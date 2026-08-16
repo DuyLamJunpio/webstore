@@ -1,26 +1,190 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: var(--font-general-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-playfair), ui-serif, Georgia, serif;
+
+  /* The Basic Concept — đen nâu / nâu kim / be */
+  --color-ink: #1c1714;
+  --color-ink-soft: #2b2320;
+  --color-gold: #a8804b;
+  --color-gold-soft: #c4a176;
+  --color-gold-deep: #8a6437;
+  --color-muted: #7c6a57;
+  --color-cream: #f5efe6;
+  --color-cream-dark: #eae1d3;
+  --color-surface: #fbf8f2;
+  --color-line: rgba(28, 23, 20, 0.1);
+  --color-line-strong: rgba(28, 23, 20, 0.18);
+
+  --radius-card: 12px;
+  --radius-block: 20px;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: var(--color-cream);
+  --foreground: var(--color-ink);
+  --header-height: 76px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  min-width: 0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  /* the header is sticky, so anchored sections need room above them */
+  scroll-padding-top: calc(var(--header-height) + 16px);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--color-ink);
+  color: var(--color-cream);
+}
+
+/* ── shared layout helpers ─────────────────────────────────────────── */
+/* full-bleed: sections span the whole viewport, only the gutter is reserved */
+.shell {
+  width: 100%;
+  padding-inline: clamp(16px, 3.2vw, 64px);
+}
+
+/* for centred copy that would be unreadable at full viewport width */
+.measure {
+  max-width: 62ch;
+  margin-inline: auto;
+}
+
+.gold-text {
+  background: linear-gradient(
+    135deg,
+    var(--color-gold-soft) 0%,
+    var(--color-gold) 42%,
+    var(--color-gold-deep) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* one vertical rhythm for every band, so stacked sections don't double up */
+.section {
+  padding-block: clamp(44px, 5.5vw, 76px);
+}
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* ── marquee ───────────────────────────────────────────────────────── */
+.marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll var(--marquee-duration, 34s) linear infinite;
+}
+
+.marquee-slow {
+  --marquee-duration: 46s;
+}
+
+.marquee:hover {
+  animation-play-state: paused;
+}
+
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ── product card image swap ───────────────────────────────────────── */
+.swap-front,
+.swap-back {
+  transition: opacity 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.swap:hover .swap-front {
+  opacity: 0;
+}
+
+.swap:hover .swap-back {
+  opacity: 1;
+  transform: scale(1.03);
+}
+
+/* ── horizontal snap rail ──────────────────────────────────────────── */
+.rail {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+}
+
+.rail::-webkit-scrollbar {
+  display: none;
+}
+
+.rail > * {
+  scroll-snap-align: start;
+}
+
+/* ── entrance animation ────────────────────────────────────────────── */
+.rise {
+  animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── dialog entrance (quick add) ───────────────────────────────────────── */
+/* deliberately faster than .rise — a panel the user opened should feel instant */
+.pop {
+  animation: pop 0.22s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee,
+  .rise,
+  .pop {
+    animation: none;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
 }
