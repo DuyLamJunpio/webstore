@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
-import { bestSellerFilters, products } from "@/lib/data";
+import { bestSellerFilters, bestSellers } from "@/lib/data";
 import ProductCard from "./ProductCard";
 import { ArrowUpRight, ChevronLeft, ChevronRight } from "./icons";
 
@@ -11,7 +11,10 @@ export default function BestSellers() {
   const railRef = useRef<HTMLDivElement>(null);
 
   const visible = useMemo(
-    () => (filter === "Tất cả" ? products : products.filter((p) => p.category === filter)),
+    () =>
+      (filter === "Tất cả" ? bestSellers : bestSellers.filter((p) => p.category === filter))
+        // dãy ngang chỉ cuộn được chừng này là hết kiên nhẫn; "Xem thêm" dẫn sang /shop
+        .slice(0, 12),
     [filter],
   );
 

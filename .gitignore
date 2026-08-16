@@ -37,6 +37,9 @@ yarn-error.log*
 # orders written by the file-backed store in lib/orders.ts
 /.data/
 
+# access/refresh token của Shopee Open Platform — bí mật, và tự đổi mỗi lần làm mới
+/.shopee/
+
 # vercel
 .vercel
 

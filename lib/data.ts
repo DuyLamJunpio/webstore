@@ -1,4 +1,4 @@
-import { shopeeSeeds } from "./catalogue.generated";
+import { shopeeCategories, shopeeSeeds } from "./catalogue.generated";
 import { CONTACT } from "./contact";
 
 export type Audience = "Nam" | "Nữ" | "Trẻ em" | "Unisex";
@@ -26,6 +26,10 @@ export type Product = {
   isNew?: boolean;
   rating: number;
   reviews: number;
+  /** lượt bán tích luỹ trên Shopee — chỉ có ở hàng đồng bộ qua API, dùng để xếp "bán chạy" */
+  sold?: number;
+  /** item_id trên Shopee, để đối chiếu khi đồng bộ và để trỏ về gian hàng */
+  shopeeItemId?: number;
   description: string;
   details: string[];
   colors: ProductColor[];
@@ -491,8 +495,30 @@ const uniqueSorted = (values: string[]) =>
 
 export const allCategories = uniqueSorted(products.map((p) => p.category));
 
-/** tab lọc ở khối "Bán chạy nhất" — bám theo danh mục thật đang có hàng */
-export const bestSellerFilters: string[] = ["Tất cả", ...allCategories.slice(0, 6)];
+/**
+ * Tab lọc ở khối "Bán chạy nhất".
+ *
+ * Khi có dữ liệu Shopee thì lấy danh mục nhiều hàng nhất lên trước — sáu danh
+ * mục đầu bảng chữ cái thường rơi vào những nhóm chỉ có một hai sản phẩm, bấm
+ * vào là ra dãy trống.
+ */
+export const bestSellerFilters: string[] = [
+  "Tất cả",
+  ...(shopeeCategories.length > 0
+    ? shopeeCategories.slice(0, 6).map((c) => c.name)
+    : allCategories.slice(0, 6)),
+];
+
+/**
+ * Bán chạy nhất: xếp theo lượt bán thật lấy từ `get_item_extra_info`.
+ *
+ * Catalogue mẫu không có `sold`, lúc đó thứ tự giữ nguyên như trước — số lượt
+ * bán bịa ra để sắp xếp còn tệ hơn là không sắp xếp.
+ */
+export const bestSellers: Product[] =
+  products.some((p) => (p.sold ?? 0) > 0)
+    ? [...products].sort((a, b) => (b.sold ?? 0) - (a.sold ?? 0))
+    : products;
 
 export const allAudiences: Audience[] = ["Nam", "Nữ", "Trẻ em", "Unisex"];
 

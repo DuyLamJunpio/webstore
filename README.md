@@ -93,10 +93,59 @@ một phía sẽ làm hai bên vẽ hai con số khác nhau và hỏng hydrate.
 một ổ đĩa. Khi triển khai serverless hoặc chạy nhiều tiến trình, cần thay bằng cơ sở dữ liệu —
 chỉ phải viết lại năm hàm ở cuối `lib/orders.ts`.
 
-## Nhập sản phẩm từ Shopee
+## Lấy dữ liệu thật từ Shopee
 
-Shopee chặn máy chủ gọi API danh sách sản phẩm (trả về `error 90309999`), nhưng trình duyệt
-đã đăng nhập thì gọi bình thường. Vì vậy bước lấy dữ liệu làm thủ công một lần:
+Catalogue của web (`lib/catalogue.generated.ts`) được sinh ra từ shop Shopee, không viết tay.
+Chừng nào file đó còn rỗng thì web dùng catalogue mẫu trong `lib/data.ts`, nên không bao giờ
+trống trang. Có hai đường lấy dữ liệu, ưu tiên đường thứ nhất.
+
+### 1. Open Platform — API chính thức (khuyên dùng)
+
+Lấy được đủ thứ mà đường thứ hai không có: **danh mục thật**, **mô tả**, **tồn kho từng
+phân loại** và **lượt bán** để xếp khối "Bán chạy nhất".
+
+1. Đăng ký ứng dụng tại [open.shopee.com](https://open.shopee.com) → *App Management* → tạo app.
+   Chép **Partner ID** và **Partner Key** vào `.env.local` (xem `.env.example`).
+   Khai luôn một *Redirect URL* — dùng gì cũng được, script chỉ đọc `?code=` trên thanh địa chỉ.
+
+2. Uỷ quyền shop, làm một lần:
+
+   ```bash
+   npm run shopee:auth
+   ```
+
+   Script in ra link; mở bằng tài khoản chủ shop, bấm đồng ý, rồi dán lại URL trình duyệt
+   nhảy tới. Token ghi vào `.shopee/token.json` (đã nằm trong `.gitignore`).
+
+3. Đồng bộ:
+
+   ```bash
+   npm run sync:shopee              # toàn bộ sản phẩm đang bán
+   npm run sync:shopee -- --limit 20
+   ```
+
+Access token sống 4 tiếng và script tự làm mới bằng refresh token. Refresh token sống 30
+ngày — bỏ không đồng bộ lâu hơn thế thì phải chạy lại `npm run shopee:auth`.
+
+Giá và tồn kho là ảnh chụp tại thời điểm đồng bộ, không phải thời gian thực. Bán hàng đều
+thì đặt lịch chạy `npm run sync:shopee` (cron / GitHub Action) rồi build lại — vài lần một
+ngày là đủ, Shopee cho 1.000 lượt gọi mỗi phút.
+
+Các endpoint đang dùng nằm ở `lib/shopee/products.ts`; phần ký chữ ký và token ở
+`lib/shopee/client.ts`.
+
+| Dữ liệu | Endpoint |
+| --- | --- |
+| Danh mục | `/api/v2/product/get_category` |
+| Danh sách sản phẩm | `/api/v2/product/get_item_list` |
+| Thông tin, giá, mô tả | `/api/v2/product/get_item_base_info` |
+| Phân loại + tồn kho | `/api/v2/product/get_model_list` |
+| Lượt bán, đánh giá | `/api/v2/product/get_item_extra_info` |
+
+### 2. JSON lưu từ trình duyệt — đường dự phòng
+
+Dùng khi chưa kịp đăng ký ứng dụng. Shopee chặn máy chủ gọi API danh sách sản phẩm (trả về
+`error 90309999`), nhưng trình duyệt đã đăng nhập thì gọi bình thường:
 
 1. Mở link này trong tab đang đăng nhập Shopee (đổi `match_id` nếu dùng shop khác):
 
@@ -112,21 +161,17 @@ Shopee chặn máy chủ gọi API danh sách sản phẩm (trả về `error 90
    npm run import:shopee -- ./duong-dan-file.json
    ```
 
-Script tải toàn bộ ảnh về `public/images/shopee/` và sinh `lib/catalogue.generated.ts`.
-Chừng nào file đó còn rỗng thì web dùng catalogue mẫu, nên không bao giờ trống trang.
-Chạy lại nhiều lần được — ảnh đã tải thì bỏ qua.
+Endpoint này không trả về mô tả (để trống thay vì bịa nội dung) và cũng không có tồn kho
+theo từng phân loại — chỉ có tổng tồn của cả sản phẩm, nên script chia đều cho các phân
+loại. Chia ít hơn thực tế chứ không bao giờ hứa thừa.
+
+Shop trên 100 sản phẩm thì lưu thêm các trang bằng cách đổi `offset=100`, `offset=200`…
+rồi chạy importer với nhiều file một lượt.
+
+Cả hai đường đều tải ảnh về `public/images/shopee/` và chạy lại nhiều lần được — ảnh đã có
+thì bỏ qua.
 
 Shop hiện tại: **By Roé Atelier** — shop ID `1481009453`.
-
-### Hai thứ endpoint này không trả về
-
-- **`description` và `details`** — mô tả sản phẩm. Script để trống thay vì bịa nội dung;
-  điền tay trong file vừa sinh.
-- **Tồn kho theo từng phân loại** — chỉ có tổng tồn kho của cả sản phẩm, nên script chia
-  đều cho các phân loại. Chia ít hơn thực tế chứ không bao giờ hứa thừa.
-
-Nếu shop có trên 100 sản phẩm, lưu thêm các trang bằng cách đổi `offset=100`, `offset=200`…
-rồi chạy importer cho từng file.
 
 ## Learn More
 

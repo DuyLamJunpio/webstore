@@ -1,5 +1,9 @@
 /**
- * Nhập sản phẩm từ Shopee vào catalogue của web.
+ * Nhập sản phẩm từ Shopee vào catalogue của web — ĐƯỜNG DỰ PHÒNG.
+ *
+ * Có tài khoản Open Platform thì dùng `npm run sync:shopee`: lấy được tồn kho
+ * thật của từng phân loại, mô tả, danh mục và lượt bán. Script này chỉ còn dùng
+ * khi chưa kịp đăng ký ứng dụng — nó đọc JSON lưu tay từ trình duyệt.
  *
  *   npm run import:shopee -- ./shopee.json
  *
@@ -16,8 +20,16 @@
  */
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
 import path from "node:path";
+import {
+  audienceFor,
+  categoryFor,
+  downloadImage,
+  hexFor,
+  lit,
+  renderSeed,
+  slugify,
+} from "./seed-format.mjs";
 
 const CDN = "https://down-vn.img.susercontent.com/file";
 const IMAGE_DIR = path.join(process.cwd(), "public", "images", "shopee");
@@ -49,111 +61,10 @@ type ItemBasic = {
 
 type SearchItems = { items?: Array<{ item_basic?: ItemBasic } & Partial<ItemBasic>>; total_count?: number };
 
-// ── tiếng Việt → slug ASCII ──────────────────────────────────────────
-
-const COMBINING = /[̀-ͯ]/g;
-
-const slugify = (value: string) =>
-  value
-    .normalize("NFD")
-    .replace(COMBINING, "")
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "D")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60) || "san-pham";
-
-// ── đoán màu → mã hex cho ô swatch ───────────────────────────────────
-
-/**
- * Shopee chỉ trả về tên phân loại dạng chữ ("Trắng kem", "Xanh navy"), còn giao
- * diện cần một mã màu để vẽ ô tròn. Bảng này dò theo từ khoá; không khớp thì
- * dùng màu be trung tính của thương hiệu — sai màu thì sửa tay một dòng, còn
- * hơn là bịa ra một mã hex ngẫu nhiên.
- */
-const COLOR_HINTS: Array<[RegExp, string]> = [
-  [/trắng|white|kem|cream|sữa|ivory/i, "#f0e7d8"],
-  [/đen|black|mực/i, "#1c1714"],
-  [/xám|ghi|grey|gray/i, "#c9c6bd"],
-  [/be|beige|nude|cát|sand|kaki|khaki/i, "#d8c4a4"],
-  [/nâu|brown|socola|chocolate|cafe|cà phê/i, "#4a3728"],
-  [/hồng|pink|ruốc/i, "#e2b3b8"],
-  [/đỏ|red|burgundy|đô/i, "#a8503a"],
-  [/cam|orange|apricot/i, "#d98441"],
-  [/vàng|yellow|mustard|bơ/i, "#d9b45b"],
-  [/xanh lá|green|rêu|olive|mint|lá/i, "#6b6a45"],
-  [/xanh dương|navy|blue|biển|chàm|denim/i, "#3d4a63"],
-  [/tím|purple|lavender|lilac/i, "#8a7aa8"],
-];
-
-const hexFor = (name: string) => COLOR_HINTS.find(([re]) => re.test(name))?.[1] ?? "#d8c4a4";
-
-// ── đoán danh mục và đối tượng từ tên sản phẩm ───────────────────────
-
-const CATEGORY_HINTS: Array<[RegExp, string]> = [
-  [/hoodie|nỉ có mũ/i, "Hoodie"],
-  [/cardigan/i, "Cardigan"],
-  [/áo khoác|jacket|blazer|bomber|phao|dạ/i, "Áo khoác"],
-  [/sơ ?mi|shirt(?!s)/i, "Áo sơ mi"],
-  [/áo len|sweater|dệt kim|knit/i, "Áo len"],
-  [/áo thun|t-?shirt|tee|polo/i, "Áo thun"],
-  [/chân váy|váy|đầm|dress|skirt/i, "Váy đầm"],
-  [/quần|pants|jean|short|jogger/i, "Quần"],
-  [/set|bộ /i, "Set đồ"],
-  [/túi|bag|balo/i, "Phụ kiện"],
-];
-
-const AUDIENCE_HINTS: Array<[RegExp, "Nam" | "Nữ" | "Trẻ em"]> = [
-  [/trẻ em|bé trai|bé gái|kids|baby|em bé/i, "Trẻ em"],
-  [/nữ|women|girl|đầm|chân váy/i, "Nữ"],
-  [/nam|men(?!t)|boy/i, "Nam"],
-];
-
-const categoryFor = (name: string) => CATEGORY_HINTS.find(([re]) => re.test(name))?.[1] ?? "Khác";
-const audienceFor = (name: string) => AUDIENCE_HINTS.find(([re]) => re.test(name))?.[1] ?? "Unisex";
-
 // ── tải ảnh ──────────────────────────────────────────────────────────
 
-async function downloadImage(hash: string, target: string): Promise<boolean> {
-  if (existsSync(target)) return true;
-  try {
-    const response = await fetch(`${CDN}/${hash}`, {
-      headers: { "User-Agent": "Mozilla/5.0", Accept: "image/jpeg,image/webp,image/*" },
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!response.ok) {
-      console.warn(`   ! ảnh ${hash} → HTTP ${response.status}`);
-      return false;
-    }
-    await writeFile(target, Buffer.from(await response.arrayBuffer()));
-    return true;
-  } catch (error) {
-    console.warn(`   ! ảnh ${hash} → ${error instanceof Error ? error.message : error}`);
-    return false;
-  }
-}
-
-// ── sinh mã ──────────────────────────────────────────────────────────
-
-/** JSON.stringify cho ra chuỗi TS hợp lệ và an toàn với dấu nháy, tiếng Việt */
-const lit = (value: unknown) => JSON.stringify(value);
-
-function renderSeed(seed: Record<string, unknown>, warnings: string[]): string {
-  const lines = [`  {`];
-  for (const [key, value] of Object.entries(seed)) {
-    if (value === undefined) continue;
-    if (key === "colors" || key === "variants") {
-      const rows = (value as Record<string, unknown>[]).map((row) => `      ${lit(row)},`).join("\n");
-      lines.push(`    ${key}: [\n${rows}\n    ],`);
-    } else {
-      lines.push(`    ${key}: ${lit(value)},`);
-    }
-  }
-  if (!seed.description) warnings.push(String(seed.slug));
-  lines.push(`  },`);
-  return lines.join("\n");
-}
+/** endpoint này chỉ trả về hash ảnh, phải tự ghép với CDN */
+const fetchImage = (hash: string, target: string) => downloadImage(`${CDN}/${hash}`, target);
 
 // ── chạy ─────────────────────────────────────────────────────────────
 
@@ -211,7 +122,7 @@ async function main() {
     const localPaths: string[] = [];
     for (const [index, hash] of hashes.entries()) {
       const file = `${slug}-${index + 1}.jpg`;
-      if (await downloadImage(hash, path.join(IMAGE_DIR, file))) {
+      if (await fetchImage(hash, path.join(IMAGE_DIR, file))) {
         localPaths.push(`/images/shopee/${file}`);
         downloaded++;
       }
@@ -297,6 +208,12 @@ import type { Seed } from "./data";
 export const shopeeSeeds: Seed[] = [
 ${seeds.join("\n")}
 ];
+
+/**
+ * Danh mục thật của shop — để trống ở đường nhập này: endpoint danh sách không
+ * kèm category_id, danh mục hiển thị được đoán từ tên sản phẩm.
+ */
+export const shopeeCategories: Array<{ name: string; count: number }> = [];
 
 export const importedAt: string | null = ${lit(new Date().toISOString())};
 `;
