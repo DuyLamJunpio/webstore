@@ -67,20 +67,32 @@ const FILE = path.join(DIR, "orders.json");
 /** old orders are dropped on write so the file cannot grow forever */
 const KEEP_MS = 60 * 24 * 60 * 60 * 1000;
 
-let cache: Store | null = null;
 /** every write goes through this chain, so two requests cannot interleave a read-modify-write */
 let queue: Promise<unknown> = Promise.resolve();
 
+/**
+ * Luôn đọc lại từ đĩa — cố ý không giữ bản sao trong bộ nhớ.
+ *
+ * Bản sao đó từng làm hỏng đúng hai thứ, vì Next đóng gói route handler và
+ * server component thành hai bundle khác nhau: mỗi bên giữ một bản sao riêng
+ * và không bên nào biết bên kia vừa ghi gì.
+ *
+ *   • `/api/checkout` tạo đơn mới → bản sao của trang `/checkout/[ref]` vẫn là
+ *     ảnh chụp cũ, không có đơn đó → khách nhận 404 ngay sau khi đặt hàng.
+ *   • tệ hơn: `transaction()` ghi nguyên bản sao cũ đó xuống đĩa, xoá sạch
+ *     những đơn mà bên kia vừa lưu.
+ *
+ * Tệp này chỉ vài KB nên đọc lại mỗi lần là không đáng kể — và khi nào nó đủ
+ * lớn để thành vấn đề thì câu trả lời là cơ sở dữ liệu, không phải bộ nhớ đệm.
+ */
 async function read(): Promise<Store> {
-  if (cache) return cache;
   try {
     const parsed = JSON.parse(await readFile(FILE, "utf8")) as Store;
-    cache = parsed?.v === 1 && parsed.orders ? parsed : { v: 1, orders: {} };
+    return parsed?.v === 1 && parsed.orders ? parsed : { v: 1, orders: {} };
   } catch {
     // no file yet, or someone hand-edited it into invalid JSON
-    cache = { v: 1, orders: {} };
+    return { v: 1, orders: {} };
   }
-  return cache;
 }
 
 async function write(store: Store): Promise<void> {
@@ -94,7 +106,6 @@ async function write(store: Store): Promise<void> {
   const temp = `${FILE}.${randomUUID()}.tmp`;
   await writeFile(temp, JSON.stringify(store, null, 2), "utf8");
   await rename(temp, FILE);
-  cache = store;
 }
 
 /** serialises a read-modify-write against the store */

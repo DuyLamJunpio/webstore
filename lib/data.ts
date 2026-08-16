@@ -1,4 +1,5 @@
 import { shopeeSeeds } from "./catalogue.generated";
+import { CONTACT } from "./contact";
 
 export type Audience = "Nam" | "Nữ" | "Trẻ em" | "Unisex";
 
@@ -397,8 +398,37 @@ const demoSeeds: Seed[] = [
  */
 const seeds: Seed[] = shopeeSeeds.length > 0 ? shopeeSeeds : demoSeeds;
 
+/**
+ * Giá thử thanh toán.
+ *
+ * `NEXT_PUBLIC_TEST_PRICE=1000` ép mọi món về 1.000 ₫ để chuyển khoản thật mà
+ * không tốn tiền thật. Bỏ biến đó đi là bảng giá trở lại nguyên vẹn — cố ý làm
+ * bằng biến môi trường thay vì sửa thẳng số trong catalogue, vì sửa tay thì
+ * phải nhớ khôi phục đúng từng mức giá trước khi bán, và quên một dòng là bán lỗ.
+ *
+ * Phải có tiền tố NEXT_PUBLIC_: giá hiển thị ở cả máy chủ lẫn trình duyệt, biến
+ * chỉ có ở một phía sẽ làm hai bên vẽ ra hai con số khác nhau và hỏng hydrate.
+ */
+const TEST_PRICE = Math.floor(Number(process.env.NEXT_PUBLIC_TEST_PRICE ?? 0));
+
+/** true khi đang chạy giá thử — checkout đọc cờ này để bỏ luôn phí giao hàng */
+export const IS_TEST_PRICING = Number.isFinite(TEST_PRICE) && TEST_PRICE > 0;
+
+// Kêu to một lần lúc khởi động máy chủ. Deploy nhầm với biến này còn bật thì cả
+// cửa hàng bán 1.000 ₫ một món, và không có gì trên giao diện nói cho biết điều đó.
+if (IS_TEST_PRICING && typeof window === "undefined") {
+  console.warn(
+    `\n⚠  GIÁ THỬ ĐANG BẬT — mọi sản phẩm bán ${TEST_PRICE} ₫, miễn phí giao hàng.` +
+      `\n   Xoá NEXT_PUBLIC_TEST_PRICE khỏi .env trước khi bán hàng thật.\n`,
+  );
+}
+
 export const products: Product[] = seeds.map((seed) => ({
   ...seed,
+  ...(IS_TEST_PRICING
+    ? // bỏ luôn comparePrice: giữ lại thì trang sản phẩm khoe "giảm 99%"
+      { price: TEST_PRICE, comparePrice: undefined }
+    : {}),
   sizes: [...seed.sizes],
   variants:
     seed.variants ??
@@ -790,12 +820,20 @@ export const footerNav = [
     ],
   },
   {
-    title: "Mạng xã hội",
+    title: "Kết nối",
+    /**
+     * Chỉ liệt kê kênh có thật. Trước đây cột này có Instagram, X và Pinterest
+     * cùng trỏ về `/#instagram` — link chết khiến khách bấm vào rồi quay ra,
+     * tệ hơn hẳn so với không hiện gì.
+     *
+     * Footer tự chọn cách mở dựa trên `href`: `/` đi trong ứng dụng, `http` mở
+     * tab mới, `tel:` giao cho máy quay số.
+     */
     links: [
-      { label: "Instagram", href: "/#instagram" },
-      { label: "Facebook", href: "/#instagram" },
-      { label: "X/Twitter", href: "/#instagram" },
-      { label: "Pinterest", href: "/#instagram" },
+      { label: "Fanpage Facebook", href: CONTACT.facebookUrl },
+      { label: "Nhắn Zalo", href: CONTACT.zaloUrl },
+      { label: `Hotline ${CONTACT.phoneDisplay}`, href: CONTACT.phoneHref },
+      { label: "Gian hàng Shopee", href: "/#shopee" },
     ],
   },
 ];

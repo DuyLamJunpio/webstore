@@ -1,27 +1,39 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { Be_Vietnam_Pro, Playfair_Display } from "next/font/google";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import CartDrawer from "@/components/CartDrawer";
+import FloatingContact from "@/components/FloatingContact";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import "./globals.css";
 
-const generalSans = localFont({
-  variable: "--font-general-sans",
+/**
+ * Cả hai font đều phải khai `subsets: ["latin", "vietnamese"]`.
+ *
+ * Trước đây trang dùng General Sans và Playfair nạp từ `public/fonts/` — nhưng
+ * đó là bản subset chỉ có Latin cơ bản: thiếu ệ ữ ự ộ ặ ơ ư, riêng Playfair
+ * thiếu cả đ/Đ. Trình duyệt phải mượn glyph của font hệ thống cho từng ký tự
+ * thiếu, nên giữa một từ có hai kiểu chữ và dấu rơi sai chỗ: "về" thành "vê`",
+ * "mẫu" thành "mâũ", "KẾT NỐI" thành "KÊT NÔ1".
+ *
+ * Be Vietnam Pro thay cho General Sans vì General Sans không có bản nào hỗ trợ
+ * tiếng Việt (đã đối chiếu với chính file gốc trên Fontshare). Be Vietnam Pro
+ * được vẽ riêng cho tiếng Việt nên dấu nằm đúng chỗ thay vì chồng máy móc.
+ */
+const beVietnam = Be_Vietnam_Pro({
+  variable: "--font-be-vietnam",
+  subsets: ["latin", "vietnamese"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
-  src: [
-    { path: "../public/fonts/GeneralSans-Regular.woff2", weight: "400", style: "normal" },
-    { path: "../public/fonts/GeneralSans-Medium.woff2", weight: "500", style: "normal" },
-    { path: "../public/fonts/GeneralSans-Semibold.woff2", weight: "600", style: "normal" },
-    { path: "../public/fonts/GeneralSans-Bold.woff2", weight: "700", style: "normal" },
-  ],
 });
 
-// font serif dùng cho monogram và chữ ký thương hiệu TBC
-const playfair = localFont({
+// font serif dùng cho monogram và chữ ký thương hiệu TBC — vẫn đúng typeface cũ,
+// chỉ khác là bản của Google có kèm subset tiếng Việt
+const playfair = Playfair_Display({
   variable: "--font-playfair",
+  subsets: ["latin", "vietnamese"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
-  src: [{ path: "../public/fonts/PlayfairDisplay-Variable.woff2", weight: "400 700", style: "normal" }],
 });
 
 export const metadata: Metadata = {
@@ -39,7 +51,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="vi"
-      className={`${generalSans.variable} ${playfair.variable} h-full antialiased`}
+      className={`${beVietnam.variable} ${playfair.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
         <AnnouncementBar />
@@ -47,6 +59,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <main className="flex-1">{children}</main>
         <Footer />
         <CartDrawer />
+        <FloatingContact />
       </body>
     </html>
   );

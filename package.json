@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "import:shopee": "tsx scripts/import-shopee.mts"
+    "import:shopee": "tsx scripts/import-shopee.mts",
+    "payos:webhook": "tsx scripts/payos-webhook.mts"
   },
   "dependencies": {
     "next": "16.3.1",

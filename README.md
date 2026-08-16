@@ -46,14 +46,46 @@ tài khoản ngân hàng trong `SHOP_BANK_*` và không có đối soát tự đ
 
 ### Webhook
 
-Khai báo trong bảng điều khiển PayOS:
-
-```
-https://<tên-miền>/api/payos/webhook
+```bash
+npm run payos:webhook -- https://<tên-miền>
 ```
 
-PayOS phải gọi được URL này từ internet. Khi chạy localhost, dùng `ngrok`/`cloudflared` —
-hoặc bỏ qua, vì trang thanh toán cũng tự hỏi PayOS mỗi 4 giây (`GET /api/orders/[ref]`).
+Script tự thử URL trước rồi mới gọi `/confirm-webhook` của PayOS, nên phân biệt được
+"server chưa chạy", "tunnel đã chết" và "PayOS từ chối" — trên bảng điều khiển thì cả ba
+đều chỉ hiện một dòng "không hợp lệ" giống hệt nhau. Khai báo tay cũng được:
+**Kênh thanh toán → Webhook Url** → `https://<tên-miền>/api/payos/webhook`.
+
+PayOS phải gọi được URL này từ internet, nên khi chạy localhost cần một tunnel:
+
+```bash
+cloudflared tunnel --url http://localhost:3000     # in ra một địa chỉ trycloudflare.com
+npm run payos:webhook -- https://<địa-chỉ-vừa-in-ra>
+```
+
+**Bỏ qua webhook vẫn chạy được, nhưng không nên khi đã bán thật.** Trang thanh toán tự hỏi
+PayOS mỗi 4 giây (`GET /api/orders/[ref]`), nên trên máy cá nhân đơn vẫn tự chuyển sang PAID.
+Nhưng vòng lặp đó chỉ sống khi khách còn mở trang: quét QR xong đóng tab rồi mới chuyển tiền
+là đơn kẹt ở `PENDING` dù tiền đã về. Webhook do PayOS chủ động gọi nên không phụ thuộc vào đó.
+
+Route `POST /api/payos/webhook` xác thực chữ ký HMAC-SHA256 bằng `PAYOS_CHECKSUM_KEY` trước
+khi ghi bất cứ thứ gì, và đối chiếu số tiền với đơn đã lưu — chuyển thiếu thì ghi `UNDERPAID`
+chứ không bao giờ tính là đã thanh toán.
+
+### Giá thử thanh toán
+
+Chuyển khoản thật để thử luồng thanh toán mà không tốn tiền thật:
+
+```bash
+NEXT_PUBLIC_TEST_PRICE=1000     # trong .env
+```
+
+Mọi sản phẩm về 1.000 ₫, bỏ giá gạch ngang, và **miễn phí giao hàng** — thiếu vế cuối thì
+đơn 1.000 ₫ vẫn bị cộng 30.000 ₫ tiền ship, tổng ra 31.000 ₫. Máy chủ in một cảnh báo lúc
+khởi động khi biến này đang bật.
+
+Xoá biến đi là bảng giá trở lại nguyên vẹn — giá gốc trong `lib/data.ts` không bị đụng tới.
+Tiền tố `NEXT_PUBLIC_` là bắt buộc: giá hiển thị ở cả máy chủ lẫn trình duyệt, biến chỉ có ở
+một phía sẽ làm hai bên vẽ hai con số khác nhau và hỏng hydrate.
 
 ### Lưu trữ đơn hàng
 

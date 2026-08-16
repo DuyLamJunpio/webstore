@@ -135,6 +135,26 @@ export const promiseIcons = {
   shield: Shield,
 };
 
+export function Phone({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden className={className}>
+      <path
+        d="M7.1 3.5 8.5 6.6 7 8.1a9.4 9.4 0 0 0 4.9 4.9l1.5-1.5 3.1 1.4v2.6a1.4 1.4 0 0 1-1.5 1.4A13.5 13.5 0 0 1 3.1 5a1.4 1.4 0 0 1 1.4-1.5h2.6Z"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/** dấu "f" của Facebook — là nhãn thương hiệu nên để nét đặc, không viền */
+export function Facebook({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden className={className}>
+      <path d="M20 10a10 10 0 1 0-11.6 9.9v-7H5.9V10h2.5V7.8c0-2.5 1.5-3.8 3.7-3.8 1.1 0 2.2.2 2.2.2v2.4h-1.2c-1.2 0-1.6.8-1.6 1.6V10h2.7l-.4 2.9h-2.3v7A10 10 0 0 0 20 10Z" />
+    </svg>
+  );
+}
+
 export function Instagram({ className = base }: IconProps) {
   return (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden className={className}>

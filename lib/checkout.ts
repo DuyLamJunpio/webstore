@@ -12,10 +12,16 @@
  * conversion step left to disagree with itself.
  */
 
-import { products } from "./data";
+import { IS_TEST_PRICING, products } from "./data";
 
-/** giao hàng miễn phí từ mức này — con số kinh doanh, chỉnh thoải mái */
-export const FREE_SHIPPING_THRESHOLD = 500_000;
+/**
+ * Giao hàng miễn phí từ mức này — con số kinh doanh, chỉnh thoải mái.
+ *
+ * Ở chế độ giá thử thì hạ về 0, tức luôn miễn phí ship. Không có dòng này thì
+ * đơn 1.000 ₫ vẫn bị cộng 30.000 ₫ tiền ship và tổng ra 31.000 ₫ — đúng cái
+ * khoản mà giá thử sinh ra để tránh.
+ */
+export const FREE_SHIPPING_THRESHOLD = IS_TEST_PRICING ? 0 : 500_000;
 export const SHIPPING_FLAT = 30_000;
 
 /** how long a bank-transfer QR stays valid before PayOS closes the link */
