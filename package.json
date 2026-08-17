@@ -7,13 +7,16 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "sync:warehouse": "tsx scripts/sync-warehouse.mts",
     "shopee:auth": "tsx scripts/shopee-auth.mts",
     "sync:shopee": "tsx scripts/sync-shopee.mts",
     "import:shopee": "tsx scripts/import-shopee.mts",
-    "payos:webhook": "tsx scripts/payos-webhook.mts"
+    "payos:webhook": "tsx scripts/payos-webhook.mts",
+    "email:test": "tsx scripts/email-test.mts"
   },
   "dependencies": {
     "next": "16.3.1",
+    "nodemailer": "^9.0.5",
     "qrcode": "^1.5.4",
     "react": "19.2.8",
     "react-dom": "19.2.8"
@@ -21,6 +24,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/nodemailer": "^8.0.1",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",

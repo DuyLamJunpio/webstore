@@ -61,346 +61,34 @@ const COLORS = {
 } satisfies Record<string, ProductColor>;
 
 /**
- * Tồn kho phải giống hệt nhau ở server và ở trình duyệt, nên nó được suy ra từ
- * hash của khoá biến thể thay vì Math.random().
- */
-const hash = (value: string) => {
-  let h = 2166136261;
-  for (let i = 0; i < value.length; i++) {
-    h ^= value.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-};
-
-const stockFor = (key: string) => {
-  const n = hash(key) % 100;
-  if (n < 8) return 0; // khoảng 8% biến thể hết hàng
-  if (n < 22) return 1 + (n % 3); // vài biến thể "chỉ còn x sản phẩm"
-  return 5 + (n % 11);
-};
-
-/**
  * Một sản phẩm trước khi được nở ra thành các biến thể.
  *
- * `variants` để trống thì tồn kho được suy ra từ hash (catalogue mẫu bên dưới);
- * hàng nhập từ Shopee mang theo tồn kho thật nên tự khai luôn.
+ * `variants` luôn có: mọi sản phẩm đều đến từ trang quản trị và mang theo
+ * tồn kho thật của từng size × màu.
  */
 export type Seed = Omit<Product, "variants" | "sizes"> & {
   sizes: readonly string[];
   variants?: Variant[];
 };
 
-const demoSeeds: Seed[] = [
-  {
-    slug: "everyday-hoodie",
-    name: "Áo Hoodie Hằng Ngày",
-    category: "Hoodie",
-    audience: "Unisex",
-    price: 1700000,
-    comparePrice: 2230000,
-    image: "/images/p-everyday-hoodie-1.png",
-    hoverImage: "/images/p-everyday-hoodie-2.png",
-    isNew: true,
-    rating: 4.8,
-    reviews: 214,
-    description:
-      "Áo hoodie vải nỉ da cá dày vừa phải, phom rộng thoải mái, mũ hai lớp. Đủ mềm để mặc ở nhà và đủ đứng phom để mặc ra phố.",
-    details: [
-      "Nỉ da cá cotton hữu cơ 380 gsm",
-      "Phom rộng — chọn nhỏ hơn một size nếu muốn dáng gọn",
-      "Bo tay và gấu dệt rib, dây mũ cùng màu",
-      "Giặt máy nước lạnh, phơi ngang",
-    ],
-    colors: [COLORS.sand, COLORS.espresso, COLORS.ink],
-    sizes: SIZES.tops,
-  },
-  {
-    slug: "lightweight-jacket",
-    name: "Áo Khoác Nhẹ",
-    category: "Áo khoác",
-    audience: "Nam",
-    price: 3200000,
-    image: "/images/p-lightweight-jacket-1.png",
-    hoverImage: "/images/p-lightweight-jacket-2.png",
-    isNew: true,
-    rating: 4.7,
-    reviews: 96,
-    description:
-      "Áo khoác một lớp cho những ngày giao mùa. Cản gió tốt, gấp gọn được và đủ nhã để khoác ngoài đồ công sở.",
-    details: [
-      "Vỏ polyester tái chế, bề mặt lì không bóng",
-      "Chống thấm nước nhẹ, không dùng hoá chất fluor",
-      "Hai túi hai bên và một túi ngực bên trong",
-      "Phom vừa — khoác vừa vặn bên ngoài áo hoodie",
-    ],
-    colors: [COLORS.olive, COLORS.slate, COLORS.ink],
-    sizes: SIZES.tops,
-  },
-  {
-    slug: "zipper-jacket",
-    name: "Áo Khoác Khoá Kéo",
-    category: "Áo khoác",
-    audience: "Nam",
-    price: 3630000,
-    comparePrice: 4380000,
-    image: "/images/p-zipper-jacket-1.png",
-    hoverImage: "/images/p-zipper-jacket-2.png",
-    rating: 4.6,
-    reviews: 141,
-    description:
-      "Áo khoá kéo tối giản, cổ trụ đứng, thân hơi ngắn. Chiếc áo khoác mặc được với mọi món bạn đang có sẵn trong tủ.",
-    details: [
-      "Vải chéo pha cotton–nylon, mặt trong chải lông",
-      "Khoá YKK hai chiều, có nẹp che khoá",
-      "Cổ và bo tay dệt rib",
-      "Phom vừa",
-    ],
-    colors: [COLORS.espresso, COLORS.ink, COLORS.fog],
-    sizes: SIZES.tops,
-  },
-  {
-    slug: "relaxed-fit-cardigan",
-    name: "Áo Cardigan Dáng Rộng",
-    category: "Cardigan",
-    audience: "Nữ",
-    price: 2450000,
-    image: "/images/p-cardigan-1.png",
-    hoverImage: "/images/p-cardigan-2.png",
-    rating: 4.9,
-    reviews: 178,
-    description:
-      "Áo len cài nút dáng dài, vai trễ. Khoác ngoài áo thun hay váy là đã đủ trọn bộ đồ.",
-    details: [
-      "Len merino pha cotton, dệt kim cỡ 12",
-      "Vai trễ, phom oversize",
-      "Nút làm từ hạt cọ corozo",
-      "Giặt tay hoặc chế độ giặt len",
-    ],
-    colors: [COLORS.cream, COLORS.clay, COLORS.fog],
-    sizes: SIZES.tops,
-  },
-  {
-    slug: "kids-graphic-t-shirt",
-    name: "Áo Thun In Hình Trẻ Em",
-    category: "Áo thun",
-    audience: "Trẻ em",
-    price: 600000,
-    image: "/images/p-kids-tee-1.png",
-    hoverImage: "/images/p-kids-tee-2.png",
-    rating: 4.7,
-    reviews: 88,
-    description:
-      "Áo thun mặc hằng ngày, chất mềm, hình in gốc nước bền màu qua nhiều lần giặt — và qua cả những buổi chạy nhảy ngoài sân.",
-    details: [
-      "Cotton chải kỹ 180 gsm",
-      "Mực in gốc nước, không dùng plastisol",
-      "Viền cổ bọc gọn, không cấn da",
-      "Giặt máy nước ấm",
-    ],
-    colors: [COLORS.cream, COLORS.indigo, COLORS.rust],
-    sizes: SIZES.kids,
-  },
-  {
-    slug: "classic-hoodie",
-    name: "Áo Hoodie Cổ Điển",
-    category: "Hoodie",
-    audience: "Unisex",
-    price: 1800000,
-    image: "/images/p-classic-hoodie-1.png",
-    hoverImage: "/images/p-classic-hoodie-2.png",
-    rating: 4.8,
-    reviews: 302,
-    description:
-      "Chiếc hoodie nguyên bản của TBC. Thân suông, tay ráp, chiếc mũ vẫn giữ nguyên phom sau cả năm mặc.",
-    details: [
-      "Nỉ bông chải mặt trong 400 gsm",
-      "Tay ráp, phom suông",
-      "Túi kangaroo",
-      "Vải đã xử lý co — chọn đúng size thường mặc",
-    ],
-    colors: [COLORS.ink, COLORS.sand, COLORS.olive],
-    sizes: SIZES.tops,
-  },
-  {
-    slug: "kids-jogger-pants",
-    name: "Quần Jogger Trẻ Em",
-    category: "Quần",
-    audience: "Trẻ em",
-    price: 800000,
-    image: "/images/p-kids-jogger-1.png",
-    hoverImage: "/images/p-kids-jogger-2.png",
-    rating: 4.6,
-    reviews: 64,
-    description:
-      "Lưng chun, ống bo chun, túi sâu. Thoải mái để chạy nhảy và đủ đơn giản để bé tự mặc.",
-    details: [
-      "Vải nỉ chân cua thành phần cotton là chính",
-      "Có dây rút bên trong điều chỉnh được",
-      "Gia cố phần đầu gối",
-      "Giặt máy nước ấm, sấy nhiệt thấp",
-    ],
-    colors: [COLORS.slate, COLORS.olive, COLORS.ink],
-    sizes: SIZES.kids,
-  },
-  {
-    slug: "oversized-graphic-tee",
-    name: "Áo Thun Oversize In Hình",
-    category: "Áo thun",
-    audience: "Unisex",
-    price: 1130000,
-    image: "/images/p-graphic-tee-1.png",
-    hoverImage: "/images/p-graphic-tee-2.png",
-    isNew: true,
-    rating: 4.5,
-    reviews: 127,
-    description:
-      "Áo thun vải dày phom vuông, giữ dáng tốt. Vai rộng, thân ngắn, hình in cố ý để nhỏ.",
-    details: [
-      "Cotton dày 240 gsm",
-      "Phom vuông — chọn nhỏ hơn một size nếu muốn dáng vừa",
-      "Cổ dệt rib, gấu may hai kim",
-      "Giặt máy nước lạnh",
-    ],
-    colors: [COLORS.cream, COLORS.ink, COLORS.rust],
-    sizes: SIZES.tops,
-  },
-  {
-    slug: "graphic-sweatshirt",
-    name: "Áo Nỉ In Hình",
-    category: "Áo len",
-    audience: "Unisex",
-    price: 2050000,
-    image: "/images/p-graphic-sweatshirt-1.png",
-    hoverImage: "/images/p-graphic-sweatshirt-2.png",
-    rating: 4.7,
-    reviews: 155,
-    description:
-      "Áo nỉ cổ tròn, mặt trong chải mềm, hình thêu cùng tông ở ngực. Cách mặc logo một cách kín đáo.",
-    details: [
-      "Nỉ pha cotton 360 gsm",
-      "Hình thêu cùng tông màu áo",
-      "Cổ, bo tay và gấu dệt rib",
-      "Phom vừa",
-    ],
-    colors: [COLORS.fog, COLORS.espresso, COLORS.indigo],
-    sizes: SIZES.tops,
-  },
-  {
-    slug: "kids-puffer-jacket",
-    name: "Áo Phao Trẻ Em",
-    category: "Áo khoác",
-    audience: "Trẻ em",
-    price: 1900000,
-    comparePrice: 2380000,
-    image: "/images/p-kids-puffer-1.png",
-    hoverImage: "/images/p-kids-puffer-2.png",
-    isNew: true,
-    rating: 4.9,
-    reviews: 73,
-    description:
-      "Ấm mà không cồng kềnh. Bông tái chế, mũ ôm không bị tuột, có ngăn che đầu khoá để không cấn cằm.",
-    details: [
-      "Vỏ và bông đều từ polyester tái chế",
-      "Xử lý chống thấm nước nhẹ",
-      "Bo tay và gấu chun",
-      "Viền phản quang ở lưng áo",
-    ],
-    colors: [COLORS.rust, COLORS.indigo, COLORS.ink],
-    sizes: SIZES.kids,
-  },
-  {
-    slug: "soft-knit-sweater",
-    name: "Áo Len Mềm",
-    category: "Áo len",
-    audience: "Nữ",
-    price: 2200000,
-    image: "/images/p-knit-sweater-1.png",
-    hoverImage: "/images/p-knit-sweater-2.png",
-    rating: 4.8,
-    reviews: 199,
-    description:
-      "Áo len cổ tròn sợi mảnh, mặc lót trong áo khoác không bị dồn vải. Đủ mềm để mặc trực tiếp lên da.",
-    details: [
-      "Len merino pha, dệt kim cỡ 14",
-      "Phom vừa hơi ôm",
-      "Cổ, bo tay và gấu dệt rib",
-      "Giặt chế độ len, phơi ngang",
-    ],
-    colors: [COLORS.cream, COLORS.clay, COLORS.olive],
-    sizes: SIZES.tops,
-  },
-  {
-    slug: "kids-everyday-hoodie",
-    name: "Áo Hoodie Trẻ Em",
-    category: "Hoodie",
-    audience: "Trẻ em",
-    price: 950000,
-    image: "/images/p-kids-hoodie-1.png",
-    hoverImage: "/images/p-kids-hoodie-2.png",
-    rating: 4.7,
-    reviews: 112,
-    description:
-      "Bản thu nhỏ của Áo Hoodie Hằng Ngày — vẫn là nỉ da cá cotton, mềm hơn một chút và bỏ dây mũ cho an toàn.",
-    details: [
-      "Nỉ da cá cotton hữu cơ 320 gsm",
-      "Không có dây mũ — đạt chuẩn an toàn cho trẻ",
-      "Túi kangaroo",
-      "Giặt máy nước ấm",
-    ],
-    colors: [COLORS.sand, COLORS.rust, COLORS.slate],
-    sizes: SIZES.kids,
-  },
-  {
-    slug: "utility-cargo-pants",
-    name: "Quần Cargo Túi Hộp",
-    category: "Quần",
-    audience: "Nam",
-    price: 2380000,
-    image: "/images/p-cargo-pants-1.png",
-    hoverImage: "/images/p-cargo-pants-2.png",
-    isNew: true,
-    rating: 4.6,
-    reviews: 134,
-    description:
-      "Quần cargo ống suông, túi hộp may sát thân quần nên không bị phồng. Tinh thần workwear nhưng gọn gàng hơn.",
-    details: [
-      "Vải ripstop cotton có độ co giãn nhẹ",
-      "Ống suông, lưng vừa",
-      "Sáu túi, các điểm chịu lực may chặn",
-      "Giặt máy nước lạnh, phơi treo",
-    ],
-    colors: [COLORS.olive, COLORS.sand, COLORS.ink],
-    sizes: SIZES.bottoms,
-  },
-  {
-    slug: "high-waist-wide-leg-jeans",
-    name: "Quần Jeans Ống Rộng Lưng Cao",
-    category: "Quần",
-    audience: "Nữ",
-    price: 2750000,
-    image: "/images/p-wide-jeans-1.png",
-    hoverImage: "/images/p-wide-jeans-2.png",
-    rating: 4.8,
-    reviews: 246,
-    description:
-      "Denim thô lưng cao, ống rộng đổ thẳng. Càng mặc càng mềm theo dáng người mà vẫn giữ phom cả ngày.",
-    details: [
-      "Denim cotton thô 13 oz",
-      "Lưng cao, ống rộng",
-      "Cửa quần cài nút, chỉ may cùng tông",
-      "Lộn trái khi giặt, dùng nước lạnh",
-    ],
-    colors: [COLORS.indigo, COLORS.fog, COLORS.ink],
-    sizes: SIZES.bottoms,
-  },
-];
-
 /**
- * Hàng thật thay thế catalogue mẫu ngay khi `npm run import:shopee` chạy xong.
- * Trước lúc đó trang vẫn có đồ để hiển thị, nên không bao giờ rơi vào trạng thái trống.
+ * Toàn bộ catalogue lấy từ trang quản trị — không còn dữ liệu mẫu nào.
+ *
+ *   npm run sync:warehouse
+ *
+ * Trước đây file này có sẵn một catalogue mẫu để trang không bao giờ trống, và
+ * tồn kho của nó được suy ra từ hash tên biến thể. Đã bỏ cả hai: hàng mẫu trông
+ * y hệt hàng thật nên rất dễ lỡ bán một món không tồn tại, còn tồn kho bịa ra
+ * thì cho khách đặt hàng đã hết. Thà trang trống và báo rõ.
  */
-const seeds: Seed[] = shopeeSeeds.length > 0 ? shopeeSeeds : demoSeeds;
+const seeds: Seed[] = shopeeSeeds;
+
+if (seeds.length === 0 && typeof window === "undefined") {
+  console.warn(
+    "\n⚠  Catalogue đang trống — chưa đồng bộ từ trang quản trị." +
+      "\n   Chạy: npm run sync:warehouse\n",
+  );
+}
 
 /**
  * Giá thử thanh toán.
@@ -434,16 +122,10 @@ export const products: Product[] = seeds.map((seed) => ({
       { price: TEST_PRICE, comparePrice: undefined }
     : {}),
   sizes: [...seed.sizes],
-  variants:
-    seed.variants ??
-    seed.colors.flatMap((color) =>
-      seed.sizes.map((size) => ({
-        id: `${seed.slug}__${color.name}__${size}`,
-        color: color.name,
-        size,
-        stock: stockFor(`${seed.slug}|${color.name}|${size}`),
-      })),
-    ),
+  // Biến thể luôn đến từ trang quản trị kèm tồn kho thật. Không còn đường
+  // nào dựng biến thể "ảo": sản phẩm chưa khai size/màu thì đơn giản là
+  // không mua được, thay vì bày ra tổ hợp không tồn tại.
+  variants: seed.variants ?? [],
 }));
 
 /**
@@ -743,74 +425,26 @@ export type TestimonialTile =
   | { type: "quote"; quote: string; author: string }
   | { type: "image"; src: string; alt: string };
 
-export const testimonials: TestimonialTile[] = [
-  {
-    type: "quote",
-    quote: "Thiết kế đơn giản, mặc rất thoải mái, giao hàng nhanh. Đúng thứ mình đang tìm.",
-    author: "Minh Anh",
-  },
-  { type: "image", src: "/images/testi-1.png", alt: "Khách hàng mặc áo blazer của TBC" },
-  {
-    type: "quote",
-    quote: "Kiểu dáng gọn gàng, đi đâu cũng hợp. Chất lượng và độ tỉ mỉ thấy rõ.",
-    author: "Quốc Bảo",
-  },
-  {
-    type: "quote",
-    quote: "Chất lượng vượt mong đợi. Món nào cũng đứng phom và vừa vặn.",
-    author: "Thuỳ Linh",
-  },
-  { type: "image", src: "/images/testi-2.png", alt: "Khách hàng mặc áo len của TBC" },
-  {
-    type: "quote",
-    quote: "Vải chạm tay rất thích, form mặc dễ chịu. Tuần nào mình cũng lấy ra mặc.",
-    author: "Gia Huy",
-  },
-  {
-    type: "quote",
-    quote: "Hiện đại, thoải mái và dễ phối đồ. Đơn nào cũng thấy đáng tiền.",
-    author: "Hải Đăng",
-  },
-  { type: "image", src: "/images/testi-3.png", alt: "Khách hàng mặc áo khoác bomber của TBC" },
-  {
-    type: "quote",
-    quote: "Đồ cơ bản mặc hằng ngày mà cảm giác cao cấp. Mình đã đặt thêm lần nữa.",
-    author: "Ngọc Trâm",
-  },
-];
+/**
+ * Đánh giá của khách — trống cho tới khi có đánh giá thật.
+ *
+ * Trước đây đây là những lời khen và tên khách do người viết code nghĩ ra.
+ * Bằng chứng xã hội bịa ra thì tệ hơn là không có: khách tin vào nó để quyết
+ * định mua. Khi nào shop có đánh giá thật thì đổ vào mảng này.
+ */
+export const testimonials: TestimonialTile[] = [];
 
-export const journal = [
-  {
-    slug: "tu-do-co-ban",
-    title: "Xây Dựng Tủ Đồ Cơ Bản",
-    excerpt: "Những món đồ dễ phối giúp việc mặc gì mỗi sáng trở nên nhẹ nhàng hơn.",
-    date: "25 Tháng 6, 2026",
-    image: "/images/journal-1.png",
-  },
-  {
-    slug: "phoi-lop-mua-he",
-    title: "Phối Lớp Mùa Hè Thật Dễ",
-    excerpt: "Những món mỏng nhẹ tạo chiều sâu cho outfit mà vẫn thoáng mát.",
-    date: "23 Tháng 6, 2026",
-    image: "/images/journal-2.png",
-  },
-  {
-    slug: "chon-dang-quan-jeans",
-    title: "Cẩm Nang Chọn Dáng Quần Jeans",
-    excerpt: "Tìm đúng phom quần với hướng dẫn về các dáng jeans hiện đại.",
-    date: "21 Tháng 6, 2026",
-    image: "/images/journal-3.png",
-  },
-];
+/**
+ * Bài viết — trống cho tới khi shop tự viết.
+ * Ba bài mẫu trước đây có ngày tháng và nội dung bịa.
+ */
+export const journal: Array<{ slug: string; title: string; excerpt: string; date: string; image: string }> = [];
 
-export const instagramFeed = [
-  { src: "/images/ig-1.png", alt: "Ảnh cộng đồng — áo len đỏ" },
-  { src: "/images/ig-2.png", alt: "Ảnh cộng đồng — áo hoodie xám" },
-  { src: "/images/ig-3.png", alt: "Ảnh cộng đồng — áo khoác phối lớp" },
-  { src: "/images/ig-4.png", alt: "Ảnh cộng đồng — set đồ màu kem" },
-  { src: "/images/ig-5.png", alt: "Ảnh cộng đồng — áo hoodie đỏ" },
-  { src: "/images/ig-6.png", alt: "Ảnh cộng đồng — áo thun xanh và quần jogger" },
-];
+/**
+ * Ảnh cộng đồng — trống cho tới khi nối Instagram thật.
+ * Sáu ảnh mẫu trước đây không phải ảnh khách của shop.
+ */
+export const instagramFeed: Array<{ src: string; alt: string }> = [];
 
 export const footerNav = [
   {

@@ -4,6 +4,9 @@ import SectionHeading from "./SectionHeading";
 import { Diamond } from "./icons";
 
 export default function Testimonials() {
+  // Chưa có đánh giá thật thì không dựng cả khối, thay vì hiện tiêu đề rỗng.
+  if (testimonials.length === 0) return null;
+
   return (
     <section id="reviews" className="shell section">
       <SectionHeading

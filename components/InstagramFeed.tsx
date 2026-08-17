@@ -4,6 +4,9 @@ import SectionHeading from "./SectionHeading";
 import { Instagram } from "./icons";
 
 export default function InstagramFeed() {
+  // Chưa nối Instagram thì không dựng cả khối, thay vì hiện tiêu đề rỗng.
+  if (instagramFeed.length === 0) return null;
+
   return (
     <section id="instagram" className="shell section">
       <SectionHeading

@@ -21,6 +21,7 @@ import {
 import { reserveOrder, saveOrder, type Order, type OrderPayment } from "@/lib/orders";
 import { createPaymentLink, DESCRIPTION_MAX, isPayosConfigured, PayosError } from "@/lib/payos";
 import { buildVietQr, readFallbackBank } from "@/lib/vietqr";
+import { pushOrder } from "@/lib/warehouse";
 
 // ── a small brake on a public endpoint that calls a paid API ─────────
 
@@ -83,6 +84,14 @@ export async function POST(request: NextRequest) {
   const priced = priceCart(body.lines ?? []);
   if (!priced.ok) return bad(priced.error);
   const cart = priced.cart;
+
+  // Đẩy đơn sang trang quản trị TRƯỚC khi tạo mã QR. Bên đó giữ tồn kho thật và
+  // kiểm tra lại một lần nữa, nên hết hàng thì khách biết ngay tại đây chứ không
+  // phải sau khi đã chuyển khoản. Tồn kho cũng được trừ ngay từ lúc này.
+  const warehouse = await pushOrder(customer, cart);
+  if (!warehouse.ok) {
+    return bad(warehouse.error, warehouse.outOfStock ? 409 : 502);
+  }
 
   const { ref, orderCode } = await reserveOrder();
   const createdAt = Date.now();
@@ -177,6 +186,8 @@ export async function POST(request: NextRequest) {
     customer,
     cart,
     payment,
+    // Mã đơn bên trang quản trị, để webhook báo "đã nhận tiền" đúng đơn.
+    warehouseOrderCode: warehouse.orderCode,
   };
   await saveOrder(order);
 

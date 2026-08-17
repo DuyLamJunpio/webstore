@@ -13,9 +13,12 @@
  * answers 200 — retrying will not make an unknown order code known.
  */
 
+import { after } from "next/server";
 import type { NextRequest } from "next/server";
+import { sendOrderConfirmation } from "@/lib/order-email";
 import { getOrderByCode, updateOrder } from "@/lib/orders";
 import { verifyWebhook, type WebhookBody } from "@/lib/payos";
+import { markPaid } from "@/lib/warehouse";
 
 /** PayOS pings the URL with a dummy payload when you register it */
 export async function GET() {
@@ -57,13 +60,23 @@ export async function POST(request: NextRequest) {
     return Response.json({ ok: true, ignored: "amount mismatch" });
   }
 
-  await updateOrder(order.ref, {
+  const paid = await updateOrder(order.ref, {
     status: "PAID",
     paidAt: Date.now(),
     amountPaid: data.amount,
     transactionRef: data.reference,
   });
   console.log(`[payos] order ${order.ref} paid — ${data.reference}`);
+
+  // Gửi thư sau khi đã trả lời PayOS: máy chủ email chậm hoặc chết cũng không
+  // được phép làm request này quá hạn, vì PayOS coi mọi phản hồi khác 2XX là
+  // thất bại và sẽ gọi lại.
+  if (paid) after(() => sendOrderConfirmation(paid));
+
+  // Báo cho trang quản trị biết đã nhận được tiền. Cũng chạy sau khi đã trả lời
+  // PayOS, và thất bại cũng không sao: nhân viên vẫn đối chiếu và xác nhận tay.
+  const warehouseCode = paid?.warehouseOrderCode;
+  if (warehouseCode) after(() => markPaid(warehouseCode));
 
   return Response.json({ ok: true });
 }

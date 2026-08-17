@@ -55,9 +55,24 @@ export type Order = {
   amountPaid?: number;
   /** bank reference of the transaction that settled it */
   transactionRef?: string;
+  /**
+   * Lúc thư xác nhận được nhận gửi, tính bằng mili giây.
+   *
+   * Có mặt = đã có người nhận việc gửi, đừng gửi nữa. Hai đường đều có thể xác
+   * nhận một đơn đã trả tiền — webhook của PayOS và vòng poll của trang thanh
+   * toán — nên thiếu cờ này là khách nhận hai, ba lá thư giống hệt nhau.
+   */
+  confirmationEmailSentAt?: number;
   customer: CustomerInfo;
   cart: PricedCart;
   payment: OrderPayment;
+  /**
+   * Mã đơn bên trang quản trị (Laravel), ví dụ "DH2608171ABC".
+   *
+   * Trang quản trị mới là nơi giữ tồn kho và danh sách đơn thật; file JSON này
+   * chỉ phục vụ trang thanh toán. Giữ mã lại để báo "đã nhận tiền" đúng đơn.
+   */
+  warehouseOrderCode?: string;
 };
 
 type Store = { v: 1; orders: Record<string, Order> };
@@ -178,6 +193,36 @@ export function updateOrder(ref: string, patch: Partial<Order>): Promise<Order |
     const current = store.orders[ref];
     if (!current) return null;
     const next = { ...current, ...patch };
+    store.orders[ref] = next;
+    return next;
+  });
+}
+
+/**
+ * Giành quyền gửi thư xác nhận cho một đơn.
+ *
+ * Trả về đơn hàng khi giành được, `null` khi đã có người khác giành trước.
+ * Việc kiểm tra và đánh dấu nằm gọn trong MỘT `transaction`, nên webhook và
+ * vòng poll chạy sát nhau vẫn chỉ một bên thắng — tách thành đọc rồi ghi là mở
+ * ra đúng khe hở để cả hai cùng thấy "chưa gửi" và cùng gửi.
+ */
+export function claimConfirmationEmail(ref: string): Promise<Order | null> {
+  return transaction((store) => {
+    const current = store.orders[ref];
+    if (!current || current.confirmationEmailSentAt) return null;
+    const next = { ...current, confirmationEmailSentAt: Date.now() };
+    store.orders[ref] = next;
+    return next;
+  });
+}
+
+/** trả lại quyền khi gửi hỏng, để lần xác nhận sau còn thử lại được */
+export function releaseConfirmationEmail(ref: string): Promise<Order | null> {
+  return transaction((store) => {
+    const current = store.orders[ref];
+    if (!current) return null;
+    const next = { ...current };
+    delete next.confirmationEmailSentAt;
     store.orders[ref] = next;
     return next;
   });
