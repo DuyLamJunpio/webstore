@@ -1,4 +1,4 @@
-import { shopeeCategories, shopeeSeeds } from "./catalogue.generated";
+import { rootCategories, shopeeCategories, shopeeSeeds } from "./catalogue.generated";
 import { CONTACT } from "./contact";
 
 export type Audience = "Nam" | "Nữ" | "Trẻ em" | "Unisex";
@@ -377,26 +377,30 @@ export const relatedProducts = (product: Product, limit = 4) =>
     })
     .slice(0, limit);
 
-export const categories = [
-  {
-    label: "Dành cho Nam",
-    title: "Tự Tin Trong Từng Ngày",
-    image: "/images/cat-men.png",
-    href: "/shop?audience=Nam",
-  },
-  {
-    label: "Dành cho Nữ",
-    title: "Thiết Kế Cho Nhịp Sống Hiện Đại",
-    image: "/images/cat-women.png",
-    href: "/shop?audience=N%E1%BB%AF",
-  },
-  {
-    label: "Dành cho Trẻ Em",
-    title: "Thoải Mái Cho Mọi Cuộc Phiêu Lưu",
-    image: "/images/cat-kids.png",
-    href: "/shop?audience=Tr%E1%BA%BB%20em",
-  },
-];
+/**
+ * Ô "Mua theo danh mục" ở trang chủ — dựng từ danh mục gốc thật bên quản trị.
+ *
+ * Trước đây là ba ô cứng ("Dành cho Nam/Nữ/Trẻ em") với ảnh stock và tiêu đề
+ * marketing tự nghĩ, không liên quan gì tới danh mục shop đang dùng: sửa danh
+ * mục bên quản trị thì trang chủ vẫn hiện y nguyên ba ô cũ.
+ *
+ * Mỗi ô giờ là một danh mục gốc có hàng, link lọc theo đúng các danh mục con
+ * của nó. Ảnh lấy từ ảnh danh mục khai bên quản trị; chưa có thì mượn ảnh sản
+ * phẩm đầu tiên trong nhánh, vì ô danh mục trống trông rất hụt.
+ */
+export const categories = rootCategories.map((root) => {
+  const inBranch = products.find((p) => root.children.includes(p.category));
+  const filters = (root.children.length > 0 ? root.children : [root.name])
+    .map((name) => `category=${encodeURIComponent(name)}`)
+    .join("&");
+
+  return {
+    label: `${root.count} sản phẩm`,
+    title: root.name,
+    image: root.image ?? inBranch?.image ?? "/images/placeholder.svg",
+    href: `/shop?${filters}`,
+  };
+});
 
 export const promises = [
   {

@@ -41,7 +41,7 @@ export const shopeeSeeds: Seed[] = [
       {"id":"41","color":"Trắng","size":"M","stock":22},
       {"id":"42","color":"Be","size":"M","stock":25},
       {"id":"43","color":"Đen","size":"L","stock":21},
-      {"id":"44","color":"Trắng","size":"L","stock":1},
+      {"id":"44","color":"Trắng","size":"L","stock":0},
       {"id":"45","color":"Be","size":"L","stock":19},
       {"id":"46","color":"Đen","size":"XL","stock":22},
       {"id":"47","color":"Trắng","size":"XL","stock":0},
@@ -168,7 +168,7 @@ export const shopeeSeeds: Seed[] = [
   {
     slug: "dam-du-tiec-dang-xoe",
     name: "Đầm dự tiệc dáng xòe",
-    category: "Váy đầm",
+    category: "Đầm dự tiệc",
     audience: "Unisex",
     price: 750000,
     image: "/images/placeholder.svg",
@@ -207,7 +207,7 @@ export const shopeeSeeds: Seed[] = [
   {
     slug: "quan-jean-ong-suong",
     name: "Quần jean ống suông",
-    category: "Quần",
+    category: "Quần jean",
     audience: "Unisex",
     price: 389000,
     image: "/images/placeholder.svg",
@@ -246,7 +246,7 @@ export const shopeeSeeds: Seed[] = [
   {
     slug: "quan-short-kaki",
     name: "Quần short kaki",
-    category: "Quần",
+    category: "Quần short",
     audience: "Unisex",
     price: 199000,
     image: "/images/placeholder.svg",
@@ -285,7 +285,7 @@ export const shopeeSeeds: Seed[] = [
   {
     slug: "quan-tay-cong-so",
     name: "Quần tây công sở",
-    category: "Quần",
+    category: "Quần tây",
     audience: "Unisex",
     price: 329000,
     image: "/images/placeholder.svg",
@@ -324,7 +324,7 @@ export const shopeeSeeds: Seed[] = [
   {
     slug: "tui-tote-canvas",
     name: "Túi tote canvas",
-    category: "Phụ kiện",
+    category: "Túi xách",
     audience: "Unisex",
     price: 139000,
     image: "/images/placeholder.svg",
@@ -363,7 +363,7 @@ export const shopeeSeeds: Seed[] = [
   {
     slug: "vay-ngan-xep-ly",
     name: "Váy ngắn xếp ly",
-    category: "Váy đầm",
+    category: "Váy ngắn",
     audience: "Unisex",
     price: 279000,
     image: "/images/placeholder.svg",
@@ -401,18 +401,35 @@ export const shopeeSeeds: Seed[] = [
   },
 ];
 
-/** Danh mục thật của shop, xếp theo số sản phẩm giảm dần. */
+/** Danh mục con thật của shop, xếp theo số sản phẩm giảm dần. */
 export const shopeeCategories: Array<{ name: string; count: number }> = [
   { name: "Áo thun", count: 2 },
-  { name: "Quần jean", count: 1 },
+  { name: "Áo sơ mi", count: 1 },
   { name: "Váy ngắn", count: 1 },
   { name: "Túi xách", count: 1 },
-  { name: "Áo sơ mi", count: 1 },
-  { name: "Đầm dự tiệc", count: 1 },
+  { name: "Quần jean", count: 1 },
   { name: "Quần tây", count: 1 },
-  { name: "Quần short", count: 1 },
+  { name: "Đầm dự tiệc", count: 1 },
   { name: "Áo khoác", count: 1 },
+  { name: "Quần short", count: 1 },
+];
+
+/**
+ * Danh mục gốc, dùng cho các ô "Mua theo danh mục" ở trang chủ.
+ * count là tổng sản phẩm của cả nhánh (gốc + các danh mục con).
+ */
+export const rootCategories: Array<{
+  name: string;
+  slug: string;
+  image: string | null;
+  count: number;
+  children: string[];
+}> = [
+  { name: "Áo", slug: "ao", image: null, count: 4, children: ["Áo sơ mi","Áo thun","Áo khoác"] },
+  { name: "Quần", slug: "quan", image: null, count: 3, children: ["Quần jean","Quần tây","Quần short"] },
+  { name: "Váy - Đầm", slug: "vay-dam", image: null, count: 2, children: ["Váy ngắn","Đầm dự tiệc"] },
+  { name: "Phụ kiện", slug: "phu-kien", image: null, count: 1, children: ["Túi xách","Thắt lưng"] },
 ];
 
 /** để README / trang quản trị biết dữ liệu lấy lúc nào */
-export const importedAt: string | null = "2026-08-17T19:50:51+07:00";
+export const importedAt: string | null = "2026-08-17T20:26:30+07:00";

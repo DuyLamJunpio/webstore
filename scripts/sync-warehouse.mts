@@ -18,7 +18,6 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import {
   audienceFor,
-  categoryFor,
   downloadImage,
   hexFor,
   lit,
@@ -63,10 +62,19 @@ type ApiProduct = {
   variants: ApiVariant[];
 };
 
+type ApiCategory = {
+  id: number;
+  name: string;
+  slug: string;
+  parent_id: number | null;
+  image: string | null;
+  count: number;
+};
+
 type ApiResponse = {
   synced_at: string;
   products: ApiProduct[];
-  categories: Array<{ name: string; count: number; parent_id: number | null }>;
+  categories: ApiCategory[];
 };
 
 // ── cấu hình ─────────────────────────────────────────────────────────
@@ -116,9 +124,11 @@ async function localiseImages(product: ApiProduct): Promise<[string, string]> {
   const saved: string[] = [];
 
   for (const [index, url] of product.images.slice(0, 2).entries()) {
-    const ext = path.extname(new URL(url).pathname) || ".jpg";
+    // API trả đường dẫn tương đối ("/storage/..."), ghép với địa chỉ trang quản trị.
+    const absolute = new URL(url, BASE);
+    const ext = path.extname(absolute.pathname) || ".jpg";
     const name = `${product.slug}-${index + 1}${ext}`;
-    const ok = await downloadImage(url, path.join(IMAGE_DIR, name));
+    const ok = await downloadImage(absolute.href, path.join(IMAGE_DIR, name));
     if (ok) saved.push(`/images/warehouse/${name}`);
   }
 
@@ -144,7 +154,11 @@ function toSeed(product: ApiProduct, image: string, hoverImage: string): Record<
   return {
     slug: product.slug || slugify(product.name),
     name: product.name,
-    category: categoryFor(product.category),
+    // Dùng nguyên tên danh mục bên quản trị. KHÔNG chạy qua categoryFor():
+    // hàm đó là heuristic thời Shopee, nó viết đè "Quần jean" thành "Quần",
+    // "Váy ngắn" thành "Váy đầm"... nên tên trên sản phẩm không còn khớp với
+    // danh mục thật, và mọi link lọc theo danh mục đều ra rỗng.
+    category: product.category,
     // Đối tượng khai thật bên quản trị; chỉ suy đoán khi chưa khai.
     audience: product.audience || audienceFor(product.name, product.category),
     price: product.price,
@@ -172,11 +186,37 @@ function toSeed(product: ApiProduct, image: string, hoverImage: string): Record<
 
 // ── ghi file ─────────────────────────────────────────────────────────
 
-function render(seeds: string[], categories: ApiResponse["categories"], syncedAt: string): string {
+function render(
+  seeds: string[],
+  categories: ApiCategory[],
+  categoryImages: Map<number, string>,
+  syncedAt: string,
+): string {
+  // Danh mục con mới là nơi gắn sản phẩm, dùng cho tab lọc "Bán chạy".
   const categoryRows = categories
     .filter((c) => c.count > 0)
     .sort((a, b) => b.count - a.count)
     .map((c) => `  { name: ${lit(c.name)}, count: ${c.count} },`)
+    .join("\n");
+
+  // Danh mục gốc dùng cho các ô "Mua theo danh mục" ở trang chủ. Số sản phẩm
+  // của một nhánh là tổng của các danh mục con, vì sản phẩm gắn vào danh mục con.
+  const childCount = (parentId: number) =>
+    categories.filter((c) => c.parent_id === parentId).reduce((sum, c) => sum + c.count, 0);
+
+  const rootRows = categories
+    .filter((c) => c.parent_id === null)
+    .map((c) => ({ ...c, total: c.count + childCount(c.id) }))
+    .filter((c) => c.total > 0)
+    .sort((a, b) => b.total - a.total)
+    .map(
+      (c) =>
+        `  { name: ${lit(c.name)}, slug: ${lit(c.slug)}, image: ${lit(
+          categoryImages.get(c.id) ?? null,
+        )}, count: ${c.total}, children: ${lit(
+          categories.filter((x) => x.parent_id === c.id).map((x) => x.name),
+        )} },`,
+    )
     .join("\n");
 
   return `/**
@@ -193,9 +233,23 @@ export const shopeeSeeds: Seed[] = [
 ${seeds.join("\n")}
 ];
 
-/** Danh mục thật của shop, xếp theo số sản phẩm giảm dần. */
+/** Danh mục con thật của shop, xếp theo số sản phẩm giảm dần. */
 export const shopeeCategories: Array<{ name: string; count: number }> = [
 ${categoryRows}
+];
+
+/**
+ * Danh mục gốc, dùng cho các ô "Mua theo danh mục" ở trang chủ.
+ * count là tổng sản phẩm của cả nhánh (gốc + các danh mục con).
+ */
+export const rootCategories: Array<{
+  name: string;
+  slug: string;
+  image: string | null;
+  count: number;
+  children: string[];
+}> = [
+${rootRows}
 ];
 
 /** để README / trang quản trị biết dữ liệu lấy lúc nào */
@@ -231,7 +285,19 @@ async function main() {
     );
   }
 
-  await writeFile(OUT_FILE, render(seeds, data.categories, data.synced_at), "utf8");
+  // Ảnh danh mục cũng tải về local như ảnh sản phẩm.
+  const categoryImages = new Map<number, string>();
+  for (const category of data.categories) {
+    if (!category.image) continue;
+    const absolute = new URL(category.image, BASE);
+    const ext = path.extname(absolute.pathname) || ".jpg";
+    const name = `danh-muc-${category.slug}${ext}`;
+    if (await downloadImage(absolute.href, path.join(IMAGE_DIR, name))) {
+      categoryImages.set(category.id, `/images/warehouse/${name}`);
+    }
+  }
+
+  await writeFile(OUT_FILE, render(seeds, data.categories, categoryImages, data.synced_at), "utf8");
 
   console.log(`\n✓ Đã ghi ${data.products.length} sản phẩm vào lib/catalogue.generated.ts`);
 
