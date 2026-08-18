@@ -36,6 +36,8 @@ export type HeroSlide = {
 
 export type SiteContent = {
   slides: HeroSlide[];
+  /** Dải chữ nhỏ trên cùng, hiện ở mọi trang. */
+  announcement: string[];
   marquee: string[];
   headings: Record<string, string>;
 };
@@ -71,6 +73,7 @@ const MAC_DINH: SiteContent = {
       ctaLink: null,
     },
   ],
+  announcement: ["Ưu đãi mùa mới", "Giảm đến 30%", "Miễn phí giao hàng từ 500.000 ₫"],
   marquee: ["Đơn giản", "Hằng ngày", "Cho mọi người"],
   headings: {},
 };
@@ -89,6 +92,7 @@ type ApiContent = {
     cta_link: string | null;
   }>;
   marquee?: string[];
+  announcement?: string[];
   headings?: Record<string, string>;
 };
 
@@ -132,6 +136,7 @@ async function fetchContent(): Promise<SiteContent | null> {
       // Chưa ai thêm slide nào thì giữ ảnh mặc định, đừng để đầu trang trống.
       slides: slides.length > 0 ? slides : MAC_DINH.slides,
       marquee: data.marquee?.length ? data.marquee : MAC_DINH.marquee,
+      announcement: data.announcement?.length ? data.announcement : MAC_DINH.announcement,
       headings: data.headings ?? {},
     };
   } catch (error) {

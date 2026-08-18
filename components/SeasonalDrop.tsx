@@ -1,11 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getCatalogue } from "@/lib/catalogue";
+import { getContent, heading } from "@/lib/content";
 import ProductCard from "./ProductCard";
 import { ArrowUpRight } from "./icons";
 
 export default async function SeasonalDrop() {
   const { seasonalDrop } = await getCatalogue();
+  const content = await getContent();
 
   return (
     <section id="seasonal-drop" className="shell section">
@@ -21,7 +23,7 @@ export default async function SeasonalDrop() {
           <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/10 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 p-7 text-cream sm:p-9">
             <h2 className="font-serif text-[clamp(2.25rem,3.4vw,3.25rem)] font-medium leading-[1.05] tracking-[-0.015em]">
-              Bộ Sưu Tập Theo Mùa
+              {heading(content, "seasonal.title", "Bộ Sưu Tập Theo Mùa")}
             </h2>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-cream/80">
               Số lượng giới hạn cho thời điểm giao mùa — lớp áo ấm, phom dáng dễ mặc.
