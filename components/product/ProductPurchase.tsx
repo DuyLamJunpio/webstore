@@ -13,6 +13,7 @@ export default function ProductPurchase({ product }: { product: Product }) {
     qty,
     error,
     variant,
+    price,
     stockBySize,
     colorSoldOut,
     isColorSoldOut,
@@ -26,8 +27,9 @@ export default function ProductPurchase({ product }: { product: Product }) {
   return (
     <div>
       <div className="flex items-baseline gap-3">
-        <p className="text-2xl font-medium">{formatPrice(product.price)}</p>
-        {product.comparePrice && (
+        <p className="text-2xl font-medium">{formatPrice(price)}</p>
+        {/* Giá gạch chỉ đúng với giá chung; biến thể có giá riêng thì bỏ. */}
+        {product.comparePrice && price === product.price && (
           <>
             <p className="text-lg text-muted line-through">{formatPrice(product.comparePrice)}</p>
             <span className="eyebrow rounded-full bg-gold px-2.5 py-1.5 text-[9px] leading-none text-cream">

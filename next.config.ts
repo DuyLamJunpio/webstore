@@ -8,24 +8,38 @@ import type { NextConfig } from "next";
 loadEnvConfig(process.cwd());
 
 /**
- * Ảnh sản phẩm nằm trên máy chủ trang quản trị, web đọc thẳng lúc chạy nên
- * next/image phải được phép tải từ đó. Suy từ WAREHOUSE_API_URL thay vì gõ cứng
- * một địa chỉ: đổi máy chủ quản trị là chỉ sửa .env, không phải sửa file này.
+ * Ảnh sản phẩm có thể nằm ở hai nơi, next/image phải được phép tải từ cả hai:
  *
- * Chỉ máy chủ Next tải ảnh gốc rồi phục vụ lại qua /_next/image, nên trang quản
- * trị không cần mở ra Internet cho trình duyệt của khách.
+ *  - Kho ngoài (Supabase Storage) — nơi trang quản trị lưu ảnh từ khi chuyển
+ *    sang máy chủ đám mây, khai bằng WAREHOUSE_MEDIA_URL.
+ *  - Chính máy chủ trang quản trị — cách cũ, còn giữ để những ảnh lưu trước đây
+ *    và môi trường chạy local với disk `local` vẫn hiển thị được.
+ *
+ * Suy từ biến môi trường thay vì gõ cứng địa chỉ: đổi kho ảnh hay đổi máy chủ
+ * quản trị là chỉ sửa .env, không phải sửa file này.
  */
-const warehouse = process.env.WAREHOUSE_API_URL;
-const warehouseImages = warehouse
-  ? [
-      {
-        protocol: new URL(warehouse).protocol.replace(":", "") as "http" | "https",
-        hostname: new URL(warehouse).hostname,
-        port: new URL(warehouse).port,
-        pathname: "/storage/**",
-      },
-    ]
-  : [];
+const remotePattern = (raw: string | undefined, fallbackPath: string) => {
+  if (!raw) return [];
+
+  const url = new URL(raw);
+  // Đường dẫn trong URL gốc chính là tiền tố hợp lệ, ví dụ bucket của Supabase
+  // nằm ở /storage/v1/object/public/warehouse — chỉ mở đúng nhánh đó.
+  const prefix = url.pathname.replace(/\/$/, "");
+
+  return [
+    {
+      protocol: url.protocol.replace(":", "") as "http" | "https",
+      hostname: url.hostname,
+      port: url.port,
+      pathname: `${prefix || fallbackPath}/**`,
+    },
+  ];
+};
+
+const warehouseImages = [
+  ...remotePattern(process.env.WAREHOUSE_MEDIA_URL, ""),
+  ...remotePattern(process.env.WAREHOUSE_API_URL, "/storage"),
+];
 
 const nextConfig: NextConfig = {
   /**

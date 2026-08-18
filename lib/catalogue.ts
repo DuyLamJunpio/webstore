@@ -71,6 +71,7 @@ async function fetchFromWarehouse(): Promise<Catalogue | null> {
         toSeed(
           product,
           product.images.slice(0, MAX_GALLERY).map((path) => mediaUrl(path, BASE)),
+          (product.videos ?? []).slice(0, MAX_GALLERY).map((path) => mediaUrl(path, BASE)),
         ),
       ),
       rootCategories: rootCategoriesOf(data.categories ?? [], (c) =>

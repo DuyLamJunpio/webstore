@@ -34,6 +34,13 @@ export function useVariantSelection(product: Product) {
   );
 
   const variant = size ? findVariant(product, color, size) : undefined;
+
+  /**
+   * Giá hiện lên và giá vào giỏ phải là giá của biến thể đang chọn: bên quản trị
+   * cho đặt "giá riêng" cho từng size/màu, lấy giá chung là bán sai tiền.
+   * Chưa chọn size thì chưa biết biến thể nào, tạm hiện giá chung.
+   */
+  const price = variant?.price ?? product.price;
   const colorSoldOut = product.sizes.every((s) => stockBySize[s] === 0);
 
   const isColorSoldOut = (name: string) =>
@@ -71,7 +78,7 @@ export function useVariantSelection(product: Product) {
       image: product.image,
       color,
       size,
-      price: product.price,
+      price,
       qty,
       stock: variant.stock,
     });
@@ -85,6 +92,8 @@ export function useVariantSelection(product: Product) {
     qty,
     error,
     variant,
+    /** giá của biến thể đang chọn, rơi về giá chung khi chưa chọn size */
+    price,
     stockBySize,
     colorSoldOut,
     isColorSoldOut,

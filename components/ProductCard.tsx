@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
-import { formatPrice, inStock, type Product } from "@/lib/data";
+import { coverOf, formatPrice, inStock, type Product } from "@/lib/data";
+import MediaFrame, { PlayBadge } from "./MediaFrame";
 import QuickAdd from "./QuickAdd";
 import { Heart } from "./icons";
 
@@ -19,6 +19,7 @@ export default function ProductCard({
 }) {
   const available = inStock(product);
   const href = `/products/${product.slug}`;
+  const [cover, hover] = coverOf(product);
 
   return (
     <article className="group flex h-full flex-col">
@@ -29,21 +30,16 @@ export default function ProductCard({
           className="swap relative block overflow-hidden rounded-card bg-surface ring-1 ring-line"
         >
           <span className="relative block aspect-square">
-            <Image
-              src={product.image}
-              alt={product.name}
-              fill
-              sizes={sizes}
-              className="swap-front object-cover"
-            />
-            <Image
-              src={product.hoverImage}
+            <MediaFrame media={cover} alt={product.name} sizes={sizes} className="swap-front" />
+            <MediaFrame
+              media={hover}
               alt=""
-              aria-hidden
-              fill
               sizes={sizes}
-              className="swap-back absolute inset-0 object-cover opacity-0"
+              className="swap-back absolute inset-0 opacity-0"
             />
+            {cover.type === "video" && (
+              <PlayBadge className="absolute bottom-3 left-3 h-8 w-8" />
+            )}
           </span>
 
           {!available ? (

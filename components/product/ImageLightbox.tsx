@@ -3,7 +3,9 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import MediaFrame, { PlayBadge } from "@/components/MediaFrame";
 import { ChevronLeft, ChevronRight, Close } from "@/components/icons";
+import type { Media } from "@/lib/data";
 
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 4;
@@ -33,13 +35,13 @@ function containedSize(natural: Size | null, stage: Size): Size {
 }
 
 export default function ImageLightbox({
-  images,
+  media,
   alt,
   index,
   onIndexChange,
   onClose,
 }: {
-  images: string[];
+  media: Media[];
   alt: string;
   index: number;
   onIndexChange: (next: number) => void;
@@ -57,7 +59,11 @@ export default function ImageLightbox({
   const drag = useRef<{ from: Point; offset: Point } | null>(null);
   const tap = useRef<Point | null>(null);
 
-  const many = images.length > 1;
+  const many = media.length > 1;
+  const current = media[index];
+  // Video có thanh điều khiển riêng: phóng to sẽ nuốt cú bấm play và kéo lệch cả
+  // thanh tua, nên mọi thao tác phóng/kéo chỉ áp cho ô ảnh.
+  const canZoom = current.type === "image";
 
   /**
    * Mọi đường đổi ảnh đều đi qua đây để mức phóng cũ được xoá ngay trong chính
@@ -76,9 +82,9 @@ export default function ImageLightbox({
   const go = useCallback(
     (step: number) => {
       if (!many) return;
-      select((index + step + images.length) % images.length);
+      select((index + step + media.length) % media.length);
     },
-    [images.length, index, many, select],
+    [media.length, index, many, select],
   );
 
   const clampView = useCallback((next: View): View => {
@@ -155,8 +161,8 @@ export default function ImageLightbox({
       if (event.key === "Escape") onClose();
       else if (event.key === "ArrowLeft") go(-1);
       else if (event.key === "ArrowRight") go(1);
-      else if (event.key === "+" || event.key === "=") applyZoom((z) => z + ZOOM_STEP);
-      else if (event.key === "-") applyZoom((z) => z - ZOOM_STEP);
+      else if (canZoom && (event.key === "+" || event.key === "=")) applyZoom((z) => z + ZOOM_STEP);
+      else if (canZoom && event.key === "-") applyZoom((z) => z - ZOOM_STEP);
       else if (event.key === "0") setView(RESET);
     };
     document.addEventListener("keydown", onKey);
@@ -165,7 +171,7 @@ export default function ImageLightbox({
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-  }, [applyZoom, go, onClose]);
+  }, [applyZoom, canZoom, go, onClose]);
 
   // React gắn onWheel ở chế độ passive nên preventDefault không có tác dụng —
   // phải tự đăng ký listener với passive: false trên chính khung xem.
@@ -173,6 +179,7 @@ export default function ImageLightbox({
     const node = stageRef.current;
     if (!node) return;
     const onWheel = (event: WheelEvent) => {
+      if (!canZoom) return;
       event.preventDefault();
       applyZoom((z) => z * Math.pow(1.0015, -event.deltaY), {
         x: event.clientX,
@@ -181,9 +188,10 @@ export default function ImageLightbox({
     };
     node.addEventListener("wheel", onWheel, { passive: false });
     return () => node.removeEventListener("wheel", onWheel);
-  }, [applyZoom]);
+  }, [applyZoom, canZoom]);
 
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!canZoom) return;
     const point = { x: event.clientX, y: event.clientY };
     pointers.current.set(event.pointerId, point);
 
@@ -204,7 +212,7 @@ export default function ImageLightbox({
   };
 
   const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!pointers.current.has(event.pointerId)) return;
+    if (!canZoom || !pointers.current.has(event.pointerId)) return;
     pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
 
     if (pinch.current && pointers.current.size >= 2) {
@@ -230,6 +238,7 @@ export default function ImageLightbox({
   };
 
   const onPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!canZoom) return;
     pointers.current.delete(event.pointerId);
     if (pointers.current.size < 2) pinch.current = null;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
@@ -256,6 +265,7 @@ export default function ImageLightbox({
   };
 
   const onDoubleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!canZoom) return;
     applyZoom((z) => (z > MIN_ZOOM ? MIN_ZOOM : QUICK_ZOOM), {
       x: event.clientX,
       y: event.clientY,
@@ -281,7 +291,7 @@ export default function ImageLightbox({
     >
       <header className="flex shrink-0 items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <p className="truncate text-[13px] tabular-nums text-cream/70">
-          {many ? `${index + 1} / ${images.length}` : alt}
+          {many ? `${index + 1} / ${media.length}` : alt}
         </p>
 
         <div className="flex shrink-0 items-center gap-1">
@@ -335,8 +345,14 @@ export default function ImageLightbox({
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
           onDoubleClick={onDoubleClick}
-          className={`absolute inset-0 touch-none select-none ${
-            zoomed ? (dragging ? "cursor-grabbing" : "cursor-grab") : "cursor-zoom-in"
+          className={`absolute inset-0 select-none ${canZoom ? "touch-none" : ""} ${
+            !canZoom
+              ? ""
+              : zoomed
+                ? dragging
+                  ? "cursor-grabbing"
+                  : "cursor-grab"
+                : "cursor-zoom-in"
           }`}
         >
           <div
@@ -346,20 +362,33 @@ export default function ImageLightbox({
               transition: dragging ? "none" : "transform 200ms ease-out",
             }}
           >
-            <Image
-              key={images[index]}
-              src={images[index]}
-              alt={alt}
-              fill
-              sizes="100vw"
-              quality={90}
-              draggable={false}
-              onLoad={(event) => {
-                const img = event.currentTarget;
-                naturalSize.current = { w: img.naturalWidth, h: img.naturalHeight };
-              }}
-              className="object-contain"
-            />
+            {current.type === "video" ? (
+              <video
+                key={current.src}
+                src={current.src}
+                controls
+                autoPlay
+                playsInline
+                preload="metadata"
+                aria-label={`Video sản phẩm — ${alt}`}
+                className="absolute inset-0 h-full w-full object-contain"
+              />
+            ) : (
+              <Image
+                key={current.src}
+                src={current.src}
+                alt={alt}
+                fill
+                sizes="100vw"
+                quality={90}
+                draggable={false}
+                onLoad={(event) => {
+                  const img = event.currentTarget;
+                  naturalSize.current = { w: img.naturalWidth, h: img.naturalHeight };
+                }}
+                className="object-contain"
+              />
+            )}
           </div>
         </div>
 
@@ -387,18 +416,19 @@ export default function ImageLightbox({
 
       {many && (
         <div className="flex shrink-0 justify-center gap-2 overflow-x-auto px-4 pt-4">
-          {images.map((src, position) => (
+          {media.map((item, position) => (
             <button
-              key={src}
+              key={item.src}
               type="button"
               onClick={() => select(position)}
-              aria-label={`Xem ảnh ${position + 1}`}
+              aria-label={`${item.type === "video" ? "Xem video" : "Xem ảnh"} ${position + 1}`}
               aria-current={position === index}
               className={`relative aspect-square w-14 shrink-0 overflow-hidden rounded-card bg-ink-soft transition-all ${
                 position === index ? "ring-2 ring-cream" : "opacity-55 hover:opacity-100"
               }`}
             >
-              <Image src={src} alt="" fill sizes="56px" className="object-cover" />
+              <MediaFrame media={item} alt="" sizes="56px" />
+              {item.type === "video" && <PlayBadge className="absolute inset-0 m-auto h-6 w-6" />}
             </button>
           ))}
         </div>

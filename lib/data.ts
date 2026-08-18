@@ -11,6 +11,11 @@ export type Variant = {
   color: string;
   size: string;
   stock: number;
+  /**
+   * Giá riêng của biến thể khi bên quản trị có đặt "giá riêng"; thiếu thì dùng
+   * giá chung của sản phẩm. Để tuỳ chọn vì bản catalogue dự phòng không có.
+   */
+  price?: number;
 };
 
 export type Product = {
@@ -25,6 +30,8 @@ export type Product = {
   hoverImage: string;
   /** toàn bộ ảnh bên quản trị, đúng thứ tự đã sắp; thiếu thì suy ra từ hai ảnh trên */
   gallery?: string[];
+  /** video mp4 bên quản trị, phát thẳng ở trang chi tiết */
+  videos?: string[];
   isNew?: boolean;
   /** ISO 8601 ngày tạo bên quản trị, dùng để sắp "hàng mới về". */
   createdAt?: string;
@@ -42,17 +49,41 @@ export type Product = {
   variants: Variant[];
 };
 
+/** một ô trong gallery — ảnh tĩnh hoặc video mp4 */
+export type Media = { type: "image" | "video"; src: string };
+
+const uniqueMedia = (type: Media["type"], sources: string[]): Media[] =>
+  [...new Set(sources)].map((src) => ({ type, src }));
+
 /**
- * Bộ ảnh của trang chi tiết. Ưu tiên `gallery` đầy đủ từ trang quản trị; hàng
+ * Bộ media của trang chi tiết. Ưu tiên `gallery` đầy đủ từ trang quản trị; hàng
  * đồng bộ trước khi có trường đó thì lùi về hai tấm ảnh của thẻ sản phẩm.
  * Bỏ trùng: sản phẩm chỉ có một ảnh thì hoverImage lặp lại chính nó, để nguyên
  * sẽ ra hai thumbnail giống hệt nhau và React báo trùng key.
+ *
+ * Sản phẩm chưa chụp ảnh mà đã có video thì video đứng luôn vai trò ảnh chính —
+ * bày ảnh giữ chỗ bên cạnh một đoạn video là tự bôi xấu món hàng đang bán.
  */
-export const galleryOf = (product: Product) => [
-  ...new Set(
+export const galleryOf = (product: Product): Media[] => {
+  const videos = uniqueMedia("video", product.videos ?? []);
+  if (!product.gallery?.length && videos.length > 0) return videos;
+
+  const stills = uniqueMedia(
+    "image",
     product.gallery?.length ? product.gallery : [product.image, product.hoverImage],
-  ),
-];
+  );
+  return [...stills, ...videos];
+};
+
+/**
+ * Hai ô đầu của gallery — thẻ sản phẩm dùng ô thứ nhất, ô thứ hai là ảnh đổi khi
+ * rê chuột. Đọc từ `galleryOf` thay vì `product.image` để món chỉ có video cũng
+ * hiện được khung hình của nó thay vì ảnh giữ chỗ.
+ */
+export const coverOf = (product: Product): [Media, Media] => {
+  const [first, second] = galleryOf(product);
+  return [first, second ?? first];
+};
 
 const SIZES = {
   tops: ["XS", "S", "M", "L", "XL"],
