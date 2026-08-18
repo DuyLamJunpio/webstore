@@ -87,6 +87,57 @@ Xoá biến đi là bảng giá trở lại nguyên vẹn — giá gốc trong `
 Tiền tố `NEXT_PUBLIC_` là bắt buộc: giá hiển thị ở cả máy chủ lẫn trình duyệt, biến chỉ có ở
 một phía sẽ làm hai bên vẽ hai con số khác nhau và hỏng hydrate.
 
+### Thư xác nhận đơn hàng
+
+Khi đơn chuyển sang `PAID`, khách nhận một thư gồm: danh sách sản phẩm, tạm tính / phí giao
+hàng / tổng cộng, thông tin người nhận và địa chỉ giao, mã giao dịch, lời cảm ơn và thông tin
+liên hệ của shop.
+
+Thư gửi thẳng qua SMTP của Gmail, nên **không cần tên miền riêng**:
+
+```bash
+SMTP_USER=thebasicconcept.official@gmail.com
+SMTP_PASSWORD=<App Password 16 ký tự>
+# SHOP_EMAIL_FROM=The Basic Concept <thebasicconcept.official@gmail.com>
+# SHOP_EMAIL_BCC=chu-shop@gmail.com   # tuỳ chọn, để shop cũng nhận một bản
+```
+
+`SMTP_PASSWORD` **không phải** mật khẩu đăng nhập Gmail mà là *App Password*:
+Tài khoản Google → Bảo mật → **Xác minh 2 bước** → **Mật khẩu ứng dụng**. Phải bật Xác minh
+2 bước thì mục đó mới hiện ra.
+
+Thử cấu hình mà không cần đặt hàng thật:
+
+```bash
+npm run email:test                    # gửi về chính SMTP_USER
+npm run email:test -- ai-do@gmail.com
+```
+
+Script bắt tay với máy chủ trước rồi mới gửi, nên phân biệt được "sai App Password" và "gửi
+được nhưng thư bị chặn" — gộp lại thì chỉ thấy một dòng "gửi thất bại" và không biết sửa đâu.
+
+Chưa cấu hình thì thanh toán vẫn chạy bình thường, chỉ là không có thư.
+
+**Gửi bù được.** Đơn đã thanh toán mà thiếu thư — vì lúc đó chưa cấu hình email, hoặc vì lần
+gửi trước trượt — sẽ được thử lại ngay khi có ai mở `/checkout/[ref]` hoặc gọi
+`GET /api/orders/[ref]`. `syncOrderStatus` cố ý kiểm tra việc này **trước** khi thoát sớm với
+đơn đã chốt trạng thái; không có nhánh đó thì một lá thư gửi hỏng là mất vĩnh viễn, vì webhook
+chỉ gọi đúng một lần.
+
+Gmail cho khoảng **500 thư/ngày**; vượt mức đó, hoặc khi đã có tên miền riêng, thì chuyển sang
+Resend/Brevo bằng cách viết lại mỗi hàm `deliver()` trong `lib/email.ts` — mẫu thư và luồng
+gửi ở `lib/order-email.ts` không phải sửa.
+
+**Gửi đúng một lần.** Cả webhook PayOS lẫn vòng poll của trang thanh toán đều có thể là bên
+đầu tiên thấy đơn đã trả tiền. Quyền gửi được giành bằng `claimConfirmationEmail` — kiểm tra
+và đánh dấu nằm gọn trong một transaction, nên hai bên chạy sát nhau vẫn chỉ ra một lá thư.
+Gửi hỏng thì cờ được mở lại để lần xác nhận sau thử tiếp.
+
+**Email là bắt buộc.** Shop không có tài khoản đăng nhập, nên thư này là thứ duy nhất khách
+cầm được về đơn hàng. Quy tắc nằm ở `validateCustomer` trong `lib/checkout.ts` — dùng chung
+cho cả form phía trình duyệt lẫn `POST /api/checkout`, nên không lách được bằng cách gọi
+thẳng API.
+
 ### Lưu trữ đơn hàng
 
 Đơn hàng được ghi ra `.data/orders.json` (xem `lib/orders.ts`). Đủ dùng cho một máy chủ ghi vào
