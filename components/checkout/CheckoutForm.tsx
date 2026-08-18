@@ -37,6 +37,8 @@ type FieldProps = {
   value: string;
   error?: string;
   optional?: boolean;
+  /** câu giải thích ngắn dưới ô nhập — nhường chỗ cho lỗi khi có lỗi */
+  hint?: string;
   type?: string;
   autoComplete?: string;
   placeholder?: string;
@@ -50,6 +52,7 @@ function Field({
   value,
   error,
   optional,
+  hint,
   type = "text",
   autoComplete,
   placeholder,
@@ -64,7 +67,9 @@ function Field({
     placeholder,
     autoComplete,
     "aria-invalid": error ? true : undefined,
-    "aria-describedby": error ? `${id}-error` : undefined,
+    // trỏ sang cả khi chỉ có gợi ý: người dùng trình đọc màn hình cũng cần biết
+    // vì sao ô này cần điền, không riêng lúc đã gõ sai
+    "aria-describedby": error || hint ? `${id}-error` : undefined,
     onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       onChange(name, event.target.value),
     className: `w-full rounded-card border bg-surface px-4 text-[15px] outline-none transition-colors placeholder:text-muted/60 focus:border-ink ${
@@ -83,8 +88,12 @@ function Field({
       ) : (
         <input {...shared} type={type} className={`${shared.className} h-12`} />
       )}
-      <p id={`${id}-error`} className="mt-1.5 min-h-4 text-[12px] text-gold-deep">
-        {error}
+      {/* một dòng dùng chung: có lỗi thì báo lỗi, không thì nhắc nhẹ vì sao cần ô này */}
+      <p
+        id={`${id}-error`}
+        className={`mt-1.5 min-h-4 text-[12px] ${error ? "text-gold-deep" : "text-muted"}`}
+      >
+        {error || hint}
       </p>
     </div>
   );
@@ -233,7 +242,7 @@ function CheckoutFields({
             label="Email"
             value={customer.email}
             error={errors.email}
-            optional
+            hint="Chúng tôi gửi xác nhận đơn hàng về đây"
             type="email"
             autoComplete="email"
             placeholder="ban@email.com"

@@ -12,7 +12,7 @@
  * conversion step left to disagree with itself.
  */
 
-import { IS_TEST_PRICING, products } from "./data";
+import { IS_TEST_PRICING, type Catalogue } from "./data";
 
 /**
  * Giao hàng miễn phí từ mức này — con số kinh doanh, chỉnh thoải mái.
@@ -25,7 +25,7 @@ export const FREE_SHIPPING_THRESHOLD = IS_TEST_PRICING ? 0 : 500_000;
 export const SHIPPING_FLAT = 30_000;
 
 /** how long a bank-transfer QR stays valid before PayOS closes the link */
-export const PAYMENT_WINDOW_MINUTES = 30;
+export const PAYMENT_WINDOW_MINUTES = 15;
 
 // ── what the browser posts ───────────────────────────────────────────
 
@@ -74,8 +74,10 @@ export function validateCustomer(input: CustomerInfo): CustomerErrors {
   if (trimmed("fullName").length < 2) errors.fullName = "Vui lòng nhập họ và tên người nhận.";
   if (!PHONE.test(normalizePhone(trimmed("phone"))))
     errors.phone = "Số điện thoại chưa đúng — ví dụ 0901 234 567.";
-  // email chỉ dùng để gửi xác nhận, nên để trống được
-  if (trimmed("email") && !EMAIL.test(trimmed("email"))) errors.email = "Địa chỉ email chưa đúng.";
+  // Bắt buộc: thư xác nhận sau khi nhận được tiền là thứ duy nhất khách cầm
+  // được về đơn hàng — shop không có tài khoản đăng nhập để tra cứu lại.
+  if (!trimmed("email")) errors.email = "Vui lòng nhập email để nhận xác nhận đơn hàng.";
+  else if (!EMAIL.test(trimmed("email"))) errors.email = "Địa chỉ email chưa đúng.";
   if (trimmed("address").length < 4) errors.address = "Vui lòng nhập số nhà và tên đường.";
   if (!trimmed("ward")) errors.ward = "Vui lòng nhập phường / xã.";
   if (!trimmed("city")) errors.city = "Vui lòng nhập tỉnh / thành phố.";
@@ -133,7 +135,7 @@ export type PriceResult = { ok: true; cart: PricedCart } | { ok: false; error: s
  * with — price, stock ceiling, product name — is looked up here, so a tampered
  * localStorage cart buys nothing it should not.
  */
-export function priceCart(input: CheckoutLine[]): PriceResult {
+export function priceCart(catalogue: Catalogue, input: CheckoutLine[]): PriceResult {
   if (!Array.isArray(input) || input.length === 0) return { ok: false, error: "Giỏ hàng đang trống." };
   if (input.length > MAX_LINES) return { ok: false, error: "Giỏ hàng có quá nhiều sản phẩm." };
 
@@ -144,7 +146,9 @@ export function priceCart(input: CheckoutLine[]): PriceResult {
       return { ok: false, error: "Giỏ hàng không hợp lệ. Vui lòng tải lại trang." };
     }
 
-    const product = products.find((candidate) => candidate.variants.some((v) => v.id === raw.id));
+    const product = catalogue.products.find((candidate) =>
+      candidate.variants.some((v) => v.id === raw.id),
+    );
     const variant = product?.variants.find((v) => v.id === raw.id);
     if (!product || !variant) {
       return { ok: false, error: "Một sản phẩm trong giỏ không còn tồn tại. Vui lòng kiểm tra lại giỏ hàng." };

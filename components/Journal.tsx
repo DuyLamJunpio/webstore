@@ -4,6 +4,9 @@ import SectionHeading from "./SectionHeading";
 import { ArrowUpRight } from "./icons";
 
 export default function Journal() {
+  // Chưa có bài viết thì không dựng cả khối, thay vì hiện tiêu đề rỗng.
+  if (journal.length === 0) return null;
+
   return (
     <section id="journal" className="shell section">
       <SectionHeading

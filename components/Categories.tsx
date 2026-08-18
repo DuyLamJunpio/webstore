@@ -1,21 +1,28 @@
 import Image from "next/image";
 import Link from "next/link";
-import { categories } from "@/lib/data";
+import { getCatalogue } from "@/lib/catalogue";
+import { getContent, heading } from "@/lib/content";
 import SectionHeading from "./SectionHeading";
 import { ArrowUpRight } from "./icons";
 
-export default function Categories() {
+export default async function Categories() {
+  const { tiles } = await getCatalogue();
+  const content = await getContent();
+
+  // Chưa có danh mục nào có hàng thì không dựng khối, thay vì hiện lưới rỗng.
+  if (tiles.length === 0) return null;
+
   return (
     <section id="categories" className="shell section">
       <SectionHeading
-        title="Mua theo danh mục"
-        subtitle="Ba bộ sưu tập, cùng một tiêu chuẩn về phom dáng và hoàn thiện."
+        title={heading(content, "categories.title", "Mua theo danh mục")}
+        subtitle="Danh mục lấy trực tiếp từ trang quản trị, luôn khớp với hàng đang bán."
       />
 
       <div className="mt-12 grid gap-5 md:grid-cols-3">
-        {categories.map((category) => (
+        {tiles.map((category) => (
           <Link
-            key={category.label}
+            key={category.title}
             href={category.href}
             className="group relative overflow-hidden rounded-block bg-cream-dark"
           >

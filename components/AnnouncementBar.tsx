@@ -1,26 +1,34 @@
-import { Diamond } from "./icons";
+import { getContent } from "@/lib/content";
 
-const items = ["Ưu đãi mùa mới", "Giảm đến 30%", "Miễn phí giao hàng từ 500.000 ₫"];
-
-function Track() {
+function Track({ items }: { items: string[] }) {
   return (
     <div className="flex shrink-0 items-center">
       {Array.from({ length: 9 }).map((_, i) => (
-        <span key={i} className="flex shrink-0 items-center gap-8 pr-8">
-          <span className="eyebrow whitespace-nowrap text-cream/90">{items[i % items.length]}</span>
-          <Diamond className="h-1.5 w-1.5 text-gold" />
+        <span key={i} className="eyebrow flex shrink-0 items-center gap-3 pr-8 text-cream/80">
+          {items[i % items.length]}
+          <span aria-hidden className="text-gold">
+            •
+          </span>
         </span>
       ))}
     </div>
   );
 }
 
-export default function AnnouncementBar() {
+/**
+ * Dải chữ nhỏ chạy trên cùng. Nằm ở layout nên hiện ở MỌI trang, không riêng
+ * trang chủ — sửa nội dung ở trang quản trị, mục Nội dung trang chủ.
+ */
+export default async function AnnouncementBar() {
+  const { announcement } = await getContent();
+
+  if (announcement.length === 0) return null;
+
   return (
-    <div className="overflow-hidden bg-ink py-[9px]">
+    <div aria-hidden className="overflow-hidden bg-ink py-2">
       <div className="marquee">
-        <Track />
-        <Track />
+        <Track items={announcement} />
+        <Track items={announcement} />
       </div>
     </div>
   );

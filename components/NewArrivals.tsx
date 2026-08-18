@@ -1,12 +1,16 @@
-import { newArrivals } from "@/lib/data";
+import { getCatalogue } from "@/lib/catalogue";
+import { getContent, heading } from "@/lib/content";
 import ProductCard from "./ProductCard";
 import SectionHeading from "./SectionHeading";
 
-export default function NewArrivals() {
+export default async function NewArrivals() {
+  const { newArrivals } = await getCatalogue();
+  const content = await getContent();
+
   return (
     <section id="new-arrivals" className="shell section">
       <SectionHeading
-        title="Hàng mới đã về"
+        title={heading(content, "new_arrivals.title", "Hàng mới đã về")}
         action={{ label: "Xem thêm", href: "/shop?new=1" }}
       />
 
