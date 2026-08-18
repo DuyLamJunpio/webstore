@@ -34,8 +34,19 @@ export type HeroSlide = {
   ctaLink: string | null;
 };
 
+export type Collection = {
+  title: string;
+  subtitle: string | null;
+  ctaLabel: string | null;
+  ctaLink: string | null;
+  /** Slug các sản phẩm chủ shop đã tích, giữ đúng thứ tự đã chọn. */
+  productSlugs: string[];
+};
+
 export type SiteContent = {
   slides: HeroSlide[];
+  /** Bộ sưu tập chủ shop tự chọn; chưa tạo cái nào thì null và web ẩn khối đó. */
+  collection: Collection | null;
   /** Dải chữ nhỏ trên cùng, hiện ở mọi trang. */
   announcement: string[];
   marquee: string[];
@@ -73,6 +84,7 @@ const MAC_DINH: SiteContent = {
       ctaLink: null,
     },
   ],
+  collection: null,
   announcement: ["Ưu đãi mùa mới", "Giảm đến 30%", "Miễn phí giao hàng từ 500.000 ₫"],
   marquee: ["Đơn giản", "Hằng ngày", "Cho mọi người"],
   headings: {},
@@ -91,6 +103,13 @@ type ApiContent = {
     cta_label: string | null;
     cta_link: string | null;
   }>;
+  collection?: {
+    title: string;
+    subtitle: string | null;
+    cta_label: string | null;
+    cta_link: string | null;
+    product_slugs: string[];
+  } | null;
   marquee?: string[];
   announcement?: string[];
   headings?: Record<string, string>;
@@ -135,6 +154,15 @@ async function fetchContent(): Promise<SiteContent | null> {
     return {
       // Chưa ai thêm slide nào thì giữ ảnh mặc định, đừng để đầu trang trống.
       slides: slides.length > 0 ? slides : MAC_DINH.slides,
+      collection: data.collection
+        ? {
+            title: data.collection.title,
+            subtitle: data.collection.subtitle,
+            ctaLabel: data.collection.cta_label,
+            ctaLink: data.collection.cta_link,
+            productSlugs: data.collection.product_slugs ?? [],
+          }
+        : null,
       marquee: data.marquee?.length ? data.marquee : MAC_DINH.marquee,
       announcement: data.announcement?.length ? data.announcement : MAC_DINH.announcement,
       headings: data.headings ?? {},
