@@ -26,6 +26,13 @@ export type WarehouseResult =
 const TIMEOUT_MS = 15_000;
 
 /**
+ * Bí mật dùng chung với trang quản trị. Chỉ dùng cho endpoint báo đã thanh toán:
+ * endpoint đó đổi trạng thái tiền bạc, mà chính khách đặt hàng cũng biết mã đơn
+ * của mình, nên nếu không xác thực thì họ tự đánh dấu "đã trả tiền" được.
+ */
+const WEBHOOK_SECRET = process.env.WAREHOUSE_WEBHOOK_SECRET ?? "";
+
+/**
  * Tạo đơn bên quản trị. Chỉ gửi id biến thể và số lượng — giá do bên đó tự
  * tính lại từ cơ sở dữ liệu, nên hai bên không thể lệch giá.
  */
@@ -51,7 +58,7 @@ export async function pushOrder(
     note: customer.note || null,
     payment_method: "banking",
     items: cart.lines.map((line) => ({
-      // id này là id biến thể bên quản trị, do npm run sync:warehouse ghi vào catalogue
+      // id này là id biến thể bên quản trị, web đọc thẳng từ đó nên luôn khớp
       variant_id: Number(line.id),
       quantity: line.qty,
     })),
@@ -61,7 +68,7 @@ export async function pushOrder(
     return {
       ok: false,
       error:
-        "Giỏ hàng còn sản phẩm từ catalogue cũ. Chạy `npm run sync:warehouse` rồi thêm lại vào giỏ.",
+        "Giỏ hàng còn sản phẩm từ phiên bản cũ của cửa hàng. Xoá giỏ và chọn lại giúp mình nhé.",
       outOfStock: false,
     };
   }
@@ -112,10 +119,19 @@ export async function pushOrder(
 export async function markPaid(orderCode: string): Promise<boolean> {
   if (!isWarehouseConfigured()) return false;
 
+  // Thiếu bí mật thì trang quản trị sẽ trả 401; báo rõ ở đây để khỏi phải đi mò log.
+  if (!WEBHOOK_SECRET) {
+    console.error("[warehouse] thiếu WAREHOUSE_WEBHOOK_SECRET — không báo được đã thanh toán");
+    return false;
+  }
+
   try {
     const response = await fetch(`${BASE}/api/checkout/${encodeURIComponent(orderCode)}/paid`, {
       method: "POST",
-      headers: { Accept: "application/json" },
+      headers: {
+        Accept: "application/json",
+        "X-Storefront-Secret": WEBHOOK_SECRET,
+      },
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
 

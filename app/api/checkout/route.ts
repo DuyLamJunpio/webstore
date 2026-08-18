@@ -6,6 +6,7 @@
  * hand-edited localStorage cart cannot buy a jacket for a dollar.
  */
 
+import { getCatalogue } from "@/lib/catalogue";
 import { after } from "next/server";
 import type { NextRequest } from "next/server";
 import {
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
     return bad("Vui lòng kiểm tra lại thông tin nhận hàng.", 400, { fieldErrors });
   }
 
-  const priced = priceCart(body.lines ?? []);
+  const priced = priceCart(await getCatalogue(), body.lines ?? []);
   if (!priced.ok) return bad(priced.error);
   const cart = priced.cart;
 
