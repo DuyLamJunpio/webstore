@@ -12,9 +12,11 @@ import SeasonalDrop from "@/components/SeasonalDrop";
 import ShopeeStore from "@/components/ShopeeStore";
 import Testimonials from "@/components/Testimonials";
 import { getCatalogue } from "@/lib/catalogue";
+import { getContent, heading } from "@/lib/content";
 
 export default async function Home() {
   const { bestSellers, bestSellerFilters } = await getCatalogue();
+  const content = await getContent();
 
   return (
     <>
@@ -23,7 +25,12 @@ export default async function Home() {
       <Marquee />
       <SeasonalDrop />
       <Categories />
-      <BestSellers products={bestSellers} filters={bestSellerFilters} />
+      <BestSellers
+        products={bestSellers}
+        filters={bestSellerFilters}
+        title={heading(content, "best_sellers.title", "Bán chạy nhất")}
+        subtitle={heading(content, "best_sellers.subtitle", "Những mẫu được khách chọn nhiều nhất.")}
+      />
       <Promises />
       <ShopeeStore />
       <Testimonials />

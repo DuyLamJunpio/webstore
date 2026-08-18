@@ -1,8 +1,7 @@
+import { getContent } from "@/lib/content";
 import { Diamond } from "./icons";
 
-const words = ["Đơn giản", "Hằng ngày", "Cho mọi người"];
-
-function Track() {
+function Track({ words }: { words: string[] }) {
   return (
     <div className="flex shrink-0 items-center">
       {Array.from({ length: 9 }).map((_, i) => (
@@ -17,12 +16,17 @@ function Track() {
   );
 }
 
-export default function Marquee() {
+/** Dải chữ chạy ngang. Nội dung chỉnh ở trang quản trị, mục Nội dung trang chủ. */
+export default async function Marquee() {
+  const { marquee } = await getContent();
+
+  if (marquee.length === 0) return null;
+
   return (
     <section aria-hidden className="overflow-hidden bg-ink py-7 sm:py-9">
       <div className="marquee marquee-slow">
-        <Track />
-        <Track />
+        <Track words={marquee} />
+        <Track words={marquee} />
       </div>
     </section>
   );

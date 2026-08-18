@@ -11,6 +11,7 @@
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { CATALOGUE_TAG } from "@/lib/catalogue";
+import { CONTENT_TAG } from "@/lib/content";
 
 const SECRET = process.env.WAREHOUSE_WEBHOOK_SECRET ?? "";
 
@@ -40,7 +41,9 @@ export async function POST(request: Request) {
   // { expire: 0 } là dạng dành riêng cho webhook: hết hạn ngay, lượt tải kế
   // tiếp đọc lại trang quản trị. Mặc định "max" sẽ còn phục vụ bản cũ thêm một
   // lượt nữa — đúng cho blog, sai cho tồn kho và giá.
+  // Xoá cả hai nhãn: quản trị chỉ gọi một lần dù vừa sửa sản phẩm hay banner.
   revalidateTag(CATALOGUE_TAG, { expire: 0 });
+  revalidateTag(CONTENT_TAG, { expire: 0 });
 
   return NextResponse.json({ revalidated: true });
 }

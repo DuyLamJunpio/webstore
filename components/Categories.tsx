@@ -1,11 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getCatalogue } from "@/lib/catalogue";
+import { getContent, heading } from "@/lib/content";
 import SectionHeading from "./SectionHeading";
 import { ArrowUpRight } from "./icons";
 
 export default async function Categories() {
   const { tiles } = await getCatalogue();
+  const content = await getContent();
 
   // Chưa có danh mục nào có hàng thì không dựng khối, thay vì hiện lưới rỗng.
   if (tiles.length === 0) return null;
@@ -13,7 +15,7 @@ export default async function Categories() {
   return (
     <section id="categories" className="shell section">
       <SectionHeading
-        title="Mua theo danh mục"
+        title={heading(content, "categories.title", "Mua theo danh mục")}
         subtitle="Danh mục lấy trực tiếp từ trang quản trị, luôn khớp với hàng đang bán."
       />
 
