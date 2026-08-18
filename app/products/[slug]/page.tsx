@@ -75,7 +75,7 @@ export default async function ProductPage(props: PageProps<"/products/[slug]">) 
             4/5 sẽ cao hơn cả màn hình và phải cuộn mới xem hết một tấm */}
         <div className="mx-auto w-full max-w-[560px] lg:mx-0 lg:sticky lg:top-[92px] lg:self-start">
           <ProductGallery
-            images={galleryOf(product)}
+            media={galleryOf(product)}
             alt={product.name}
             badge={!available ? "Hết hàng" : product.isNew ? "Mới" : undefined}
           />

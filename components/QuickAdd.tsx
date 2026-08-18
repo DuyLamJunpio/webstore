@@ -19,6 +19,7 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
     qty,
     error,
     variant,
+    price,
     stockBySize,
     colorSoldOut,
     isColorSoldOut,
@@ -78,8 +79,9 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
               </Link>
             </h2>
             <p className="mt-1 flex items-baseline gap-2">
-              <span className="font-medium">{formatPrice(product.price)}</span>
-              {product.comparePrice && (
+              <span className="font-medium">{formatPrice(price)}</span>
+              {/* Giá gạch chỉ đúng với giá chung; biến thể có giá riêng thì bỏ. */}
+              {product.comparePrice && price === product.price && (
                 <span className="text-[13px] text-muted line-through">
                   {formatPrice(product.comparePrice)}
                 </span>

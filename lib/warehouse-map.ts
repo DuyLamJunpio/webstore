@@ -76,8 +76,11 @@ export const PLACEHOLDER = "/images/placeholder.svg";
 export const MAX_GALLERY = 8;
 
 /**
- * API trả đường dẫn tính từ gốc site ("/storage/..."), cố ý không kèm tên miền.
- * Ghép với địa chỉ trang quản trị để ra địa chỉ tải được.
+ * API trả về một trong hai dạng: đường dẫn tính từ gốc site ("/storage/...")
+ * khi ảnh nằm trên chính máy chủ quản trị, hoặc địa chỉ đầy đủ khi ảnh đã
+ * chuyển lên kho ngoài (Supabase Storage).
+ *
+ * new URL() xử lý gọn cả hai: gặp địa chỉ đầy đủ thì nó bỏ qua `base`.
  */
 export const mediaUrl = (path: string, base: string) => new URL(path, base).href;
 
@@ -89,7 +92,7 @@ export const mediaUrl = (path: string, base: string) => new URL(path, base).href
  * Ảnh truyền vào từ bên ngoài: khi đọc thẳng thì là địa chỉ trên máy chủ quản
  * trị, khi chụp bản dự phòng thì là file đã tải về `public/images/warehouse/`.
  */
-export function toSeed(product: ApiProduct, gallery: string[]): Seed {
+export function toSeed(product: ApiProduct, gallery: string[], videos: string[] = []): Seed {
   // Màu và size lấy từ chính các biến thể đã khai bên quản trị.
   const colorNames = [...new Set(product.variants.map((v) => v.color).filter(Boolean))] as string[];
   const sizes = [...new Set(product.variants.map((v) => v.size).filter(Boolean))] as string[];
@@ -101,6 +104,9 @@ export function toSeed(product: ApiProduct, gallery: string[]): Seed {
     colorNames.length ? `Màu: ${colorNames.join(", ")}` : null,
   ].filter(Boolean) as string[];
 
+  // `image`/`hoverImage` phải luôn là ảnh thật: nhiều chỗ (giỏ hàng, đơn hàng,
+  // thẻ Open Graph) đưa thẳng vào next/image, đưa đường dẫn .mp4 vào là hỏng.
+  // Chỗ biết dùng video là gallery — xem galleryOf() trong lib/data.ts.
   const images = gallery.length > 0 ? gallery : [PLACEHOLDER];
 
   return {
@@ -118,7 +124,10 @@ export function toSeed(product: ApiProduct, gallery: string[]): Seed {
     image: images[0],
     // Ảnh hiện khi rê chuột ở thẻ sản phẩm; chỉ có một ảnh thì dùng lại chính nó.
     hoverImage: images[1] ?? images[0],
-    gallery: images,
+    // chỉ ảnh thật, không kèm ảnh giữ chỗ — galleryOf() dựa vào chỗ này để biết
+    // sản phẩm đã có ảnh chưa, có rồi mới xếp video ra sau
+    gallery,
+    videos,
     isNew: product.is_new || undefined,
     createdAt: product.created_at ?? undefined,
     // Chưa có hệ thống đánh giá thật nên để 0; giao diện tự ẩn khi bằng 0.
@@ -135,6 +144,7 @@ export function toSeed(product: ApiProduct, gallery: string[]): Seed {
       color: v.color ?? "Mặc định",
       size: v.size ?? "Freesize",
       stock: v.stock,
+      price: v.price,
     })),
   };
 }

@@ -167,6 +167,10 @@ export function priceCart(catalogue: Catalogue, input: CheckoutLine[]): PriceRes
       continue;
     }
 
+    // Giá riêng của biến thể (nếu quản trị có đặt) mới là giá đúng. Ở chế độ giá
+    // thử thì bỏ qua, vì lúc đó cả giỏ cố tình chạy theo một mức giá tượng trưng.
+    const unitPrice = !IS_TEST_PRICING && variant.price ? variant.price : product.price;
+
     lines.push({
       id: variant.id,
       slug: product.slug,
@@ -174,9 +178,9 @@ export function priceCart(catalogue: Catalogue, input: CheckoutLine[]): PriceRes
       image: product.image,
       color: variant.color,
       size: variant.size,
-      unitPrice: product.price,
+      unitPrice,
       qty,
-      total: product.price * qty,
+      total: unitPrice * qty,
     });
   }
 
