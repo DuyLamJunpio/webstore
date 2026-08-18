@@ -1,12 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
-import { categories } from "@/lib/data";
+import { getCatalogue } from "@/lib/catalogue";
 import SectionHeading from "./SectionHeading";
 import { ArrowUpRight } from "./icons";
 
-export default function Categories() {
-  // Chưa đồng bộ danh mục nào có hàng thì không dựng khối, thay vì hiện lưới rỗng.
-  if (categories.length === 0) return null;
+export default async function Categories() {
+  const { tiles } = await getCatalogue();
+
+  // Chưa có danh mục nào có hàng thì không dựng khối, thay vì hiện lưới rỗng.
+  if (tiles.length === 0) return null;
 
   return (
     <section id="categories" className="shell section">
@@ -16,7 +18,7 @@ export default function Categories() {
       />
 
       <div className="mt-12 grid gap-5 md:grid-cols-3">
-        {categories.map((category) => (
+        {tiles.map((category) => (
           <Link
             key={category.title}
             href={category.href}

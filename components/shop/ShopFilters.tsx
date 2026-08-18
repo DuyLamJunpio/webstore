@@ -1,19 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  allAudiences,
-  allCategories,
-  allColors,
-  priceBounds,
-  sizeGroups,
-  type FacetCounts,
-} from "@/lib/data";
+import { allColors, type FacetCounts, type ShopFacets } from "@/lib/data";
 import { PARAM } from "@/lib/shop-params";
 import { Close } from "../icons";
 import { useShopUrl } from "./useShopUrl";
 
-type Props = { queryString: string; counts: FacetCounts; activeCount: number };
+type Props = {
+  queryString: string;
+  counts: FacetCounts;
+  /** danh mục, nhóm size và khoảng giá dựng từ hàng đang bán */
+  facets: ShopFacets;
+  activeCount: number;
+};
 
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -55,7 +54,7 @@ function Checkbox({
   );
 }
 
-function Facets({ queryString, counts }: Omit<Props, "activeCount">) {
+function Facets({ queryString, counts, facets }: Omit<Props, "activeCount">) {
   const { params, has, toggle, apply } = useShopUrl(queryString);
 
   const urlMin = params.get(PARAM.min) ?? "";
@@ -100,20 +99,8 @@ function Facets({ queryString, counts }: Omit<Props, "activeCount">) {
 
   return (
     <div>
-      <Group title="Mua cho">
-        {allAudiences.map((audience) => (
-          <Checkbox
-            key={audience}
-            label={audience}
-            count={counts.audiences[audience] ?? 0}
-            checked={has(PARAM.audience, audience)}
-            onChange={() => toggle(PARAM.audience, audience)}
-          />
-        ))}
-      </Group>
-
       <Group title="Danh mục">
-        {allCategories.map((category) => (
+        {facets.categories.map((category) => (
           <Checkbox
             key={category}
             label={category}
@@ -126,7 +113,7 @@ function Facets({ queryString, counts }: Omit<Props, "activeCount">) {
 
       <Group title="Kích cỡ">
         <div className="flex flex-col gap-4">
-          {sizeGroups.map((group) => (
+          {facets.sizeGroups.map((group) => (
             <div key={group.label}>
               <p className="mb-2 text-[13px] text-muted">{group.label}</p>
               <div className="flex flex-wrap gap-2">
@@ -194,7 +181,7 @@ function Facets({ queryString, counts }: Omit<Props, "activeCount">) {
             value={min}
             onChange={(event) => setMin(event.target.value)}
             onBlur={applyPrice}
-            placeholder={`${priceBounds.min}`}
+            placeholder={`${facets.priceBounds.min}`}
             aria-label="Giá thấp nhất"
             className="h-10 w-full rounded-full border border-line-strong bg-surface px-4 text-sm outline-none focus:border-ink"
           />
@@ -206,7 +193,7 @@ function Facets({ queryString, counts }: Omit<Props, "activeCount">) {
             value={max}
             onChange={(event) => setMax(event.target.value)}
             onBlur={applyPrice}
-            placeholder={`${priceBounds.max}`}
+            placeholder={`${facets.priceBounds.max}`}
             aria-label="Giá cao nhất"
             className="h-10 w-full rounded-full border border-line-strong bg-surface px-4 text-sm outline-none focus:border-ink"
           />
@@ -225,7 +212,7 @@ function Facets({ queryString, counts }: Omit<Props, "activeCount">) {
   );
 }
 
-export default function ShopFilters({ queryString, counts, activeCount }: Props) {
+export default function ShopFilters({ queryString, counts, facets, activeCount }: Props) {
   const { clearAll } = useShopUrl(queryString);
   const [open, setOpen] = useState(false);
 
@@ -275,7 +262,7 @@ export default function ShopFilters({ queryString, counts, activeCount }: Props)
               </div>
 
               <div className="flex-1 overflow-y-auto px-5 pb-6">
-                <Facets queryString={queryString} counts={counts} />
+                <Facets queryString={queryString} counts={counts} facets={facets} />
               </div>
 
               <div className="flex gap-3 border-t border-line px-5 py-4">
@@ -314,7 +301,7 @@ export default function ShopFilters({ queryString, counts, activeCount }: Props)
               </button>
             )}
           </div>
-          <Facets queryString={queryString} counts={counts} />
+          <Facets queryString={queryString} counts={counts} facets={facets} />
         </div>
       </aside>
     </>

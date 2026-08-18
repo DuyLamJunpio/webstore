@@ -1,4 +1,4 @@
-import { priceBounds, sortOptions, type ShopQuery, type SortValue } from "./data";
+import { sortOptions, type ShopFacets, type ShopQuery, type SortValue } from "./data";
 
 /**
  * Toàn bộ trạng thái lọc của cửa hàng nằm trong URL, nên mọi kết quả đều chia sẻ
@@ -82,7 +82,7 @@ export function toQueryString(raw: RawSearchParams): string {
 export type ActiveFilter = { key: string; value: string; label: string };
 
 /** danh sách phẳng những gì đang thu hẹp kết quả — dùng cho các thẻ lọc */
-export function activeFilters(query: ShopQuery): ActiveFilter[] {
+export function activeFilters(query: ShopQuery, bounds: ShopFacets["priceBounds"]): ActiveFilter[] {
   const chips: ActiveFilter[] = [];
   const push = (key: string, values: string[] | undefined, prefix = "") =>
     values?.forEach((value) => chips.push({ key, value, label: `${prefix}${value}` }));
@@ -94,8 +94,8 @@ export function activeFilters(query: ShopQuery): ActiveFilter[] {
   push(PARAM.color, query.colors);
 
   if (query.minPrice !== undefined || query.maxPrice !== undefined) {
-    const from = query.minPrice ?? priceBounds.min;
-    const to = query.maxPrice ?? priceBounds.max;
+    const from = query.minPrice ?? bounds.min;
+    const to = query.maxPrice ?? bounds.max;
     chips.push({ key: "price", value: "", label: `$${from} – $${to}` });
   }
 

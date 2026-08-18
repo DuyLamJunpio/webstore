@@ -1,4 +1,4 @@
-import { rootCategories, shopeeCategories, shopeeSeeds } from "./catalogue.generated";
+import type { RootCategory } from "./warehouse-map";
 import { CONTACT } from "./contact";
 
 export type Audience = "Nam" | "Nữ" | "Trẻ em" | "Unisex";
@@ -23,10 +23,12 @@ export type Product = {
   comparePrice?: number;
   image: string;
   hoverImage: string;
+  /** toàn bộ ảnh bên quản trị, đúng thứ tự đã sắp; thiếu thì suy ra từ hai ảnh trên */
+  gallery?: string[];
   isNew?: boolean;
   rating: number;
   reviews: number;
-  /** lượt bán tích luỹ trên Shopee — chỉ có ở hàng đồng bộ qua API, dùng để xếp "bán chạy" */
+  /** lượt bán thật, chỉ đếm đơn đã hoàn thành — dùng để xếp "bán chạy" */
   sold?: number;
   /** item_id trên Shopee, để đối chiếu khi đồng bộ và để trỏ về gian hàng */
   shopeeItemId?: number;
@@ -38,8 +40,17 @@ export type Product = {
   variants: Variant[];
 };
 
-/** hai tấm ảnh của mỗi sản phẩm cũng chính là gallery ở trang chi tiết */
-export const galleryOf = (product: Product) => [product.image, product.hoverImage];
+/**
+ * Bộ ảnh của trang chi tiết. Ưu tiên `gallery` đầy đủ từ trang quản trị; hàng
+ * đồng bộ trước khi có trường đó thì lùi về hai tấm ảnh của thẻ sản phẩm.
+ * Bỏ trùng: sản phẩm chỉ có một ảnh thì hoverImage lặp lại chính nó, để nguyên
+ * sẽ ra hai thumbnail giống hệt nhau và React báo trùng key.
+ */
+export const galleryOf = (product: Product) => [
+  ...new Set(
+    product.gallery?.length ? product.gallery : [product.image, product.hoverImage],
+  ),
+];
 
 const SIZES = {
   tops: ["XS", "S", "M", "L", "XL"],
@@ -72,25 +83,6 @@ export type Seed = Omit<Product, "variants" | "sizes"> & {
 };
 
 /**
- * Toàn bộ catalogue lấy từ trang quản trị — không còn dữ liệu mẫu nào.
- *
- *   npm run sync:warehouse
- *
- * Trước đây file này có sẵn một catalogue mẫu để trang không bao giờ trống, và
- * tồn kho của nó được suy ra từ hash tên biến thể. Đã bỏ cả hai: hàng mẫu trông
- * y hệt hàng thật nên rất dễ lỡ bán một món không tồn tại, còn tồn kho bịa ra
- * thì cho khách đặt hàng đã hết. Thà trang trống và báo rõ.
- */
-const seeds: Seed[] = shopeeSeeds;
-
-if (seeds.length === 0 && typeof window === "undefined") {
-  console.warn(
-    "\n⚠  Catalogue đang trống — chưa đồng bộ từ trang quản trị." +
-      "\n   Chạy: npm run sync:warehouse\n",
-  );
-}
-
-/**
  * Giá thử thanh toán.
  *
  * `NEXT_PUBLIC_TEST_PRICE=1000` ép mọi món về 1.000 ₫ để chuyển khoản thật mà
@@ -115,96 +107,47 @@ if (IS_TEST_PRICING && typeof window === "undefined") {
   );
 }
 
-export const products: Product[] = seeds.map((seed) => ({
-  ...seed,
-  ...(IS_TEST_PRICING
-    ? // bỏ luôn comparePrice: giữ lại thì trang sản phẩm khoe "giảm 99%"
-      { price: TEST_PRICE, comparePrice: undefined }
-    : {}),
-  sizes: [...seed.sizes],
-  // Biến thể luôn đến từ trang quản trị kèm tồn kho thật. Không còn đường
-  // nào dựng biến thể "ảo": sản phẩm chưa khai size/màu thì đơn giản là
-  // không mua được, thay vì bày ra tổ hợp không tồn tại.
-  variants: seed.variants ?? [],
-}));
+/* ── catalogue ─────────────────────────────────────────────────────── */
 
-/**
- * Các khối trên trang chủ ghim sẵn vài sản phẩm chọn lọc.
- *
- * Khi catalogue mẫu bị thay bằng hàng thật từ Shopee thì những slug đó biến
- * mất, nên danh sách được bù cho đủ số ô thay vì làm vỡ trang — hàng mới về
- * được ưu tiên trước.
- */
-const curated = (slugs: string[], count: number): Product[] => {
-  const picked = slugs
-    .map((slug) => products.find((p) => p.slug === slug))
-    .filter((product): product is Product => product !== undefined);
+export type CategoryTile = { label: string; title: string; image: string; href: string };
 
-  const backfill = [...products].sort((a, b) => Number(b.isNew ?? false) - Number(a.isNew ?? false));
-  for (const product of backfill) {
-    if (picked.length >= count) break;
-    if (!picked.includes(product)) picked.push(product);
-  }
-  return picked.slice(0, count);
+/** Giá trị dựng nên bảng lọc, suy ra từ hàng đang bán nên không bao giờ lệch. */
+export type ShopFacets = {
+  categories: string[];
+  sizes: string[];
+  sizeGroups: Array<{ label: string; sizes: string[] }>;
+  priceBounds: { min: number; max: number };
 };
 
-export const getProduct = (slug: string) => products.find((p) => p.slug === slug);
-
-export const findVariant = (product: Product, color: string, size: string) =>
-  product.variants.find((v) => v.color === color && v.size === size);
-
-export const inStock = (product: Product) => product.variants.some((v) => v.stock > 0);
-
-export const newArrivals = curated([
-  "everyday-hoodie",
-  "lightweight-jacket",
-  "oversized-graphic-tee",
-  "kids-puffer-jacket",
-  "utility-cargo-pants",
-], 5);
-
-export const seasonalDrop = curated([
-  "zipper-jacket",
-  "relaxed-fit-cardigan",
-  "kids-puffer-jacket",
-  "kids-everyday-hoodie",
-], 4);
-
-/** ── bộ lọc cửa hàng, suy ra từ danh mục nên không bao giờ lệch ────────── */
+/**
+ * Toàn bộ những gì trang cần để vẽ, dựng một lần cho mỗi lượt nạp dữ liệu.
+ *
+ * Trước đây đây là các hằng số ở cấp module, đọc từ catalogue bake sẵn lúc
+ * build: sửa sản phẩm bên quản trị là phải chạy `npm run sync:warehouse` rồi
+ * build lại thì web mới đổi. Giờ dữ liệu đến lúc chạy, nên mọi thứ phải dựng
+ * được từ dữ liệu truyền vào thay vì nằm cứng trong module.
+ */
+export type Catalogue = {
+  products: Product[];
+  /** ô "Mua theo danh mục" ở trang chủ */
+  tiles: CategoryTile[];
+  newArrivals: Product[];
+  seasonalDrop: Product[];
+  bestSellers: Product[];
+  bestSellerFilters: string[];
+  facets: ShopFacets;
+  /** lúc trang quản trị chốt số liệu này */
+  syncedAt: string | null;
+  /** true khi không gọi được trang quản trị và đang dùng bản chụp dự phòng */
+  stale: boolean;
+};
 
 const uniqueSorted = (values: string[]) =>
   [...new Set(values)].sort((a, b) => a.localeCompare(b, "vi"));
 
-export const allCategories = uniqueSorted(products.map((p) => p.category));
-
-/**
- * Tab lọc ở khối "Bán chạy nhất".
- *
- * Khi có dữ liệu Shopee thì lấy danh mục nhiều hàng nhất lên trước — sáu danh
- * mục đầu bảng chữ cái thường rơi vào những nhóm chỉ có một hai sản phẩm, bấm
- * vào là ra dãy trống.
- */
-export const bestSellerFilters: string[] = [
-  "Tất cả",
-  ...(shopeeCategories.length > 0
-    ? shopeeCategories.slice(0, 6).map((c) => c.name)
-    : allCategories.slice(0, 6)),
-];
-
-/**
- * Bán chạy nhất: xếp theo lượt bán thật lấy từ `get_item_extra_info`.
- *
- * Catalogue mẫu không có `sold`, lúc đó thứ tự giữ nguyên như trước — số lượt
- * bán bịa ra để sắp xếp còn tệ hơn là không sắp xếp.
- */
-export const bestSellers: Product[] =
-  products.some((p) => (p.sold ?? 0) > 0)
-    ? [...products].sort((a, b) => (b.sold ?? 0) - (a.sold ?? 0))
-    : products;
-
-export const allAudiences: Audience[] = ["Nam", "Nữ", "Trẻ em", "Unisex"];
-
-export const allSizes = uniqueSorted(products.flatMap((p) => p.sizes));
+/** Các khối trên trang chủ chỉ cần đủ số ô; hàng mới về được ưu tiên trước. */
+const firstFew = (products: Product[], count: number): Product[] =>
+  [...products].sort((a, b) => Number(b.isNew ?? false) - Number(a.isNew ?? false)).slice(0, count);
 
 /**
  * Gom size thành nhóm để bảng lọc gắn nhãn được.
@@ -213,11 +156,14 @@ export const allSizes = uniqueSorted(products.flatMap((p) => p.sizes));
  * thuộc — "Freesize", "2XL", size do shop tự đặt — vẫn được gom vào nhóm cuối
  * thay vì biến mất khỏi bộ lọc.
  */
-export const sizeGroups: Array<{ label: string; sizes: string[] }> = (() => {
+const groupSizes = (allSizes: string[]) => {
   const present = new Set<string>(allSizes);
   const groups = [
     { label: "Áo", sizes: SIZES.tops.filter((size) => present.has(size)) as string[] },
-    { label: "Quần (eo, inch)", sizes: SIZES.bottoms.filter((size) => present.has(size)) as string[] },
+    {
+      label: "Quần (eo, inch)",
+      sizes: SIZES.bottoms.filter((size) => present.has(size)) as string[],
+    },
     { label: "Trẻ em (tuổi)", sizes: SIZES.kids.filter((size) => present.has(size)) as string[] },
   ].filter((group) => group.sizes.length > 0);
 
@@ -226,16 +172,120 @@ export const sizeGroups: Array<{ label: string; sizes: string[] }> = (() => {
   if (rest.length > 0) groups.push({ label: groups.length > 0 ? "Khác" : "Size", sizes: rest });
 
   return groups;
-})();
+};
+
+export type CatalogueInput = {
+  seeds: Seed[];
+  rootCategories: RootCategory[];
+  subCategories: Array<{ name: string; count: number }>;
+  syncedAt?: string | null;
+  stale?: boolean;
+};
+
+export function buildCatalogue({
+  seeds,
+  rootCategories,
+  subCategories,
+  syncedAt = null,
+  stale = false,
+}: CatalogueInput): Catalogue {
+  const products: Product[] = seeds.map((seed) => ({
+    ...seed,
+    ...(IS_TEST_PRICING
+      ? // bỏ luôn comparePrice: giữ lại thì trang sản phẩm khoe "giảm 99%"
+        { price: TEST_PRICE, comparePrice: undefined }
+      : {}),
+    sizes: [...seed.sizes],
+    // Biến thể luôn đến từ trang quản trị kèm tồn kho thật. Không còn đường
+    // nào dựng biến thể "ảo": sản phẩm chưa khai size/màu thì đơn giản là
+    // không mua được, thay vì bày ra tổ hợp không tồn tại.
+    variants: seed.variants ?? [],
+  }));
+
+  const categories = uniqueSorted(products.map((p) => p.category));
+  const sizes = uniqueSorted(products.flatMap((p) => p.sizes));
+  const prices = products.map((p) => p.price);
+
+  /*
+   * Ô "Mua theo danh mục" — mỗi ô là một danh mục gốc có hàng, link lọc theo
+   * đúng các danh mục con của nó. Ảnh lấy từ ảnh danh mục khai bên quản trị;
+   * chưa có thì mượn ảnh sản phẩm đầu trong nhánh, vì ô trống trông rất hụt.
+   */
+  const tiles: CategoryTile[] = rootCategories.map((root) => {
+    const inBranch = products.find((p) => root.children.includes(p.category));
+    const filters = (root.children.length > 0 ? root.children : [root.name])
+      .map((name) => `category=${encodeURIComponent(name)}`)
+      .join("&");
+
+    return {
+      label: `${root.count} sản phẩm`,
+      title: root.name,
+      image: root.image ?? inBranch?.image ?? "/images/placeholder.svg",
+      href: `/shop?${filters}`,
+    };
+  });
+
+  return {
+    products,
+    tiles,
+    newArrivals: firstFew(products, 5),
+    seasonalDrop: firstFew(products, 4),
+    /*
+     * Bán chạy nhất xếp theo lượt bán thật. Chưa có đơn hoàn thành nào thì giữ
+     * nguyên thứ tự — số lượt bán bịa ra để sắp xếp còn tệ hơn là không sắp xếp.
+     */
+    bestSellers: products.some((p) => (p.sold ?? 0) > 0)
+      ? [...products].sort((a, b) => (b.sold ?? 0) - (a.sold ?? 0))
+      : products,
+    /*
+     * Tab lọc ở khối "Bán chạy nhất": danh mục nhiều hàng nhất lên trước — sáu
+     * danh mục đầu bảng chữ cái thường rơi vào những nhóm chỉ có một hai sản
+     * phẩm, bấm vào là ra dãy trống.
+     */
+    bestSellerFilters: [
+      "Tất cả",
+      ...(subCategories.length > 0
+        ? subCategories.slice(0, 6).map((c) => c.name)
+        : categories.slice(0, 6)),
+    ],
+    facets: {
+      categories,
+      sizes,
+      sizeGroups: groupSizes(sizes),
+      // Catalogue rỗng thì Math.min(...[]) ra Infinity và bảng lọc hiện "∞".
+      priceBounds: {
+        min: prices.length > 0 ? Math.floor(Math.min(...prices)) : 0,
+        max: prices.length > 0 ? Math.ceil(Math.max(...prices)) : 0,
+      },
+    },
+    syncedAt,
+    stale,
+  };
+}
+
+/** Catalogue rỗng — khi vừa không gọi được quản trị vừa chưa có bản chụp nào. */
+export const EMPTY_CATALOGUE: Catalogue = buildCatalogue({
+  seeds: [],
+  rootCategories: [],
+  subCategories: [],
+  stale: true,
+});
+
+/* ── tra cứu ───────────────────────────────────────────────────────── */
+
+export const getProduct = (catalogue: Catalogue, slug: string) =>
+  catalogue.products.find((p) => p.slug === slug);
+
+export const findVariant = (product: Product, color: string, size: string) =>
+  product.variants.find((v) => v.color === color && v.size === size);
+
+export const inStock = (product: Product) => product.variants.some((v) => v.stock > 0);
+
+export const allAudiences: Audience[] = ["Nam", "Nữ", "Trẻ em", "Unisex"];
 
 export const allColors: ProductColor[] = Object.values(COLORS).sort((a, b) =>
   a.name.localeCompare(b.name, "vi"),
 );
-
-export const priceBounds = {
-  min: Math.floor(Math.min(...products.map((p) => p.price))),
-  max: Math.ceil(Math.max(...products.map((p) => p.price))),
-};
 
 export const sortOptions = [
   { value: "featured", label: "Nổi bật" },
@@ -293,7 +343,7 @@ const matchesText = (product: Product, q: string) => {
   return query.length >= 4 && prose.includes(query);
 };
 
-export function filterProducts(query: ShopQuery): Product[] {
+export function filterProducts(catalogue: Catalogue, query: ShopQuery): Product[] {
   const {
     q,
     categories,
@@ -307,6 +357,8 @@ export function filterProducts(query: ShopQuery): Product[] {
     inStock: stockOnly,
     sort = "featured",
   } = query;
+
+  const { products } = catalogue;
 
   const result = products.filter((product) => {
     if (q && !matchesText(product, q)) return false;
@@ -347,28 +399,32 @@ export type FacetCounts = {
  * vấn đã bỏ đi lựa chọn của *chính nó*, nên khi tick thêm một màu thì không bao
  * giờ hiện "(0)" cạnh một màu đang nhìn thấy trên màn hình.
  */
-export function facetCounts(query: ShopQuery): FacetCounts {
+export function facetCounts(catalogue: Catalogue, query: ShopQuery): FacetCounts {
   const countBy = (
     key: "categories" | "audiences" | "sizes" | "colors",
     values: string[],
     valuesOf: (product: Product) => string[],
   ) => {
-    const base = filterProducts({ ...query, [key]: [] });
+    const base = filterProducts(catalogue, { ...query, [key]: [] });
     return Object.fromEntries(
       values.map((value) => [value, base.filter((p) => valuesOf(p).includes(value)).length]),
     );
   };
 
   return {
-    categories: countBy("categories", allCategories, (p) => [p.category]),
+    categories: countBy("categories", catalogue.facets.categories, (p) => [p.category]),
     audiences: countBy("audiences", allAudiences, (p) => [p.audience]),
-    sizes: countBy("sizes", allSizes, (p) => p.sizes),
-    colors: countBy("colors", allColors.map((c) => c.name), (p) => p.colors.map((c) => c.name)),
+    sizes: countBy("sizes", catalogue.facets.sizes, (p) => p.sizes),
+    colors: countBy(
+      "colors",
+      allColors.map((c) => c.name),
+      (p) => p.colors.map((c) => c.name),
+    ),
   };
 }
 
-export const relatedProducts = (product: Product, limit = 4) =>
-  products
+export const relatedProducts = (catalogue: Catalogue, product: Product, limit = 4) =>
+  catalogue.products
     .filter((p) => p.slug !== product.slug)
     .sort((a, b) => {
       const score = (p: Product) =>
@@ -376,31 +432,6 @@ export const relatedProducts = (product: Product, limit = 4) =>
       return score(b) - score(a);
     })
     .slice(0, limit);
-
-/**
- * Ô "Mua theo danh mục" ở trang chủ — dựng từ danh mục gốc thật bên quản trị.
- *
- * Trước đây là ba ô cứng ("Dành cho Nam/Nữ/Trẻ em") với ảnh stock và tiêu đề
- * marketing tự nghĩ, không liên quan gì tới danh mục shop đang dùng: sửa danh
- * mục bên quản trị thì trang chủ vẫn hiện y nguyên ba ô cũ.
- *
- * Mỗi ô giờ là một danh mục gốc có hàng, link lọc theo đúng các danh mục con
- * của nó. Ảnh lấy từ ảnh danh mục khai bên quản trị; chưa có thì mượn ảnh sản
- * phẩm đầu tiên trong nhánh, vì ô danh mục trống trông rất hụt.
- */
-export const categories = rootCategories.map((root) => {
-  const inBranch = products.find((p) => root.children.includes(p.category));
-  const filters = (root.children.length > 0 ? root.children : [root.name])
-    .map((name) => `category=${encodeURIComponent(name)}`)
-    .join("&");
-
-  return {
-    label: `${root.count} sản phẩm`,
-    title: root.name,
-    image: root.image ?? inBranch?.image ?? "/images/placeholder.svg",
-    href: `/shop?${filters}`,
-  };
-});
 
 export const promises = [
   {

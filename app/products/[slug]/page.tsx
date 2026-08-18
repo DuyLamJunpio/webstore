@@ -5,15 +5,21 @@ import ProductCard from "@/components/ProductCard";
 import ProductGallery from "@/components/product/ProductGallery";
 import ProductPurchase from "@/components/product/ProductPurchase";
 import { promiseIcons } from "@/components/icons";
-import { galleryOf, getProduct, inStock, products, promises, relatedProducts } from "@/lib/data";
+import { getCatalogue } from "@/lib/catalogue";
+import { galleryOf, getProduct, inStock, promises, relatedProducts } from "@/lib/data";
 
-export function generateStaticParams() {
+/**
+ * Dựng sẵn trang cho hàng đang bán lúc build. Sản phẩm thêm sau vẫn mở được:
+ * Next dựng trang theo yêu cầu cho slug chưa có trong danh sách này.
+ */
+export async function generateStaticParams() {
+  const { products } = await getCatalogue();
   return products.map((product) => ({ slug: product.slug }));
 }
 
 export async function generateMetadata(props: PageProps<"/products/[slug]">): Promise<Metadata> {
   const { slug } = await props.params;
-  const product = getProduct(slug);
+  const product = getProduct(await getCatalogue(), slug);
   if (!product) return { title: "Không tìm thấy sản phẩm" };
 
   return {
@@ -36,10 +42,11 @@ const Stars = ({ rating }: { rating: number }) => (
 
 export default async function ProductPage(props: PageProps<"/products/[slug]">) {
   const { slug } = await props.params;
-  const product = getProduct(slug);
+  const catalogue = await getCatalogue();
+  const product = getProduct(catalogue, slug);
   if (!product) notFound();
 
-  const related = relatedProducts(product);
+  const related = relatedProducts(catalogue, product);
   const available = inStock(product);
 
   return (
@@ -64,7 +71,9 @@ export default async function ProductPage(props: PageProps<"/products/[slug]">) 
       </nav>
 
       <div className="mt-6 grid gap-10 lg:grid-cols-2 lg:gap-16">
-        <div className="lg:sticky lg:top-[92px] lg:self-start">
+        {/* trần chiều rộng: trên màn hình lớn nửa lưới rộng tới ~900px, ảnh tỉ lệ
+            4/5 sẽ cao hơn cả màn hình và phải cuộn mới xem hết một tấm */}
+        <div className="mx-auto w-full max-w-[560px] lg:mx-0 lg:sticky lg:top-[92px] lg:self-start">
           <ProductGallery
             images={galleryOf(product)}
             alt={product.name}

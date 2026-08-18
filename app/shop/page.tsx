@@ -4,6 +4,7 @@ import ProductCard from "@/components/ProductCard";
 import ActiveFilters from "@/components/shop/ActiveFilters";
 import ShopFilters from "@/components/shop/ShopFilters";
 import ShopToolbar from "@/components/shop/ShopToolbar";
+import { getCatalogue } from "@/lib/catalogue";
 import { facetCounts, filterProducts } from "@/lib/data";
 import { activeFilters, parseShopQuery, toQueryString } from "@/lib/shop-params";
 
@@ -18,9 +19,10 @@ export default async function ShopPage(props: PageProps<"/shop">) {
   const query = parseShopQuery(raw);
   const queryString = toQueryString(raw);
 
-  const results = filterProducts(query);
-  const counts = facetCounts(query);
-  const chips = activeFilters(query);
+  const catalogue = await getCatalogue();
+  const results = filterProducts(catalogue, query);
+  const counts = facetCounts(catalogue, query);
+  const chips = activeFilters(query, catalogue.facets.priceBounds);
 
   return (
     <div className="shell section">
@@ -47,7 +49,12 @@ export default async function ShopPage(props: PageProps<"/shop">) {
       </div>
 
       <div className="mt-8 grid gap-10 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-12">
-        <ShopFilters queryString={queryString} counts={counts} activeCount={chips.length} />
+        <ShopFilters
+          queryString={queryString}
+          counts={counts}
+          facets={catalogue.facets}
+          activeCount={chips.length}
+        />
 
         <div>
           <ActiveFilters queryString={queryString} filters={chips} />

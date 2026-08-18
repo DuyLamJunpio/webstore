@@ -1,10 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { seasonalDrop } from "@/lib/data";
+import { getCatalogue } from "@/lib/catalogue";
 import ProductCard from "./ProductCard";
 import { ArrowUpRight } from "./icons";
 
-export default function SeasonalDrop() {
+export default async function SeasonalDrop() {
+  const { seasonalDrop } = await getCatalogue();
+
   return (
     <section id="seasonal-drop" className="shell section">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">

@@ -1,81 +1,37 @@
 /**
- * Đồng bộ catalogue từ trang quản trị (Laravel) → catalogue của web.
+ * Chụp lại catalogue từ trang quản trị (Laravel) làm BẢN DỰ PHÒNG cho web.
  *
  *   npm run sync:warehouse
  *
- * Nguồn dữ liệu thật của cửa hàng là trang quản trị, không phải Shopee: sản
- * phẩm, giá, biến thể size × màu và tồn kho đều lấy từ đó. Ảnh tải về
- * `public/images/warehouse/` để trang không phụ thuộc vào máy chủ quản trị lúc
- * hiển thị, dữ liệu ghi ra `lib/catalogue.generated.ts`.
+ * KHÔNG cần chạy sau mỗi lần sửa sản phẩm nữa: web đọc thẳng trang quản trị lúc
+ * chạy (`lib/catalogue.ts`) và trang quản trị gọi `/api/revalidate` ngay khi
+ * lưu, nên thay đổi tự lên web.
  *
- * Chạy lại mỗi khi thêm/sửa sản phẩm bên quản trị. Tồn kho hiển thị có thể cũ
- * giữa hai lần chạy, nhưng không bán quá được: lúc đặt hàng, máy chủ quản trị
- * kiểm tra lại tồn và từ chối nếu thiếu.
+ * Bản chụp này chỉ được dùng khi web không gọi được trang quản trị — máy chủ
+ * quản trị tắt, mạng nội bộ hỏng. Ảnh tải về `public/images/warehouse/` để lúc
+ * đó trang vẫn còn ảnh mà hiển thị. Chạy lại khi muốn bản dự phòng mới hơn,
+ * chẳng hạn trước lúc deploy.
+ *
+ * Tồn kho trong bản chụp có thể cũ, nhưng không bán quá được: lúc đặt hàng,
+ * máy chủ quản trị kiểm tra lại tồn và từ chối nếu thiếu.
  */
 
 import { mkdir, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
-import path from "node:path";
+import nodePath from "node:path";
+import { downloadImage, lit, renderSeed } from "./seed-format.mjs";
 import {
-  audienceFor,
-  downloadImage,
-  hexFor,
-  lit,
-  renderSeed,
-  slugify,
-} from "./seed-format.mjs";
+  MAX_GALLERY,
+  mediaUrl,
+  toSeed,
+  type ApiCategory,
+  type ApiResponse,
+} from "../lib/warehouse-map.js";
 
 const { loadEnvConfig } = createRequire(import.meta.url)("@next/env") as {
   loadEnvConfig: (dir: string, dev?: boolean) => unknown;
 };
 loadEnvConfig(process.cwd(), true);
-
-// ── kiểu dữ liệu trả về từ /api/storefront/products ──────────────────
-
-type ApiVariant = {
-  id: number;
-  size: string | null;
-  color: string | null;
-  sku: string;
-  stock: number;
-  price: number;
-};
-
-type ApiProduct = {
-  id: number;
-  slug: string;
-  name: string;
-  category: string;
-  description: string | null;
-  material: string | null;
-  brand: string | null;
-  audience: string;
-  is_new: boolean;
-  sold: number;
-  price: number;
-  compare_price: number | null;
-  is_featured: boolean;
-  in_stock: boolean;
-  total_stock: number;
-  images: string[];
-  videos: string[];
-  variants: ApiVariant[];
-};
-
-type ApiCategory = {
-  id: number;
-  name: string;
-  slug: string;
-  parent_id: number | null;
-  image: string | null;
-  count: number;
-};
-
-type ApiResponse = {
-  synced_at: string;
-  products: ApiProduct[];
-  categories: ApiCategory[];
-};
 
 // ── cấu hình ─────────────────────────────────────────────────────────
 
@@ -90,11 +46,10 @@ if (!BASE) {
   process.exit(1);
 }
 
-const IMAGE_DIR = path.join(process.cwd(), "public", "images", "warehouse");
-const OUT_FILE = path.join(process.cwd(), "lib", "catalogue.generated.ts");
+const IMAGE_DIR = nodePath.join(process.cwd(), "public", "images", "warehouse");
+const OUT_FILE = nodePath.join(process.cwd(), "lib", "catalogue.generated.ts");
 
-/** Ảnh dùng khi sản phẩm chưa có ảnh nào bên quản trị. */
-const PLACEHOLDER = "/images/placeholder.svg";
+const IMAGE_DIR_NAME = "warehouse";
 
 // ── nạp dữ liệu ──────────────────────────────────────────────────────
 
@@ -118,70 +73,21 @@ async function fetchCatalogue(): Promise<ApiResponse> {
 }
 
 /**
- * Tải ảnh về local. Trả về đường dẫn dùng được trên web, hoặc ảnh thay thế.
+ * Tải ảnh của một sản phẩm về local. Trả về đường dẫn dùng được trên web —
+ * rỗng khi sản phẩm chưa có ảnh nào tải được.
  */
-async function localiseImages(product: ApiProduct): Promise<[string, string]> {
+async function localiseImages(slug: string, paths: string[]): Promise<string[]> {
   const saved: string[] = [];
 
-  for (const [index, url] of product.images.slice(0, 2).entries()) {
-    // API trả đường dẫn tương đối ("/storage/..."), ghép với địa chỉ trang quản trị.
-    const absolute = new URL(url, BASE);
-    const ext = path.extname(absolute.pathname) || ".jpg";
-    const name = `${product.slug}-${index + 1}${ext}`;
-    const ok = await downloadImage(absolute.href, path.join(IMAGE_DIR, name));
-    if (ok) saved.push(`/images/warehouse/${name}`);
+  for (const [index, path] of paths.slice(0, MAX_GALLERY).entries()) {
+    const absolute = new URL(mediaUrl(path, BASE));
+    const ext = nodePath.extname(absolute.pathname) || ".jpg";
+    const name = `${slug}-${index + 1}${ext}`;
+    const ok = await downloadImage(absolute.href, nodePath.join(IMAGE_DIR, name));
+    if (ok) saved.push(`/images/${IMAGE_DIR_NAME}/${name}`);
   }
 
-  if (saved.length === 0) return [PLACEHOLDER, PLACEHOLDER];
-  // Chỉ có một ảnh thì ảnh hover dùng lại chính nó.
-  return [saved[0], saved[1] ?? saved[0]];
-}
-
-// ── dựng seed ────────────────────────────────────────────────────────
-
-function toSeed(product: ApiProduct, image: string, hoverImage: string): Record<string, unknown> {
-  // Màu và size lấy từ chính các biến thể đã khai bên quản trị.
-  const colorNames = [...new Set(product.variants.map((v) => v.color).filter(Boolean))] as string[];
-  const sizes = [...new Set(product.variants.map((v) => v.size).filter(Boolean))] as string[];
-
-  const details = [
-    product.material ? `Chất liệu: ${product.material}` : null,
-    product.brand ? `Thương hiệu: ${product.brand}` : null,
-    sizes.length ? `Có size: ${sizes.join(", ")}` : null,
-    colorNames.length ? `Màu: ${colorNames.join(", ")}` : null,
-  ].filter(Boolean) as string[];
-
-  return {
-    slug: product.slug || slugify(product.name),
-    name: product.name,
-    // Dùng nguyên tên danh mục bên quản trị. KHÔNG chạy qua categoryFor():
-    // hàm đó là heuristic thời Shopee, nó viết đè "Quần jean" thành "Quần",
-    // "Váy ngắn" thành "Váy đầm"... nên tên trên sản phẩm không còn khớp với
-    // danh mục thật, và mọi link lọc theo danh mục đều ra rỗng.
-    category: product.category,
-    // Đối tượng khai thật bên quản trị; chỉ suy đoán khi chưa khai.
-    audience: product.audience || audienceFor(product.name, product.category),
-    price: product.price,
-    comparePrice: product.compare_price ?? undefined,
-    image,
-    hoverImage,
-    isNew: product.is_new || undefined,
-    // Chưa có hệ thống đánh giá thật nên để 0; giao diện tự ẩn khi bằng 0.
-    rating: 0,
-    reviews: 0,
-    sold: product.sold || undefined,
-    description: product.description ?? "",
-    details,
-    colors: colorNames.map((name) => ({ name, hex: hexFor(name) })),
-    sizes,
-    // id của biến thể chính là id bên quản trị, đặt hàng sẽ gửi lại nguyên vẹn.
-    variants: product.variants.map((v) => ({
-      id: String(v.id),
-      color: v.color ?? "Mặc định",
-      size: v.size ?? "Freesize",
-      stock: v.stock,
-    })),
-  };
+  return saved;
 }
 
 // ── ghi file ─────────────────────────────────────────────────────────
@@ -277,9 +183,9 @@ async function main() {
   const seeds: string[] = [];
 
   for (const product of data.products) {
-    const [image, hoverImage] = await localiseImages(product);
-    if (image === PLACEHOLDER) noImage.push(product.name);
-    seeds.push(renderSeed(toSeed(product, image, hoverImage), warnings));
+    const gallery = await localiseImages(product.slug, product.images);
+    if (gallery.length === 0) noImage.push(product.name);
+    seeds.push(renderSeed(toSeed(product, gallery) as unknown as Record<string, unknown>, warnings));
     console.log(
       `   ✓ ${product.name} — ${product.variants.length} biến thể, tồn ${product.total_stock}`,
     );
@@ -289,11 +195,11 @@ async function main() {
   const categoryImages = new Map<number, string>();
   for (const category of data.categories) {
     if (!category.image) continue;
-    const absolute = new URL(category.image, BASE);
-    const ext = path.extname(absolute.pathname) || ".jpg";
+    const absolute = new URL(mediaUrl(category.image, BASE));
+    const ext = nodePath.extname(absolute.pathname) || ".jpg";
     const name = `danh-muc-${category.slug}${ext}`;
-    if (await downloadImage(absolute.href, path.join(IMAGE_DIR, name))) {
-      categoryImages.set(category.id, `/images/warehouse/${name}`);
+    if (await downloadImage(absolute.href, nodePath.join(IMAGE_DIR, name))) {
+      categoryImages.set(category.id, `/images/${IMAGE_DIR_NAME}/${name}`);
     }
   }
 

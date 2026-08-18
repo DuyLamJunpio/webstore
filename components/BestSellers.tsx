@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
-import { bestSellerFilters, bestSellers } from "@/lib/data";
+import type { Product } from "@/lib/data";
 import ProductCard from "./ProductCard";
 import { ArrowUpRight, ChevronLeft, ChevronRight } from "./icons";
 
-export default function BestSellers() {
+type Props = { products: Product[]; filters: string[] };
+
+export default function BestSellers({ products: bestSellers, filters: bestSellerFilters }: Props) {
   const [filter, setFilter] = useState<string>("Tất cả");
   const railRef = useRef<HTMLDivElement>(null);
 
@@ -15,7 +17,7 @@ export default function BestSellers() {
       (filter === "Tất cả" ? bestSellers : bestSellers.filter((p) => p.category === filter))
         // dãy ngang chỉ cuộn được chừng này là hết kiên nhẫn; "Xem thêm" dẫn sang /shop
         .slice(0, 12),
-    [filter],
+    [filter, bestSellers],
   );
 
   const scrollBy = (direction: 1 | -1) => {

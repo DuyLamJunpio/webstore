@@ -11,8 +11,11 @@ import Promises from "@/components/Promises";
 import SeasonalDrop from "@/components/SeasonalDrop";
 import ShopeeStore from "@/components/ShopeeStore";
 import Testimonials from "@/components/Testimonials";
+import { getCatalogue } from "@/lib/catalogue";
 
-export default function Home() {
+export default async function Home() {
+  const { bestSellers, bestSellerFilters } = await getCatalogue();
+
   return (
     <>
       <Hero />
@@ -20,7 +23,7 @@ export default function Home() {
       <Marquee />
       <SeasonalDrop />
       <Categories />
-      <BestSellers />
+      <BestSellers products={bestSellers} filters={bestSellerFilters} />
       <Promises />
       <ShopeeStore />
       <Testimonials />

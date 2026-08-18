@@ -1,8 +1,10 @@
-import { newArrivals } from "@/lib/data";
+import { getCatalogue } from "@/lib/catalogue";
 import ProductCard from "./ProductCard";
 import SectionHeading from "./SectionHeading";
 
-export default function NewArrivals() {
+export default async function NewArrivals() {
+  const { newArrivals } = await getCatalogue();
+
   return (
     <section id="new-arrivals" className="shell section">
       <SectionHeading
