@@ -26,6 +26,8 @@ export type Product = {
   /** toàn bộ ảnh bên quản trị, đúng thứ tự đã sắp; thiếu thì suy ra từ hai ảnh trên */
   gallery?: string[];
   isNew?: boolean;
+  /** ISO 8601 ngày tạo bên quản trị, dùng để sắp "hàng mới về". */
+  createdAt?: string;
   rating: number;
   reviews: number;
   /** lượt bán thật, chỉ đếm đơn đã hoàn thành — dùng để xếp "bán chạy" */
@@ -146,8 +148,17 @@ const uniqueSorted = (values: string[]) =>
   [...new Set(values)].sort((a, b) => a.localeCompare(b, "vi"));
 
 /** Các khối trên trang chủ chỉ cần đủ số ô; hàng mới về được ưu tiên trước. */
+/** Mới nhất trước, theo ngày tạo thật bên quản trị. */
+const moiNhatTruoc = (a: Product, b: Product) => {
+  // Sản phẩm chưa có ngày tạo (bản chụp dự phòng cũ) xếp xuống cuối, chứ không
+  // được coi là mới nhất chỉ vì so sánh với undefined trả về 0.
+  const ta = a.createdAt ? Date.parse(a.createdAt) : 0;
+  const tb = b.createdAt ? Date.parse(b.createdAt) : 0;
+  return tb - ta;
+};
+
 const firstFew = (products: Product[], count: number): Product[] =>
-  [...products].sort((a, b) => Number(b.isNew ?? false) - Number(a.isNew ?? false)).slice(0, count);
+  [...products].sort(moiNhatTruoc).slice(0, count);
 
 /**
  * Gom size thành nhóm để bảng lọc gắn nhãn được.
@@ -229,7 +240,9 @@ export function buildCatalogue({
     products,
     tiles,
     newArrivals: firstFew(products, 5),
-    seasonalDrop: firstFew(products, 4),
+    // seasonalDrop giữ lại cho kiểu dữ liệu cũ, nhưng khối bộ sưu tập trên trang
+    // chủ giờ lấy sản phẩm chủ shop tự tích, không dùng danh sách này nữa.
+    seasonalDrop: [],
     /*
      * Bán chạy nhất xếp theo lượt bán thật. Chưa có đơn hoàn thành nào thì giữ
      * nguyên thứ tự — số lượt bán bịa ra để sắp xếp còn tệ hơn là không sắp xếp.
@@ -377,7 +390,7 @@ export function filterProducts(catalogue: Catalogue, query: ShopQuery): Product[
   const order = products.map((p) => p.slug);
   const sorters: Record<SortValue, (a: Product, b: Product) => number> = {
     featured: (a, b) => order.indexOf(a.slug) - order.indexOf(b.slug),
-    newest: (a, b) => Number(!!b.isNew) - Number(!!a.isNew),
+    newest: moiNhatTruoc,
     "price-asc": (a, b) => a.price - b.price,
     "price-desc": (a, b) => b.price - a.price,
     rating: (a, b) => b.rating - a.rating || b.reviews - a.reviews,

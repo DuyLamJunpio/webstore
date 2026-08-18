@@ -31,6 +31,7 @@ export type ApiProduct = {
   brand: string | null;
   audience: string;
   is_new: boolean;
+  created_at: string | null;
   sold: number;
   price: number;
   compare_price: number | null;
@@ -119,6 +120,7 @@ export function toSeed(product: ApiProduct, gallery: string[]): Seed {
     hoverImage: images[1] ?? images[0],
     gallery: images,
     isNew: product.is_new || undefined,
+    createdAt: product.created_at ?? undefined,
     // Chưa có hệ thống đánh giá thật nên để 0; giao diện tự ẩn khi bằng 0.
     rating: 0,
     reviews: 0,
