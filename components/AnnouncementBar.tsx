@@ -4,9 +4,9 @@ function Track({ items }: { items: string[] }) {
   return (
     <div className="flex shrink-0 items-center">
       {Array.from({ length: 9 }).map((_, i) => (
-        <span key={i} className="eyebrow flex shrink-0 items-center gap-3 pr-8 text-cream/80">
+        <span key={i} className="eyebrow flex shrink-0 items-center gap-3 pr-8 text-white">
           {items[i % items.length]}
-          <span aria-hidden className="text-gold">
+          <span aria-hidden className="text-white/80">
             •
           </span>
         </span>

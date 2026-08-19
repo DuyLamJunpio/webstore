@@ -1,3 +1,4 @@
+import AnnouncementBar from "@/components/AnnouncementBar";
 import BestSellers from "@/components/BestSellers";
 import Categories from "@/components/Categories";
 import FacebookPage from "@/components/FacebookPage";
@@ -20,6 +21,7 @@ export default async function Home() {
   return (
     <>
       <Hero />
+      <AnnouncementBar />
       <NewArrivals />
       <SeasonalDrop />
       <Categories />

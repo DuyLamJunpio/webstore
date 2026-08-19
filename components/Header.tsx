@@ -68,7 +68,7 @@ export default function Header() {
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${
+      className={`fixed inset-x-0 top-0 z-40 transition-all duration-300 ${
         showSolidHeader
           ? "border-b border-line bg-cream/85 text-ink backdrop-blur-xl"
           : "bg-transparent text-cream"
