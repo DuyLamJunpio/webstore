@@ -93,10 +93,6 @@ body {
   animation: marquee-scroll var(--marquee-duration, 34s) linear infinite;
 }
 
-.marquee-slow {
-  --marquee-duration: 46s;
-}
-
 .marquee:hover {
   animation-play-state: paused;
 }

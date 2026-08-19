@@ -51,7 +51,6 @@ export type SiteContent = {
   collection: Collection | null;
   /** Dải chữ nhỏ trên cùng, hiện ở mọi trang. */
   announcement: string[];
-  marquee: string[];
   headings: Record<string, string>;
   /** Hình thức thanh toán và phí giao hàng, chỉnh bên trang quản trị. */
   sales: SalesSettings;
@@ -90,7 +89,6 @@ const MAC_DINH: SiteContent = {
   ],
   collection: null,
   announcement: ["Ưu đãi mùa mới", "Giảm đến 30%", "Miễn phí giao hàng từ 500.000 ₫"],
-  marquee: ["Đơn giản", "Hằng ngày", "Cho mọi người"],
   headings: {},
   sales: SALES_MAC_DINH,
 };
@@ -115,7 +113,6 @@ type ApiContent = {
     cta_link: string | null;
     product_slugs: string[];
   } | null;
-  marquee?: string[];
   announcement?: string[];
   headings?: Record<string, string>;
   sales?: Record<
@@ -198,7 +195,6 @@ async function fetchContent(): Promise<SiteContent | null> {
             productSlugs: data.collection.product_slugs ?? [],
           }
         : null,
-      marquee: data.marquee?.length ? data.marquee : MAC_DINH.marquee,
       announcement: data.announcement?.length ? data.announcement : MAC_DINH.announcement,
       headings: data.headings ?? {},
       sales: napSales(data.sales),

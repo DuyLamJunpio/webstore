@@ -4,7 +4,6 @@ import FacebookPage from "@/components/FacebookPage";
 import Hero from "@/components/Hero";
 import InstagramFeed from "@/components/InstagramFeed";
 import Journal from "@/components/Journal";
-import Marquee from "@/components/Marquee";
 import NewArrivals from "@/components/NewArrivals";
 import Newsletter from "@/components/Newsletter";
 import Promises from "@/components/Promises";
@@ -22,7 +21,6 @@ export default async function Home() {
     <>
       <Hero />
       <NewArrivals />
-      <Marquee />
       <SeasonalDrop />
       <Categories />
       <BestSellers
