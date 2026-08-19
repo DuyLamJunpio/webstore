@@ -59,11 +59,21 @@ async function fetchFromWarehouse(): Promise<Catalogue | null> {
 
     const data = (await response.json()) as ApiResponse;
 
-    // Danh sách rỗng gần như luôn là lỗi phía quản trị chứ không phải shop hết
-    // hàng thật; lùi về bản chụp thay vì dọn sạch cửa hàng.
-    if (!Array.isArray(data.products) || data.products.length === 0) {
-      console.error("[catalogue] trang quản trị không trả về sản phẩm nào");
+    // Sai kiểu dữ liệu là lỗi phía quản trị thật — lùi về bản chụp.
+    if (!Array.isArray(data.products)) {
+      console.error("[catalogue] trang quản trị trả về dữ liệu sai kiểu");
       return null;
+    }
+
+    // Rỗng thì tin, KHÔNG lùi về bản chụp: quản trị đã trả lời 200 nên nó đang
+    // sống, và "không có sản phẩm" là câu trả lời thật của nó. Trước đây chỗ này
+    // coi rỗng là lỗi, nên khi chủ shop dọn sạch kho để nhập lại từ đầu thì cửa
+    // hàng vẫn bày hàng cũ đã xoá kèm ảnh đã chết — không cách nào dọn được.
+    // Trang trắng vì quản trị sập vẫn được bản chụp đỡ, vì đường đó đi qua
+    // nhánh `return null` ở trên và trong `catch`.
+    if (data.products.length === 0) {
+      console.warn("[catalogue] trang quản trị chưa có sản phẩm nào");
+      return EMPTY_CATALOGUE;
     }
 
     return buildCatalogue({
