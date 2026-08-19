@@ -65,6 +65,28 @@ export function itemsToFreeShipping(
   return Math.max(0, config.freeShippingMinItems - itemCount);
 }
 
+/** Tên hiển thị cho khách ở ô chọn hình thức thanh toán. */
+export const TEN_PHUONG_THUC: Record<PaymentMethodKey, string> = {
+  bank_transfer: "Chuyển khoản ngân hàng",
+  cod: "Thanh toán khi nhận hàng",
+};
+
+export const MO_TA_PHUONG_THUC: Record<PaymentMethodKey, string> = {
+  bank_transfer: "Quét mã QR ngay sau khi đặt. Đơn được xác nhận khi shop nhận được tiền.",
+  cod: "Trả tiền mặt cho người giao hàng. Shop gọi xác nhận trước khi gửi đi.",
+};
+
+/** Chữ trên nút đặt hàng, đổi theo hình thức đang chọn. */
+export const NHAN_NUT_DAT: Record<PaymentMethodKey, string> = {
+  bank_transfer: "Tạo mã QR chuyển khoản",
+  cod: "Tạo hoá đơn — trả khi nhận hàng",
+};
+
+export const NHAN_NUT_DANG_GUI: Record<PaymentMethodKey, string> = {
+  bank_transfer: "Đang tạo mã QR…",
+  cod: "Đang gửi đơn…",
+};
+
 /** Thứ tự bày ra cho khách; cũng là thứ tự chọn hình thức mặc định. */
 export const THU_TU_PHUONG_THUC: PaymentMethodKey[] = ["bank_transfer", "cod"];
 
