@@ -65,6 +65,34 @@ export function itemsToFreeShipping(
   return Math.max(0, config.freeShippingMinItems - itemCount);
 }
 
+/** Tên hiển thị cho khách, dùng chung ở trang thanh toán và trong thư xác nhận. */
+export const TEN_PHUONG_THUC: Record<PaymentMethodKey, string> = {
+  bank_transfer: "Chuyển khoản ngân hàng",
+  cod: "Thanh toán khi nhận hàng",
+};
+
+export const MO_TA_PHUONG_THUC: Record<PaymentMethodKey, string> = {
+  bank_transfer: "Quét mã QR ngay sau khi đặt. Đơn được xác nhận khi shop nhận được tiền.",
+  cod: "Trả tiền mặt cho người giao hàng. Shop sẽ gọi xác nhận trước khi gửi đi.",
+};
+
+/** Thứ tự bày ra cho khách; cũng là thứ tự chọn hình thức mặc định. */
+export const THU_TU_PHUONG_THUC: PaymentMethodKey[] = ["bank_transfer", "cod"];
+
+/** Các hình thức chủ shop đang mở, giữ đúng thứ tự bày. */
+export const enabledMethods = (settings: SalesSettings): PaymentMethodKey[] =>
+  THU_TU_PHUONG_THUC.filter((key) => settings[key]?.enabled);
+
+/**
+ * Hình thức chọn sẵn khi mở trang thanh toán, và cũng là hình thức dùng để ước
+ * lượng phí giao hàng ở giỏ — lúc đó khách chưa chọn gì.
+ *
+ * Tắt hết thì trả về chuyển khoản: máy chủ vẫn chặn đơn, nhưng giao diện không
+ * được phép vỡ vì thiếu giá trị.
+ */
+export const defaultMethod = (settings: SalesSettings): PaymentMethodKey =>
+  enabledMethods(settings)[0] ?? "bank_transfer";
+
 const SalesContext = createContext<SalesSettings>(SALES_MAC_DINH);
 
 export function SalesProvider({

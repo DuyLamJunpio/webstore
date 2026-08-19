@@ -13,7 +13,15 @@ import {
 } from "@/lib/checkout";
 import { useCart } from "@/lib/cart";
 import { formatPrice } from "@/lib/data";
-import { shippingFeeFor, useSales } from "@/lib/sales";
+import {
+  defaultMethod,
+  enabledMethods,
+  shippingFeeFor,
+  useSales,
+  MO_TA_PHUONG_THUC,
+  TEN_PHUONG_THUC,
+  type PaymentMethodKey,
+} from "@/lib/sales";
 import { ArrowRight } from "../icons";
 
 /** the shop has no accounts, so the last address typed is the only "profile" there is */
@@ -143,6 +151,8 @@ function CheckoutFields({
   subtotal,
 }: Pick<ReturnType<typeof useCart>, "items" | "count" | "subtotal">) {
   const sales = useSales();
+  const cachChon = enabledMethods(sales);
+  const [method, setMethod] = useState<PaymentMethodKey>(defaultMethod(sales));
   const router = useRouter();
 
   const [customer, setCustomer] = useState<CustomerInfo>(readDraft);
@@ -176,6 +186,7 @@ function CheckoutFields({
           // only ids and quantities — the server prices the order itself
           lines: items.map((line) => ({ id: line.id, qty: line.qty })),
           customer,
+          paymentMethod: method,
         }),
       });
       const payload = (await response.json()) as {
@@ -208,7 +219,7 @@ function CheckoutFields({
 
   // Cùng phép tính máy chủ chạy lại lúc đặt hàng, nên con số khách thấy ở đây
   // chính là con số ghi vào đơn.
-  const shipping = shippingFeeFor(sales, "bank_transfer", count);
+  const shipping = shippingFeeFor(sales, method, count);
   const total = subtotal + shipping;
 
   return (
@@ -288,6 +299,38 @@ function CheckoutFields({
             onChange={update}
           />
         </div>
+
+        {/* Chỉ bày những hình thức chủ shop đang mở; một hình thức thì khỏi bắt chọn. */}
+        {cachChon.length > 1 && (
+          <fieldset className="mt-10">
+            <legend className="eyebrow text-ink/60">Hình thức thanh toán</legend>
+            <div className="mt-4 flex flex-col gap-3">
+              {cachChon.map((key) => (
+                <label
+                  key={key}
+                  className={`flex cursor-pointer gap-3 rounded-card border p-4 transition ${
+                    method === key ? "border-ink bg-surface" : "border-line hover:border-ink/40"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value={key}
+                    checked={method === key}
+                    onChange={() => setMethod(key)}
+                    className="mt-1 accent-ink"
+                  />
+                  <span>
+                    <span className="block text-[15px] font-medium">{TEN_PHUONG_THUC[key]}</span>
+                    <span className="mt-0.5 block text-[13px] text-muted">
+                      {MO_TA_PHUONG_THUC[key]}
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
       </section>
 
       <aside className="lg:sticky lg:top-[92px] lg:self-start">

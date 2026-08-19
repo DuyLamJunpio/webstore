@@ -67,6 +67,7 @@ const BRAND = {
 
 function buildText(order: Order): string {
   const { customer, cart, payment } = order;
+  const laCod = order.paymentMethod === "cod";
   const items = cart.lines.map(
     (line) =>
       `- ${line.name} (${line.color} / ${line.size}) x${line.qty} — ${formatPrice(line.total)}`,
@@ -92,7 +93,9 @@ function buildText(order: Order): string {
     customer.note ? `Ghi chú: ${customer.note}` : "",
     ``,
     `THANH TOÁN`,
-    `Chuyển khoản ngân hàng${payment.bankName ? ` (${payment.bankName})` : ""}`,
+    laCod
+      ? `Thanh toán khi nhận hàng — trả ${formatPrice(cart.total)} cho người giao hàng.`
+      : `Chuyển khoản ngân hàng${payment.bankName ? ` (${payment.bankName})` : ""}`,
     order.transactionRef ? `Mã giao dịch: ${order.transactionRef}` : "",
     ``,
     `Chúng tôi sẽ đóng gói và bàn giao cho đơn vị vận chuyển trong thời gian sớm nhất.`,
@@ -116,6 +119,7 @@ function buildText(order: Order): string {
  */
 function buildHtml(order: Order): string {
   const { customer, cart, payment } = order;
+  const laCod = order.paymentMethod === "cod";
 
   const row = (label: string, value: string) => `
     <tr>
@@ -165,7 +169,11 @@ function buildHtml(order: Order): string {
 
   const paymentBlock = `
     <div style="color:${BRAND.ink};font-size:15px;line-height:1.65;">
-      Chuyển khoản ngân hàng${payment.bankName ? ` · ${esc(payment.bankName)}` : ""}<br>
+      ${
+        laCod
+          ? `Thanh toán khi nhận hàng — trả ${esc(formatPrice(cart.total))} cho người giao hàng.<br>`
+          : `Chuyển khoản ngân hàng${payment.bankName ? ` · ${esc(payment.bankName)}` : ""}<br>`
+      }
       ${order.paidAt ? `Thanh toán lúc ${esc(formatMoment(order.paidAt))}<br>` : ""}
       ${order.transactionRef ? `<span style="color:${BRAND.muted};">Mã giao dịch: ${esc(order.transactionRef)}</span>` : ""}
     </div>`;

@@ -86,6 +86,58 @@ function OrderSummary({ order }: { order: Order }) {
   );
 }
 
+/**
+ * Đơn trả khi nhận hàng: không có mã QR, không có đồng hồ đếm ngược, không có gì
+ * để chờ. Khách chỉ cần biết đơn đã vào sổ và sẽ trả bao nhiêu cho người giao.
+ */
+function CodConfirmation({ order }: { order: Order }) {
+  return (
+    <div className="shell section">
+      <nav aria-label="Đường dẫn" className="text-[13px] text-muted">
+        <Link href="/" className="transition-colors hover:text-ink">
+          Trang chủ
+        </Link>
+        <span className="px-2">/</span>
+        <span className="text-ink">Đơn {order.ref}</span>
+      </nav>
+
+      <h1 className="mt-4 font-serif text-[clamp(2.25rem,4vw,3.5rem)] font-medium leading-[1.05] tracking-[-0.015em]">
+        Đã Nhận Đơn Hàng
+      </h1>
+      <p className="mt-3 text-[15px] text-muted">
+        Mã đơn hàng <span className="font-medium tracking-wide text-ink">{order.ref}</span>
+      </p>
+
+      <div className="mt-10 grid gap-12 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <section>
+          {/* Đơn đã vào sổ bên kho rồi, giữ lại giỏ chỉ khiến khách đặt trùng. */}
+          <ClearCartOnPaid />
+          <div className="rounded-block border border-line bg-surface p-8">
+            <span className="grid h-12 w-12 place-items-center rounded-full bg-ink text-cream">
+              <Shield />
+            </span>
+            <h2 className="mt-5 font-serif text-3xl font-medium">Cảm ơn bạn!</h2>
+            <p className="mt-3 max-w-[52ch] text-[15px] leading-relaxed text-muted">
+              Bạn trả <span className="font-medium text-ink">{formatPrice(order.cart.total)}</span>{" "}
+              bằng tiền mặt cho người giao hàng khi nhận. Shop sẽ gọi số{" "}
+              {order.customer.phone} để xác nhận trước khi gửi đi.
+            </p>
+            <Link
+              href="/shop"
+              className="mt-7 inline-flex h-12 items-center gap-2 rounded-full bg-ink px-7 text-sm font-medium text-cream transition-opacity hover:opacity-90"
+            >
+              Tiếp tục mua sắm
+              <ArrowRight />
+            </Link>
+          </div>
+        </section>
+
+        <OrderSummary order={order} />
+      </div>
+    </div>
+  );
+}
+
 export default async function OrderPage(props: PageProps<"/checkout/[ref]">) {
   const { ref } = await props.params;
   const { huy } = await props.searchParams;
@@ -94,6 +146,8 @@ export default async function OrderPage(props: PageProps<"/checkout/[ref]">) {
   if (!stored) notFound();
 
   const order = await syncOrderStatus(stored);
+  if (order.paymentMethod === "cod") return <CodConfirmation order={order} />;
+
   const { payment } = order;
   // UNDERPAID still shows the QR: the link is open and the shortfall is payable
   const waiting = isOpen(order.status);

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect } from "react";
 import { useCart } from "@/lib/cart";
-import { itemsToFreeShipping, useSales } from "@/lib/sales";
+import { defaultMethod, itemsToFreeShipping, useSales } from "@/lib/sales";
 import { formatPrice } from "@/lib/data";
 import QuantityStepper from "./QuantityStepper";
 import { Bag, Close } from "./icons";
@@ -13,11 +13,11 @@ import { Bag, Close } from "./icons";
  * Web mới chỉ có một đường thanh toán: chuyển khoản qua PayOS. Đặt tên hằng để
  * lúc thêm COD thì thấy ngay chỗ nào cần cho khách chọn.
  */
-const PHUONG_THUC = "bank_transfer" as const;
-
 export default function CartDrawer() {
   const { items, count, subtotal, isOpen, closeCart, setQty, remove } = useCart();
   const sales = useSales();
+  // Khách chưa chọn hình thức nào ở đây, nên ước lượng theo hình thức bày đầu tiên.
+  const PHUONG_THUC = defaultMethod(sales);
 
   useEffect(() => {
     if (!isOpen) return;

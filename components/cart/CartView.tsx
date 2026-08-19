@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "@/lib/cart";
-import { shippingFeeFor, useSales } from "@/lib/sales";
+import { defaultMethod, shippingFeeFor, useSales } from "@/lib/sales";
 import { formatPrice } from "@/lib/data";
 import QuantityStepper from "../QuantityStepper";
 import { ArrowRight } from "../icons";
@@ -52,7 +52,7 @@ export default function CartView() {
   }
 
   // Phí giao hàng theo cài đặt bên quản trị, tính trên số món trong giỏ.
-  const shipping = shippingFeeFor(sales, "bank_transfer", count);
+  const shipping = shippingFeeFor(sales, defaultMethod(sales), count);
 
   return (
     <div className="mt-10 grid gap-12 lg:grid-cols-[minmax(0,1fr)_340px]">

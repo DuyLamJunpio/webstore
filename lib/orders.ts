@@ -20,10 +20,14 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { CustomerInfo, PricedCart } from "./checkout";
 import type { PaymentStatus } from "./payos";
+import type { PaymentMethodKey } from "./sales";
 
 export type OrderPayment = {
-  /** "payos" once the merchant keys are in place; "fallback" is a local VietQR */
-  provider: "payos" | "fallback";
+  /**
+   * "payos" once the merchant keys are in place; "fallback" is a local VietQR.
+   * "cod" là đơn trả khi nhận hàng — không có mã QR nào để hiện.
+   */
+  provider: "payos" | "fallback" | "cod";
   bin: string;
   bankName?: string;
   accountNumber: string;
@@ -66,6 +70,11 @@ export type Order = {
   customer: CustomerInfo;
   cart: PricedCart;
   payment: OrderPayment;
+  /**
+   * Khách chọn trả kiểu gì. Thiếu = chuyển khoản: đơn đặt trước khi web có lựa
+   * chọn này đều là chuyển khoản, và đọc chúng không được phép hỏng.
+   */
+  paymentMethod?: PaymentMethodKey;
   /**
    * Mã đơn bên trang quản trị (Laravel), ví dụ "DH2608171ABC".
    *

@@ -14,6 +14,7 @@
  */
 
 import type { CustomerInfo, PricedCart } from "./checkout";
+import type { PaymentMethodKey } from "./sales";
 
 const BASE = (process.env.WAREHOUSE_API_URL ?? "").replace(/\/$/, "");
 
@@ -39,6 +40,7 @@ const WEBHOOK_SECRET = process.env.WAREHOUSE_WEBHOOK_SECRET ?? "";
 export async function pushOrder(
   customer: CustomerInfo,
   cart: PricedCart,
+  method: PaymentMethodKey = "bank_transfer",
 ): Promise<WarehouseResult> {
   if (!isWarehouseConfigured()) {
     return {
@@ -56,7 +58,9 @@ export async function pushOrder(
     ward: customer.ward,
     address: customer.address,
     note: customer.note || null,
-    payment_method: "banking",
+    // Trang quản trị nhận "banking" hoặc "cod"; nó tự tính phí giao hàng và hạn
+    // thanh toán theo mã này, nên gửi sai là đơn ghi sai tiền.
+    payment_method: method === "cod" ? "cod" : "banking",
     items: cart.lines.map((line) => ({
       // id này là id biến thể bên quản trị, web đọc thẳng từ đó nên luôn khớp
       variant_id: Number(line.id),
