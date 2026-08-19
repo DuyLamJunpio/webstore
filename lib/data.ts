@@ -47,6 +47,13 @@ export type Product = {
   sizes: string[];
   /** mọi tổ hợp màu × size, dựng một lần khi nạp module */
   variants: Variant[];
+  /**
+   * Bên quản trị có theo dõi tồn kho của mặt hàng này không. Tắt với hàng đặt
+   * may hay hàng order: kho ghi 0 nhưng vẫn bán bình thường. Để tuỳ chọn vì bản
+   * catalogue dự phòng chụp trước khi có cờ này không mang theo nó — thiếu thì
+   * coi như có theo dõi, đúng cách chạy cũ.
+   */
+  manageStock?: boolean;
 };
 
 /** một ô trong gallery — ảnh tĩnh hoặc video mp4 */
@@ -323,7 +330,9 @@ export const getProduct = (catalogue: Catalogue, slug: string) =>
 export const findVariant = (product: Product, color: string, size: string) =>
   product.variants.find((v) => v.color === color && v.size === size);
 
-export const inStock = (product: Product) => product.variants.some((v) => v.stock > 0);
+// Hàng không theo dõi tồn kho luôn còn bán: số tồn của nó không nói lên điều gì.
+export const inStock = (product: Product) =>
+  product.manageStock === false || product.variants.some((v) => v.stock > 0);
 
 export const allAudiences: Audience[] = ["Nam", "Nữ", "Trẻ em", "Unisex"];
 
