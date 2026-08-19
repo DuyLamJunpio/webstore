@@ -31,9 +31,9 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   const ctaLink = current.ctaLink ?? slides[0].ctaLink;
 
   return (
-    <section id="top">
-      <div className="relative overflow-hidden bg-ink">
-        <div className="relative aspect-4/5 w-full sm:aspect-16/11 lg:aspect-16/7">
+    <section id="top" className="relative">
+      <div className="relative h-[100vh] min-h-[640px] overflow-hidden bg-ink">
+        <div className="relative h-full w-full">
           {slides.map((slide, i) => (
             <div
               key={slide.id}
@@ -88,7 +88,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
 
           <div className="absolute inset-0 bg-gradient-to-t from-ink/75 via-ink/25 to-ink/10" />
 
-          <div className="shell absolute inset-0 flex flex-col justify-end py-8 sm:py-12 lg:py-16">
+          <div className="shell absolute inset-0 flex flex-col justify-end pb-8 pt-[104px] sm:pb-12 sm:pt-[112px] lg:pb-16 lg:pt-[120px]">
             <div className="max-w-2xl text-cream">
               {heading ? (
                 <h1 className="rise font-serif text-[clamp(2.75rem,7vw,6rem)] font-medium leading-[0.98] tracking-[-0.02em]">

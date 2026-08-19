@@ -29,12 +29,22 @@ export default function Header() {
   const searchRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { count, hydrated, openCart } = useCart();
+  const showSolidHeader = scrolled || searchOpen;
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 16);
+    const onScroll = () => {
+      const hero = document.getElementById("top");
+      const threshold = hero ? hero.offsetHeight - 120 : window.innerHeight * 0.8;
+      setScrolled(window.scrollY > threshold);
+    };
+
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, []);
 
   useEffect(() => {
@@ -58,8 +68,10 @@ export default function Header() {
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-colors duration-300 ${
-        scrolled || searchOpen ? "border-b border-line bg-cream/85 backdrop-blur-xl" : "bg-transparent"
+      className={`fixed inset-x-0 top-0 z-40 transition-all duration-300 ${
+        showSolidHeader
+          ? "border-b border-line bg-cream/85 text-ink backdrop-blur-xl"
+          : "bg-transparent text-cream"
       }`}
     >
       <div className="shell">
@@ -73,7 +85,11 @@ export default function Header() {
               <Link
                 key={link.label}
                 href={link.href}
-                className="eyebrow relative py-1 text-ink/75 transition-colors after:absolute after:inset-x-0 after:-bottom-0.5 after:h-px after:origin-right after:scale-x-0 after:bg-gold after:transition-transform after:duration-300 hover:text-ink hover:after:origin-left hover:after:scale-x-100"
+                className={`eyebrow relative py-1 transition-colors after:absolute after:inset-x-0 after:-bottom-0.5 after:h-px after:origin-right after:scale-x-0 after:bg-gold after:transition-transform after:duration-300 ${
+                  showSolidHeader
+                    ? "text-ink/75 hover:text-ink hover:after:origin-left hover:after:scale-x-100"
+                    : "text-cream/80 hover:text-cream hover:after:origin-left hover:after:scale-x-100"
+                }`}
               >
                 {link.label}
               </Link>
@@ -86,14 +102,18 @@ export default function Header() {
               aria-label="Tìm kiếm"
               aria-expanded={searchOpen}
               onClick={() => setSearchOpen((v) => !v)}
-              className="grid h-10 w-10 place-items-center rounded-full transition-colors hover:bg-ink/5"
+              className={`grid h-10 w-10 place-items-center rounded-full transition-colors ${
+                showSolidHeader ? "hover:bg-ink/5" : "hover:bg-white/10"
+              }`}
             >
               {searchOpen ? <Close /> : <Search />}
             </button>
             <Link
               href="/shop?sale=1"
               aria-label="Yêu thích, 0 sản phẩm"
-              className="relative hidden h-10 w-10 place-items-center rounded-full transition-colors hover:bg-ink/5 sm:grid"
+              className={`relative hidden h-10 w-10 place-items-center rounded-full transition-colors sm:grid ${
+                showSolidHeader ? "hover:bg-ink/5" : "hover:bg-white/10"
+              }`}
             >
               <Heart />
               <Counter value={0} />
@@ -102,7 +122,9 @@ export default function Header() {
               type="button"
               onClick={openCart}
               aria-label={`Giỏ hàng, ${hydrated ? count : 0} sản phẩm`}
-              className="relative grid h-10 w-10 place-items-center rounded-full transition-colors hover:bg-ink/5"
+              className={`relative grid h-10 w-10 place-items-center rounded-full transition-colors ${
+                showSolidHeader ? "hover:bg-ink/5" : "hover:bg-white/10"
+              }`}
             >
               <Bag />
               <Counter value={hydrated ? count : 0} />
@@ -112,7 +134,9 @@ export default function Header() {
               onClick={() => setOpen((v) => !v)}
               aria-label={open ? "Đóng menu" : "Mở menu"}
               aria-expanded={open}
-              className="grid h-10 w-10 place-items-center rounded-full transition-colors hover:bg-ink/5 lg:hidden"
+              className={`grid h-10 w-10 place-items-center rounded-full transition-colors lg:hidden ${
+                showSolidHeader ? "hover:bg-ink/5" : "hover:bg-white/10"
+              }`}
             >
               {open ? <Close /> : <Menu />}
             </button>

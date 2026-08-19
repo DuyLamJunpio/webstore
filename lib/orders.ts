@@ -18,6 +18,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { tmpdir } from "node:os";
 import type { CustomerInfo, PricedCart } from "./checkout";
 import type { PaymentStatus } from "./payos";
 import type { PaymentMethodKey } from "./sales";
@@ -86,7 +87,22 @@ export type Order = {
 
 type Store = { v: 1; orders: Record<string, Order> };
 
-const DIR = path.join(process.cwd(), ".data");
+/**
+ * Nơi cất tệp đơn.
+ *
+ * Trên máy chủ dựng sẵn kiểu Vercel, thư mục mã nguồn chỉ đọc: mọi lần ghi đều
+ * ném EROFS, và vì đơn được lưu SAU khi trang quản trị đã nhận, khách thấy báo
+ * lỗi rồi bấm lại — mỗi lần bấm là thêm một đơn trùng bên kho. Ở đó chỉ có thư
+ * mục tạm của hệ điều hành là ghi được.
+ *
+ * Thư mục tạm sống theo tuổi thọ một máy ảo, đủ cho quãng 15 phút chờ chuyển
+ * khoản của một đơn, nhưng KHÔNG phải chỗ lưu lâu dài: máy ảo mới là mất sạch.
+ * Chỗ lưu bền cho trang thanh toán phải là kho hàng hoặc một cơ sở dữ liệu, và
+ * ORDERS_DIR để trỏ sang chỗ khác khi có ổ đĩa gắn kèm.
+ */
+const DIR =
+  process.env.ORDERS_DIR ??
+  (process.env.VERCEL ? path.join(tmpdir(), "tbc-orders") : path.join(process.cwd(), ".data"));
 const FILE = path.join(DIR, "orders.json");
 /** old orders are dropped on write so the file cannot grow forever */
 const KEEP_MS = 60 * 24 * 60 * 60 * 1000;
