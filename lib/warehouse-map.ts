@@ -18,6 +18,8 @@ export type ApiVariant = {
   color: string | null;
   sku: string;
   stock: number;
+  /** Có bán được dòng này không — quản trị đã tính sẵn cả cờ theo dõi tồn kho. */
+  available?: boolean;
   price: number;
 };
 
@@ -36,6 +38,8 @@ export type ApiProduct = {
   price: number;
   compare_price: number | null;
   is_featured: boolean;
+  /** Quản trị có theo dõi tồn kho mặt hàng này không. Thiếu = có, như trước đây. */
+  manage_stock?: boolean;
   in_stock: boolean;
   total_stock: number;
   images: string[];
@@ -68,6 +72,17 @@ export type RootCategory = {
 
 /** Ảnh dùng khi sản phẩm chưa có ảnh nào bên quản trị. */
 export const PLACEHOLDER = "/images/placeholder.svg";
+
+/**
+ * Số tồn gán cho hàng không theo dõi tồn kho (đặt may, hàng order).
+ *
+ * Cả web tính còn/hết bằng `stock > 0` — ô chọn size, giỏ hàng, bước thanh toán
+ * đều vậy. Đổ một con số đủ lớn ở đúng chỗ nắn dữ liệu này khiến mọi nơi hiểu
+ * đúng ngay, thay vì rải thêm một điều kiện `manageStock` vào từng chỗ và chắc
+ * chắn sót một chỗ nào đó. Đủ lớn để không bao giờ chạm ngưỡng "chỉ còn N sản
+ * phẩm" (LOW_STOCK) mà vẫn là số hữu hạn cho ô nhập số lượng.
+ */
+export const UNLIMITED_STOCK = 9999;
 
 /**
  * Nhiều nhất chừng này ảnh cho một sản phẩm. Trang chi tiết cuộn thumbnail dọc,
@@ -138,12 +153,13 @@ export function toSeed(product: ApiProduct, gallery: string[], videos: string[] 
     details,
     colors: colorNames.map((name) => ({ name, hex: hexFor(name) })),
     sizes,
+    manageStock: product.manage_stock !== false,
     // id của biến thể chính là id bên quản trị, đặt hàng sẽ gửi lại nguyên vẹn.
     variants: product.variants.map((v) => ({
       id: String(v.id),
       color: v.color ?? "Mặc định",
       size: v.size ?? "Freesize",
-      stock: v.stock,
+      stock: product.manage_stock === false ? UNLIMITED_STOCK : v.stock,
       price: v.price,
     })),
   };
