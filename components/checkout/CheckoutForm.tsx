@@ -199,7 +199,10 @@ function CheckoutFields({
           paymentMethod: method,
         }),
       });
-      const payload = (await response.json()) as {
+      // Máy chủ lỗi nặng thì phần thân là trang HTML, không phải JSON. Để json()
+      // ném ở đây là rơi vào nhánh bắt lỗi cuối cùng và khách đọc được đúng một
+      // câu sai sự thật: "mất kết nối".
+      const payload = (await response.json().catch(() => ({}))) as {
         url?: string;
         error?: string;
         fieldErrors?: CustomerErrors;
@@ -207,7 +210,10 @@ function CheckoutFields({
 
       if (!response.ok || !payload.url) {
         setErrors(payload.fieldErrors ?? {});
-        setFormError(payload.error ?? "Không tạo được đơn hàng. Vui lòng thử lại.");
+        setFormError(
+          payload.error ??
+            `Không tạo được đơn hàng (lỗi ${response.status}). Vui lòng thử lại hoặc liên hệ shop.`,
+        );
         return;
       }
 

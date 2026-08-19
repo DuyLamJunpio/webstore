@@ -112,7 +112,27 @@ export async function POST(request: NextRequest) {
     return bad(warehouse.error, warehouse.outOfStock ? 409 : 502);
   }
 
-  const { ref, orderCode } = await reserveOrder();
+  /**
+   * Từ đây trở đi trang quản trị ĐÃ nhận đơn và đã trừ kho. Hỏng bước nào thì
+   * cũng không được để khách bấm lại: mỗi lần bấm là thêm một đơn trùng bên kho.
+   * Nên báo kèm mã đơn và nói thẳng là đừng đặt lại.
+   */
+  const daGhiNhan = (error: unknown) => {
+    console.error("[checkout] đơn đã sang kho nhưng không lưu được ở web", error);
+    return bad(
+      `Đơn hàng của bạn ĐÃ được ghi nhận với mã ${warehouse.orderCode ?? ""}. `
+        + "Trang theo dõi đơn tạm thời không mở được — vui lòng KHÔNG đặt lại, shop sẽ liên hệ với bạn.",
+      500,
+    );
+  };
+
+  let ref: string;
+  let orderCode: number;
+  try {
+    ({ ref, orderCode } = await reserveOrder());
+  } catch (error) {
+    return daGhiNhan(error);
+  }
   const createdAt = Date.now();
   let expiresAt = createdAt + PAYMENT_WINDOW_MINUTES * 60 * 1000;
 
@@ -222,7 +242,11 @@ export async function POST(request: NextRequest) {
     // Mã đơn bên trang quản trị, để webhook báo "đã nhận tiền" đúng đơn.
     warehouseOrderCode: warehouse.orderCode,
   };
-  await saveOrder(order);
+  try {
+    await saveOrder(order);
+  } catch (error) {
+    return daGhiNhan(error);
+  }
 
   return Response.json({ ref, url: `/checkout/${ref}` }, { status: 201 });
 }
