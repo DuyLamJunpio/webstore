@@ -71,7 +71,7 @@ export default function Header() {
       className={`fixed inset-x-0 top-0 z-40 transition-all duration-300 ${
         showSolidHeader
           ? "border-b border-line bg-cream/85 text-ink backdrop-blur-xl"
-          : "bg-transparent text-cream"
+          : "bg-[linear-gradient(to_bottom,rgba(0,0,0,0.28),rgba(0,0,0,0.08),rgba(0,0,0,0))] text-white backdrop-blur-[2px]"
       }`}
     >
       <div className="shell">
@@ -85,10 +85,10 @@ export default function Header() {
               <Link
                 key={link.label}
                 href={link.href}
-                className={`eyebrow relative py-1 transition-colors after:absolute after:inset-x-0 after:-bottom-0.5 after:h-px after:origin-right after:scale-x-0 after:bg-gold after:transition-transform after:duration-300 ${
+                className={`eyebrow relative py-1 transition-colors drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] after:absolute after:inset-x-0 after:-bottom-0.5 after:h-px after:origin-right after:scale-x-0 after:bg-gold after:transition-transform after:duration-300 ${
                   showSolidHeader
                     ? "text-ink/75 hover:text-ink hover:after:origin-left hover:after:scale-x-100"
-                    : "text-cream/80 hover:text-cream hover:after:origin-left hover:after:scale-x-100"
+                    : "text-white/95 hover:text-white hover:after:origin-left hover:after:scale-x-100"
                 }`}
               >
                 {link.label}
@@ -102,7 +102,7 @@ export default function Header() {
               aria-label="Tìm kiếm"
               aria-expanded={searchOpen}
               onClick={() => setSearchOpen((v) => !v)}
-              className={`grid h-10 w-10 place-items-center rounded-full transition-colors ${
+              className={`grid h-10 w-10 place-items-center rounded-full text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] transition-colors ${
                 showSolidHeader ? "hover:bg-ink/5" : "hover:bg-white/10"
               }`}
             >
@@ -111,7 +111,7 @@ export default function Header() {
             <Link
               href="/shop?sale=1"
               aria-label="Yêu thích, 0 sản phẩm"
-              className={`relative hidden h-10 w-10 place-items-center rounded-full transition-colors sm:grid ${
+              className={`relative hidden h-10 w-10 place-items-center rounded-full text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] transition-colors sm:grid ${
                 showSolidHeader ? "hover:bg-ink/5" : "hover:bg-white/10"
               }`}
             >
@@ -122,7 +122,7 @@ export default function Header() {
               type="button"
               onClick={openCart}
               aria-label={`Giỏ hàng, ${hydrated ? count : 0} sản phẩm`}
-              className={`relative grid h-10 w-10 place-items-center rounded-full transition-colors ${
+              className={`relative grid h-10 w-10 place-items-center rounded-full text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] transition-colors ${
                 showSolidHeader ? "hover:bg-ink/5" : "hover:bg-white/10"
               }`}
             >
@@ -134,7 +134,7 @@ export default function Header() {
               onClick={() => setOpen((v) => !v)}
               aria-label={open ? "Đóng menu" : "Mở menu"}
               aria-expanded={open}
-              className={`grid h-10 w-10 place-items-center rounded-full transition-colors lg:hidden ${
+              className={`grid h-10 w-10 place-items-center rounded-full text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] transition-colors lg:hidden ${
                 showSolidHeader ? "hover:bg-ink/5" : "hover:bg-white/10"
               }`}
             >
