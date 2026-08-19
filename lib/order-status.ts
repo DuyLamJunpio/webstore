@@ -25,6 +25,16 @@ const OPEN: PaymentStatus[] = ["PENDING", "PROCESSING", "UNDERPAID"];
 export const isOpen = (status: PaymentStatus) => OPEN.includes(status);
 
 export async function syncOrderStatus(order: Order): Promise<Order> {
+  /**
+   * Đơn trả khi nhận hàng không có gì để đối soát: không có liên kết thanh toán
+   * nào bên PayOS, và tiền chỉ về khi người giao hàng thu hộ. Hỏi cổng thanh
+   * toán về nó chỉ tổ nhận lỗi rồi ghi đè trạng thái bằng một câu trả lời sai.
+   */
+  if (order.paymentMethod === "cod") {
+    if (!order.confirmationEmailSentAt) await sendOrderConfirmation(order);
+    return order;
+  }
+
   if (!isOpen(order.status)) {
     /**
      * Đơn đã chốt thì không hỏi PayOS nữa — nhưng vẫn phải thử gửi lại thư khi

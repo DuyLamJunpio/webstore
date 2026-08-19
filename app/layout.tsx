@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Be_Vietnam_Pro, Playfair_Display } from "next/font/google";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import CartDrawer from "@/components/CartDrawer";
+import { getContent } from "@/lib/content";
+import { SalesProvider } from "@/lib/sales";
 import FloatingContact from "@/components/FloatingContact";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
@@ -47,19 +49,25 @@ export const metadata: Metadata = {
     "Những món đồ mùa mới cho sự tự tin mỗi ngày. Áo khoác, đồ len và đồ cơ bản cho nam, nữ và trẻ em.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Cài đặt bán hàng nằm cùng lời gọi nội dung trang chủ; `cache()` bên trong
+  // gom mọi nơi cần nó về một lần gọi cho mỗi lượt dựng trang.
+  const { sales } = await getContent();
+
   return (
     <html
       lang="vi"
       className={`${beVietnam.variable} ${playfair.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
-        <AnnouncementBar />
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <CartDrawer />
-        <FloatingContact />
+        <SalesProvider value={sales}>
+          <AnnouncementBar />
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+          <CartDrawer />
+          <FloatingContact />
+        </SalesProvider>
       </body>
     </html>
   );

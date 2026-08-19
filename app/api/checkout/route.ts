@@ -7,6 +7,8 @@
  */
 
 import { getCatalogue } from "@/lib/catalogue";
+import { getContent } from "@/lib/content";
+import type { PaymentMethodKey } from "@/lib/sales";
 import { after } from "next/server";
 import type { NextRequest } from "next/server";
 import {
@@ -25,6 +27,9 @@ import { buildVietQr, readFallbackBank } from "@/lib/vietqr";
 import { pushOrder } from "@/lib/warehouse";
 
 // ── a small brake on a public endpoint that calls a paid API ─────────
+
+/** Đơn trả khi nhận hàng không có hạn thanh toán; con số này chỉ để lấp chỗ. */
+const COD_WINDOW_DAYS = 30;
 
 const RATE_WINDOW_MS = 10 * 60 * 1000;
 const RATE_MAX = 12;
@@ -53,7 +58,11 @@ const clientIp = (request: NextRequest) =>
 
 // ── request body ─────────────────────────────────────────────────────
 
-type Body = { lines?: CheckoutLine[]; customer?: Partial<CustomerInfo> };
+type Body = {
+  lines?: CheckoutLine[];
+  customer?: Partial<CustomerInfo>;
+  paymentMethod?: string;
+};
 
 const bad = (error: string, status = 400, extra: Record<string, unknown> = {}) =>
   Response.json({ error, ...extra }, { status });
@@ -82,14 +91,23 @@ export async function POST(request: NextRequest) {
     return bad("Vui lòng kiểm tra lại thông tin nhận hàng.", 400, { fieldErrors });
   }
 
-  const priced = priceCart(await getCatalogue(), body.lines ?? []);
+  // Cài đặt bán hàng lấy lại từ trang quản trị chứ không tin phía trình duyệt:
+  // phí giao hàng và việc hình thức thanh toán có đang mở hay không đều là tiền.
+  const { sales } = await getContent();
+  const method: PaymentMethodKey = body.paymentMethod === "cod" ? "cod" : "bank_transfer";
+
+  if (!sales[method].enabled) {
+    return bad("Hình thức thanh toán này đang tạm ngưng. Vui lòng chọn cách khác.", 503);
+  }
+
+  const priced = priceCart(await getCatalogue(), body.lines ?? [], sales, method);
   if (!priced.ok) return bad(priced.error);
   const cart = priced.cart;
 
   // Đẩy đơn sang trang quản trị TRƯỚC khi tạo mã QR. Bên đó giữ tồn kho thật và
   // kiểm tra lại một lần nữa, nên hết hàng thì khách biết ngay tại đây chứ không
   // phải sau khi đã chuyển khoản. Tồn kho cũng được trừ ngay từ lúc này.
-  const warehouse = await pushOrder(customer, cart);
+  const warehouse = await pushOrder(customer, cart, method);
   if (!warehouse.ok) {
     return bad(warehouse.error, warehouse.outOfStock ? 409 : 502);
   }
@@ -100,7 +118,20 @@ export async function POST(request: NextRequest) {
 
   let payment: OrderPayment;
 
-  if (isPayosConfigured()) {
+  if (method === "cod") {
+    // Trả tiền khi nhận hàng: không có mã QR, không có đồng hồ đếm ngược. Vẫn đặt
+    // một hạn rất xa để mọi chỗ đọc `expiresAt` không phải thêm nhánh riêng.
+    expiresAt = createdAt + COD_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+    payment = {
+      provider: "cod",
+      bin: "",
+      accountNumber: "",
+      accountName: "",
+      amount: cart.total,
+      description: "",
+      qrCode: "",
+    };
+  } else if (isPayosConfigured()) {
     const origin = siteUrl(request);
     // PayOS allows nine characters when the shop is on a plain bank account, so
     // the memo carries the tail of the order code rather than the full ref.
@@ -187,6 +218,7 @@ export async function POST(request: NextRequest) {
     customer,
     cart,
     payment,
+    paymentMethod: method,
     // Mã đơn bên trang quản trị, để webhook báo "đã nhận tiền" đúng đơn.
     warehouseOrderCode: warehouse.orderCode,
   };
