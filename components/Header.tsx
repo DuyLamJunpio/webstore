@@ -34,7 +34,7 @@ export default function Header() {
   useEffect(() => {
     const onScroll = () => {
       const hero = document.getElementById("top");
-      const threshold = hero ? hero.offsetHeight - 120 : window.innerHeight * 0.8;
+      const threshold = hero ? hero.offsetHeight - 110 : window.innerHeight * 0.75;
       setScrolled(window.scrollY > threshold);
     };
 

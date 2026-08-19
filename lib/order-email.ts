@@ -13,55 +13,8 @@ import { formatAddress } from "./checkout";
 import { CONTACT } from "./contact";
 import { formatPrice } from "./data";
 import { deliver, isEmailConfigured, type OutgoingEmail } from "./email";
+import { BRAND, block, esc, formatMoment, renderShell, row } from "./email-layout";
 import { claimConfirmationEmail, releaseConfirmationEmail, type Order } from "./orders";
-
-/** Chặn dữ liệu khách nhập phá vỡ HTML của thư — tên và địa chỉ là do người lạ gõ vào */
-const esc = (value: string) =>
-  value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-
-/**
- * Giờ Việt Nam, không phụ thuộc múi giờ máy chủ.
- * Máy chủ đặt ở Singapore hay Mỹ thì khách vẫn đọc đúng giờ mình đã chuyển khoản.
- */
-const TIME_ZONE = "Asia/Ho_Chi_Minh";
-
-/**
- * Ghép tay giờ và ngày thay vì dùng `dateStyle`+`timeStyle`.
- *
- * `vi-VN` với hai tuỳ chọn đó trả về "lúc 10:42 17 tháng 8, 2026" — tự nó đã
- * kèm chữ "lúc", nên câu "Thanh toán lúc …" đọc ra thành "lúc lúc". Ghép tay
- * thì mỗi nơi tự quyết định có cần chữ "lúc" hay không.
- */
-const formatMoment = (ms: number) => {
-  const at = new Date(ms);
-  const time = new Intl.DateTimeFormat("vi-VN", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: TIME_ZONE,
-  }).format(at);
-  const date = new Intl.DateTimeFormat("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    timeZone: TIME_ZONE,
-  }).format(at);
-  return `${time} ngày ${date}`;
-};
-
-const BRAND = {
-  ink: "#1c1714",
-  cream: "#f5efe6",
-  creamDark: "#eae1d3",
-  surface: "#fbf8f2",
-  gold: "#a8804b",
-  muted: "#7a726b",
-  line: "#ded5c7",
-};
 
 // ── bản chữ thuần ────────────────────────────────────────────────────
 
@@ -121,12 +74,6 @@ function buildHtml(order: Order): string {
   const { customer, cart, payment } = order;
   const laCod = order.paymentMethod === "cod";
 
-  const row = (label: string, value: string) => `
-    <tr>
-      <td style="padding:4px 0;color:${BRAND.muted};font-size:14px;white-space:nowrap;">${esc(label)}</td>
-      <td style="padding:4px 0 4px 16px;color:${BRAND.ink};font-size:14px;text-align:right;">${esc(value)}</td>
-    </tr>`;
-
   const items = cart.lines
     .map(
       (line) => `
@@ -152,12 +99,6 @@ function buildHtml(order: Order): string {
       <td style="padding:12px 0 0;border-top:1px solid ${BRAND.line};color:${BRAND.ink};font-size:17px;font-weight:700;text-align:right;white-space:nowrap;">${esc(formatPrice(cart.total))}</td>
     </tr>`;
 
-  const block = (title: string, body: string) => `
-    <tr><td style="padding:28px 0 0;">
-      <div style="color:${BRAND.gold};font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding-bottom:10px;">${esc(title)}</div>
-      ${body}
-    </td></tr>`;
-
   const addressBlock = `
     <div style="color:${BRAND.ink};font-size:15px;line-height:1.65;">
       <strong>${esc(customer.fullName)}</strong><br>
@@ -178,69 +119,22 @@ function buildHtml(order: Order): string {
       ${order.transactionRef ? `<span style="color:${BRAND.muted};">Mã giao dịch: ${esc(order.transactionRef)}</span>` : ""}
     </div>`;
 
-  return `<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Xác nhận đơn hàng ${esc(order.ref)}</title></head>
-<body style="margin:0;padding:0;background:${BRAND.cream};">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;">Đã nhận thanh toán cho đơn ${esc(order.ref)} — ${esc(formatPrice(cart.total))}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BRAND.cream};padding:32px 16px;">
-<tr><td align="center">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:${BRAND.surface};border-radius:16px;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-
-    <tr><td style="background:${BRAND.ink};padding:32px 32px 28px;text-align:center;">
-      <div style="color:${BRAND.gold};font-size:26px;font-weight:700;letter-spacing:.12em;">TBC</div>
-      <div style="color:${BRAND.cream};font-size:11px;letter-spacing:.28em;text-transform:uppercase;padding-top:8px;">The Basic Concept</div>
-    </td></tr>
-
-    <tr><td style="padding:32px 32px 0;">
-      <h1 style="margin:0;color:${BRAND.ink};font-size:24px;line-height:1.25;">Cảm ơn bạn đã đặt hàng!</h1>
-      <p style="margin:12px 0 0;color:${BRAND.muted};font-size:15px;line-height:1.65;">
-        Chúng tôi đã nhận được thanh toán cho đơn <strong style="color:${BRAND.ink};">${esc(order.ref)}</strong>.
-        Đơn của bạn đang được chuẩn bị và sẽ sớm bàn giao cho đơn vị vận chuyển.
-      </p>
-    </td></tr>
-
-    <tr><td style="padding:24px 32px 0;">
-      <div style="background:${BRAND.creamDark};border-radius:12px;padding:14px 18px;color:${BRAND.ink};font-size:14px;">
-        Mã đơn hàng: <strong>${esc(order.ref)}</strong>
-      </div>
-    </td></tr>
-
-    <tr><td style="padding:0 32px;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-        ${block("Sản phẩm", `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${items}</table>`)}
+  return renderShell({
+    title: `Xác nhận đơn hàng ${order.ref}`,
+    preheader: `Đã nhận thanh toán cho đơn ${order.ref} — ${formatPrice(cart.total)}`,
+    heading: "Cảm ơn bạn đã đặt hàng!",
+    lead: `Chúng tôi đã nhận được thanh toán cho đơn <strong style="color:${BRAND.ink};">${esc(order.ref)}</strong>.
+        Đơn của bạn đang được chuẩn bị và sẽ sớm bàn giao cho đơn vị vận chuyển.`,
+    badge: `Mã đơn hàng: <strong>${esc(order.ref)}</strong>`,
+    sections: `${block("Sản phẩm", `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${items}</table>`)}
         <tr><td style="padding:18px 0 0;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${totals}</table>
         </td></tr>
         ${block("Người nhận", addressBlock)}
-        ${block("Thanh toán", paymentBlock)}
-      </table>
-    </td></tr>
-
-    <tr><td style="padding:32px 32px 0;">
-      <div style="border-top:1px solid ${BRAND.line};padding-top:24px;">
-        <div style="color:${BRAND.gold};font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding-bottom:10px;">Cần hỗ trợ?</div>
-        <p style="margin:0;color:${BRAND.muted};font-size:15px;line-height:1.7;">
-          Có bất kỳ thắc mắc nào về đơn hàng, bạn cứ nhắn cho chúng tôi:<br>
-          Điện thoại / Zalo:
-          <a href="${CONTACT.phoneHref}" style="color:${BRAND.ink};font-weight:600;text-decoration:none;">${esc(CONTACT.phoneDisplay)}</a><br>
-          Zalo: <a href="${CONTACT.zaloUrl}" style="color:${BRAND.ink};text-decoration:underline;">zalo.me</a>
-          &nbsp;·&nbsp;
-          Facebook: <a href="${CONTACT.facebookUrl}" style="color:${BRAND.ink};text-decoration:underline;">Fanpage</a>
-        </p>
-      </div>
-    </td></tr>
-
-    <tr><td style="padding:28px 32px 32px;text-align:center;">
-      <p style="margin:0;color:${BRAND.muted};font-size:12px;line-height:1.7;">
-        The Basic Concept — Đơn giản. Hằng ngày. Cho tất cả.<br>
-        Thư này được gửi tự động tới ${esc(customer.email)} vì bạn vừa đặt hàng tại cửa hàng của chúng tôi.
-      </p>
-    </td></tr>
-
-  </table>
-</td></tr></table>
-</body></html>`;
+        ${block("Thanh toán", paymentBlock)}`,
+    recipient: customer.email,
+    reason: "vì bạn vừa đặt hàng tại cửa hàng của chúng tôi.",
+  });
 }
 
 // ── dựng & gửi ───────────────────────────────────────────────────────
@@ -283,18 +177,37 @@ export async function sendOrderConfirmation(order: Order): Promise<void> {
     return;
   }
 
-  // Giành quyền TRƯỚC khi gửi. Giành sau thì hai tiến trình cùng gửi xong mới
-  // phát hiện ra nhau, lúc đó khách đã nhận hai lá thư rồi.
-  const claimed = await claimConfirmationEmail(order.ref);
+  /*
+   * Giành quyền TRƯỚC khi gửi. Giành sau thì hai tiến trình cùng gửi xong mới
+   * phát hiện ra nhau, lúc đó khách đã nhận hai lá thư rồi.
+   *
+   * Cờ này nằm bên kho, nên giành quyền là một lần gọi mạng và có thể hỏng. Hàm
+   * này được gọi ngay trong lúc dựng trang đơn hàng, nên một lá thư gửi trễ
+   * KHÔNG được phép biến thành trang lỗi trước mặt khách: bỏ qua lần này, vòng
+   * poll của trang thanh toán sẽ chạy lại qua đây sau vài giây.
+   */
+  let claimed: Order | null;
+  try {
+    claimed = await claimConfirmationEmail(order.ref);
+  } catch (error) {
+    console.error(`[email] không giành được quyền gửi thư cho đơn ${order.ref}`, error);
+    return;
+  }
   if (!claimed) return;
 
   try {
     await deliver(renderOrderConfirmation(claimed));
     console.log(`[email] đã gửi xác nhận đơn ${claimed.ref} tới ${claimed.customer.email}`);
   } catch (error) {
+    console.error(`[email] gửi xác nhận đơn ${claimed.ref} thất bại`, error);
+
     // Mở lại cờ để lần xác nhận sau còn thử lại — vòng poll của trang thanh
     // toán sẽ chạy qua đây lần nữa sau vài giây.
-    await releaseConfirmationEmail(claimed.ref);
-    console.error(`[email] gửi xác nhận đơn ${claimed.ref} thất bại`, error);
+    try {
+      await releaseConfirmationEmail(claimed.ref);
+    } catch (releaseError) {
+      // Không mở lại được thì đơn này mất lá thư xác nhận, chứ không mất tiền.
+      console.error(`[email] không mở lại được cờ gửi thư đơn ${claimed.ref}`, releaseError);
+    }
   }
 }

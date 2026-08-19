@@ -1,27 +1,27 @@
 /**
  * Order storage.
  *
- * The shop has no database, so orders live in a JSON file under `.data/`. That
- * is enough for one server writing to one disk — `next dev`, a VPS, a container
- * with a volume — and it keeps the checkout flow honest end to end: the payment
- * page reads a real stored order rather than trusting query parameters.
+ * Đơn của trang thanh toán nằm bên trang quản trị, cạnh đơn hàng thật. Trước
+ * đây chúng nằm trong một tệp JSON trên đĩa máy chủ này, và trên Vercel thì đó
+ * là một cái bẫy: thư mục duy nhất ghi được là thư mục tạm của máy ảo, mà máy ảo
+ * bị thay sau vài phút. Đơn vẫn vào sổ bên kho, mã QR vẫn hiện — rồi giữa lúc
+ * khách còn đang ở trong app ngân hàng, trang đơn hàng thành 404.
  *
- * It is deliberately the only module that knows *where* orders live. Swapping in
- * Postgres or Prisma means reimplementing the five functions at the bottom and
- * touching nothing else.
+ * Trang quản trị là chỗ duy nhất trong hệ thống này có cơ sở dữ liệu thật, nên
+ * nó giữ luôn: một bảng `storefront_orders` với cả đơn trong một cột JSON.
  *
- * Caveats worth knowing before this goes anywhere serious: a serverless
- * deployment gets a fresh, empty filesystem per instance, and two processes
- * writing at once would clobber each other. Both are database problems.
+ * Đây vẫn là module duy nhất biết đơn nằm ở ĐÂU. Đổi chỗ lưu lần nữa là viết lại
+ * mấy hàm ở cuối tệp và không sửa gì thêm.
+ *
+ * Điều phải biết trước khi đọc tiếp: mỗi hàm ở đây là một lần gọi mạng, không
+ * còn là một lần đọc đĩa. Chúng ném lỗi khi trang quản trị không trả lời, và
+ * `null` chỉ có một nghĩa duy nhất — đơn không tồn tại.
  */
 
-import { randomUUID } from "node:crypto";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { tmpdir } from "node:os";
 import type { CustomerInfo, PricedCart } from "./checkout";
 import type { PaymentStatus } from "./payos";
 import type { PaymentMethodKey } from "./sales";
+import { warehouseFetch } from "./warehouse";
 
 export type OrderPayment = {
   /**
@@ -79,87 +79,11 @@ export type Order = {
   /**
    * Mã đơn bên trang quản trị (Laravel), ví dụ "DH2608171ABC".
    *
-   * Trang quản trị mới là nơi giữ tồn kho và danh sách đơn thật; file JSON này
-   * chỉ phục vụ trang thanh toán. Giữ mã lại để báo "đã nhận tiền" đúng đơn.
+   * Trang quản trị mới là nơi giữ tồn kho và danh sách đơn thật. Giữ mã lại để
+   * báo "đã nhận tiền" đúng đơn.
    */
   warehouseOrderCode?: string;
 };
-
-type Store = { v: 1; orders: Record<string, Order> };
-
-/**
- * Nơi cất tệp đơn.
- *
- * Trên máy chủ dựng sẵn kiểu Vercel, thư mục mã nguồn chỉ đọc: mọi lần ghi đều
- * ném EROFS, và vì đơn được lưu SAU khi trang quản trị đã nhận, khách thấy báo
- * lỗi rồi bấm lại — mỗi lần bấm là thêm một đơn trùng bên kho. Ở đó chỉ có thư
- * mục tạm của hệ điều hành là ghi được.
- *
- * Thư mục tạm sống theo tuổi thọ một máy ảo, đủ cho quãng 15 phút chờ chuyển
- * khoản của một đơn, nhưng KHÔNG phải chỗ lưu lâu dài: máy ảo mới là mất sạch.
- * Chỗ lưu bền cho trang thanh toán phải là kho hàng hoặc một cơ sở dữ liệu, và
- * ORDERS_DIR để trỏ sang chỗ khác khi có ổ đĩa gắn kèm.
- */
-const DIR =
-  process.env.ORDERS_DIR ??
-  (process.env.VERCEL ? path.join(tmpdir(), "tbc-orders") : path.join(process.cwd(), ".data"));
-const FILE = path.join(DIR, "orders.json");
-/** old orders are dropped on write so the file cannot grow forever */
-const KEEP_MS = 60 * 24 * 60 * 60 * 1000;
-
-/** every write goes through this chain, so two requests cannot interleave a read-modify-write */
-let queue: Promise<unknown> = Promise.resolve();
-
-/**
- * Luôn đọc lại từ đĩa — cố ý không giữ bản sao trong bộ nhớ.
- *
- * Bản sao đó từng làm hỏng đúng hai thứ, vì Next đóng gói route handler và
- * server component thành hai bundle khác nhau: mỗi bên giữ một bản sao riêng
- * và không bên nào biết bên kia vừa ghi gì.
- *
- *   • `/api/checkout` tạo đơn mới → bản sao của trang `/checkout/[ref]` vẫn là
- *     ảnh chụp cũ, không có đơn đó → khách nhận 404 ngay sau khi đặt hàng.
- *   • tệ hơn: `transaction()` ghi nguyên bản sao cũ đó xuống đĩa, xoá sạch
- *     những đơn mà bên kia vừa lưu.
- *
- * Tệp này chỉ vài KB nên đọc lại mỗi lần là không đáng kể — và khi nào nó đủ
- * lớn để thành vấn đề thì câu trả lời là cơ sở dữ liệu, không phải bộ nhớ đệm.
- */
-async function read(): Promise<Store> {
-  try {
-    const parsed = JSON.parse(await readFile(FILE, "utf8")) as Store;
-    return parsed?.v === 1 && parsed.orders ? parsed : { v: 1, orders: {} };
-  } catch {
-    // no file yet, or someone hand-edited it into invalid JSON
-    return { v: 1, orders: {} };
-  }
-}
-
-async function write(store: Store): Promise<void> {
-  const cutoff = Date.now() - KEEP_MS;
-  store.orders = Object.fromEntries(
-    Object.entries(store.orders).filter(([, order]) => order.createdAt > cutoff),
-  );
-
-  await mkdir(DIR, { recursive: true });
-  // write-then-rename: a crash mid-write leaves the previous file intact
-  const temp = `${FILE}.${randomUUID()}.tmp`;
-  await writeFile(temp, JSON.stringify(store, null, 2), "utf8");
-  await rename(temp, FILE);
-}
-
-/** serialises a read-modify-write against the store */
-function transaction<T>(work: (store: Store) => Promise<T> | T): Promise<T> {
-  const next = queue.then(async () => {
-    const store = await read();
-    const result = await work(store);
-    await write(store);
-    return result;
-  });
-  // keep the chain alive even when this link rejects
-  queue = next.catch(() => undefined);
-  return next;
-}
 
 // ── ids ──────────────────────────────────────────────────────────────
 
@@ -172,83 +96,128 @@ function newRef(): string {
   return Array.from(bytes, (byte) => ALPHABET[byte % ALPHABET.length]).join("");
 }
 
+/** mã cuối đã phát ra từ tiến trình này, để hai đơn sát nhau không trùng mã */
+let lastOrderCode = 0;
+
 /**
  * PayOS wants a positive integer, unique for the lifetime of the merchant
  * account. Milliseconds since the epoch is unique per shop and stays well
- * inside the 2^53 ceiling; the loop only matters if two orders land on the
- * same millisecond.
+ * inside the 2^53 ceiling.
+ *
+ * Cột `order_code` bên kho là UNIQUE, nên trùng mã bị chặn thẳng chứ không âm
+ * thầm khớp sai giao dịch. Bộ đếm dưới đây lo phần hay xảy ra: hai đơn rơi vào
+ * cùng một mili giây trên cùng một máy chủ.
  */
-function newOrderCode(store: Store): number {
-  const taken = new Set(Object.values(store.orders).map((order) => order.orderCode));
-  let code = Date.now();
-  while (taken.has(code)) code += 1;
-  return code;
+function newOrderCode(): number {
+  const now = Date.now();
+  lastOrderCode = now > lastOrderCode ? now : lastOrderCode + 1;
+  return lastOrderCode;
 }
 
 // ── the five functions a database would have to replace ──────────────
 
-/** reserves ref + orderCode before the payment link exists, so PayOS can be told both */
-export function reserveOrder(): Promise<{ ref: string; orderCode: number }> {
-  return transaction((store) => {
-    let ref = newRef();
-    while (store.orders[ref]) ref = newRef();
-    return { ref, orderCode: newOrderCode(store) };
+const ROOT = "/api/storefront/orders";
+
+const at = (ref: string) => `${ROOT}/${encodeURIComponent(ref)}`;
+
+/**
+ * Đọc một đơn.
+ *
+ * 404 là "không có đơn nào như thế" và trả về `null`. Mọi mã lỗi khác đều ném ra
+ * — một sự cố bên kho KHÔNG được phép biến thành "không tìm thấy đơn hàng" trên
+ * trang khách đang chờ tiền về, vì hai chuyện đó cần hai câu trả lời khác nhau.
+ */
+async function readOrder(url: string): Promise<Order | null> {
+  const response = await warehouseFetch(url);
+
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error(`Trang quản trị trả về HTTP ${response.status} khi đọc đơn hàng.`);
+  }
+
+  return (await response.json()) as Order;
+}
+
+/**
+ * reserves ref + orderCode before the payment link exists, so PayOS can be told both
+ *
+ * Không gọi mạng: mã sinh ngay tại đây, và bảng bên kho tự chặn trùng lúc lưu.
+ * Thêm một chặng mạng vào đây chỉ làm khách chờ thêm ngay trước khi thấy mã QR.
+ */
+export async function reserveOrder(): Promise<{ ref: string; orderCode: number }> {
+  return { ref: newRef(), orderCode: newOrderCode() };
+}
+
+export async function saveOrder(order: Order): Promise<Order> {
+  const response = await warehouseFetch(ROOT, {
+    method: "POST",
+    body: JSON.stringify({ ref: order.ref, order_code: order.orderCode, payload: order }),
   });
+
+  if (!response.ok) {
+    const data = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(
+      data?.error ?? `Trang quản trị trả về HTTP ${response.status} khi lưu đơn hàng.`,
+    );
+  }
+
+  return order;
 }
 
-export function saveOrder(order: Order): Promise<Order> {
-  return transaction((store) => {
-    store.orders[order.ref] = order;
-    return order;
+export function getOrder(ref: string): Promise<Order | null> {
+  return readOrder(at(ref));
+}
+
+export function getOrderByCode(orderCode: number): Promise<Order | null> {
+  return readOrder(`${ROOT}/by-code/${orderCode}`);
+}
+
+/**
+ * Ghi một phần thay đổi vào đơn.
+ *
+ * Bên kho hoà `patch` vào đơn trong một transaction có khoá dòng, nên webhook
+ * PayOS và vòng poll chạy sát nhau vẫn không xoá mất phần của nhau.
+ */
+export async function updateOrder(ref: string, patch: Partial<Order>): Promise<Order | null> {
+  const response = await warehouseFetch(at(ref), {
+    method: "PATCH",
+    body: JSON.stringify({ patch }),
   });
-}
 
-export async function getOrder(ref: string): Promise<Order | null> {
-  const store = await read();
-  return store.orders[ref] ?? null;
-}
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error(`Trang quản trị trả về HTTP ${response.status} khi cập nhật đơn hàng.`);
+  }
 
-export async function getOrderByCode(orderCode: number): Promise<Order | null> {
-  const store = await read();
-  return Object.values(store.orders).find((order) => order.orderCode === orderCode) ?? null;
-}
-
-export function updateOrder(ref: string, patch: Partial<Order>): Promise<Order | null> {
-  return transaction((store) => {
-    const current = store.orders[ref];
-    if (!current) return null;
-    const next = { ...current, ...patch };
-    store.orders[ref] = next;
-    return next;
-  });
+  return (await response.json()) as Order;
 }
 
 /**
  * Giành quyền gửi thư xác nhận cho một đơn.
  *
- * Trả về đơn hàng khi giành được, `null` khi đã có người khác giành trước.
- * Việc kiểm tra và đánh dấu nằm gọn trong MỘT `transaction`, nên webhook và
- * vòng poll chạy sát nhau vẫn chỉ một bên thắng — tách thành đọc rồi ghi là mở
- * ra đúng khe hở để cả hai cùng thấy "chưa gửi" và cùng gửi.
+ * Trả về đơn hàng khi giành được, `null` khi đã có người khác giành trước. Việc
+ * kiểm tra và đánh dấu nằm gọn trong một transaction bên kho (409 = đã có người
+ * giành trước), nên webhook và vòng poll chạy sát nhau vẫn chỉ một bên thắng.
  */
-export function claimConfirmationEmail(ref: string): Promise<Order | null> {
-  return transaction((store) => {
-    const current = store.orders[ref];
-    if (!current || current.confirmationEmailSentAt) return null;
-    const next = { ...current, confirmationEmailSentAt: Date.now() };
-    store.orders[ref] = next;
-    return next;
-  });
+export async function claimConfirmationEmail(ref: string): Promise<Order | null> {
+  const response = await warehouseFetch(`${at(ref)}/email-claim`, { method: "POST" });
+
+  if (response.status === 404 || response.status === 409) return null;
+  if (!response.ok) {
+    throw new Error(`Trang quản trị trả về HTTP ${response.status} khi nhận gửi thư xác nhận.`);
+  }
+
+  return (await response.json()) as Order;
 }
 
 /** trả lại quyền khi gửi hỏng, để lần xác nhận sau còn thử lại được */
-export function releaseConfirmationEmail(ref: string): Promise<Order | null> {
-  return transaction((store) => {
-    const current = store.orders[ref];
-    if (!current) return null;
-    const next = { ...current };
-    delete next.confirmationEmailSentAt;
-    store.orders[ref] = next;
-    return next;
-  });
+export async function releaseConfirmationEmail(ref: string): Promise<Order | null> {
+  const response = await warehouseFetch(`${at(ref)}/email-claim`, { method: "DELETE" });
+
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error(`Trang quản trị trả về HTTP ${response.status} khi trả lại việc gửi thư.`);
+  }
+
+  return (await response.json()) as Order;
 }

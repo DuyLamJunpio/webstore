@@ -52,9 +52,17 @@ export async function syncOrderStatus(order: Order): Promise<Order> {
 
   // no merchant keys: the QR is the shop's own account, so nobody is watching it
   if (order.payment.provider !== "payos" || !isPayosConfigured()) {
-    return Date.now() > order.expiresAt
-      ? ((await updateOrder(order.ref, { status: "EXPIRED" })) ?? order)
-      : order;
+    if (Date.now() <= order.expiresAt) return order;
+
+    try {
+      return (await updateOrder(order.ref, { status: "EXPIRED" })) ?? order;
+    } catch (error) {
+      // Ghi được hay không thì mã QR cũng đã hết hạn; nói thật với khách đang
+      // xem trang, còn việc ghi lại để lần poll sau. Sự cố bên kho không được
+      // biến thành trang lỗi ở đây.
+      console.error(`[order-status] không ghi được hạn của ${order.ref}`, error);
+      return { ...order, status: "EXPIRED" };
+    }
   }
 
   try {
