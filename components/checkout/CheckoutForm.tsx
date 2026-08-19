@@ -17,9 +17,9 @@ import {
   defaultMethod,
   itemsToFreeShipping,
   shippingFeeFor,
-  useSales,
   type PaymentMethodKey,
 } from "@/lib/sales";
+import { useSales } from "@/lib/sales-context";
 import { ArrowRight } from "../icons";
 
 /** the shop has no accounts, so the last address typed is the only "profile" there is */

@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "@/lib/cart";
-import { defaultMethod, shippingFeeFor, useSales } from "@/lib/sales";
+import { defaultMethod, shippingFeeFor } from "@/lib/sales";
+import { useSales } from "@/lib/sales-context";
 import { formatPrice } from "@/lib/data";
 import QuantityStepper from "../QuantityStepper";
 import { ArrowRight } from "../icons";

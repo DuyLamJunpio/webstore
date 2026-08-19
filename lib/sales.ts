@@ -1,8 +1,10 @@
-"use client";
-
 /**
  * Cài đặt bán hàng do trang quản trị quyết định: hình thức thanh toán nào đang
  * mở và phí giao hàng tính ra sao.
+ *
+ * Cố ý KHÔNG có "use client": máy chủ cũng dùng những hàm này để định giá lại
+ * đơn. Đánh dấu client thì Next biến chúng thành đầu mối gọi sang trình duyệt,
+ * và mọi lời gọi từ route API đều nổ.
  *
  * Trước đây phí giao hàng là hai hằng số trong `lib/checkout.ts`, muốn đổi phải
  * sửa mã rồi triển khai lại. Giờ chủ shop tự chỉnh trong trang quản trị.
@@ -10,8 +12,6 @@
  * Số tiền hiển thị ở đây chỉ để khách xem trước; con số tính tiền thật vẫn do
  * máy chủ dựng lại từ cùng cấu hình này lúc đặt hàng.
  */
-
-import { createContext, useContext, type ReactNode } from "react";
 
 export type PaymentMethodKey = "bank_transfer" | "cod";
 
@@ -81,17 +81,3 @@ export const enabledMethods = (settings: SalesSettings): PaymentMethodKey[] =>
  */
 export const defaultMethod = (settings: SalesSettings): PaymentMethodKey =>
   enabledMethods(settings)[0] ?? "bank_transfer";
-
-const SalesContext = createContext<SalesSettings>(SALES_MAC_DINH);
-
-export function SalesProvider({
-  value,
-  children,
-}: {
-  value: SalesSettings;
-  children: ReactNode;
-}) {
-  return <SalesContext.Provider value={value}>{children}</SalesContext.Provider>;
-}
-
-export const useSales = () => useContext(SalesContext);
