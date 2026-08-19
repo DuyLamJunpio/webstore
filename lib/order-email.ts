@@ -283,18 +283,37 @@ export async function sendOrderConfirmation(order: Order): Promise<void> {
     return;
   }
 
-  // Giành quyền TRƯỚC khi gửi. Giành sau thì hai tiến trình cùng gửi xong mới
-  // phát hiện ra nhau, lúc đó khách đã nhận hai lá thư rồi.
-  const claimed = await claimConfirmationEmail(order.ref);
+  /*
+   * Giành quyền TRƯỚC khi gửi. Giành sau thì hai tiến trình cùng gửi xong mới
+   * phát hiện ra nhau, lúc đó khách đã nhận hai lá thư rồi.
+   *
+   * Cờ này nằm bên kho, nên giành quyền là một lần gọi mạng và có thể hỏng. Hàm
+   * này được gọi ngay trong lúc dựng trang đơn hàng, nên một lá thư gửi trễ
+   * KHÔNG được phép biến thành trang lỗi trước mặt khách: bỏ qua lần này, vòng
+   * poll của trang thanh toán sẽ chạy lại qua đây sau vài giây.
+   */
+  let claimed: Order | null;
+  try {
+    claimed = await claimConfirmationEmail(order.ref);
+  } catch (error) {
+    console.error(`[email] không giành được quyền gửi thư cho đơn ${order.ref}`, error);
+    return;
+  }
   if (!claimed) return;
 
   try {
     await deliver(renderOrderConfirmation(claimed));
     console.log(`[email] đã gửi xác nhận đơn ${claimed.ref} tới ${claimed.customer.email}`);
   } catch (error) {
+    console.error(`[email] gửi xác nhận đơn ${claimed.ref} thất bại`, error);
+
     // Mở lại cờ để lần xác nhận sau còn thử lại — vòng poll của trang thanh
     // toán sẽ chạy qua đây lần nữa sau vài giây.
-    await releaseConfirmationEmail(claimed.ref);
-    console.error(`[email] gửi xác nhận đơn ${claimed.ref} thất bại`, error);
+    try {
+      await releaseConfirmationEmail(claimed.ref);
+    } catch (releaseError) {
+      // Không mở lại được thì đơn này mất lá thư xác nhận, chứ không mất tiền.
+      console.error(`[email] không mở lại được cờ gửi thư đơn ${claimed.ref}`, releaseError);
+    }
   }
 }

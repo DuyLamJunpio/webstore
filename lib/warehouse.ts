@@ -27,11 +27,45 @@ export type WarehouseResult =
 const TIMEOUT_MS = 15_000;
 
 /**
- * Bí mật dùng chung với trang quản trị. Chỉ dùng cho endpoint báo đã thanh toán:
- * endpoint đó đổi trạng thái tiền bạc, mà chính khách đặt hàng cũng biết mã đơn
- * của mình, nên nếu không xác thực thì họ tự đánh dấu "đã trả tiền" được.
+ * Bí mật dùng chung với trang quản trị, cho những endpoint không được để ngỏ:
+ *
+ *   • báo đã thanh toán — nó đổi trạng thái tiền bạc, mà chính khách đặt hàng
+ *     cũng biết mã đơn của mình, nên không xác thực là họ tự đánh dấu "đã trả
+ *     tiền" được;
+ *   • chỗ lưu đơn của trang thanh toán — payload có tên, số điện thoại và địa
+ *     chỉ của khách.
  */
 const WEBHOOK_SECRET = process.env.WAREHOUSE_WEBHOOK_SECRET ?? "";
+
+/**
+ * Gọi một endpoint server-to-server của trang quản trị.
+ *
+ * Cố ý ném lỗi khi chưa cấu hình thay vì trả về một giá trị rỗng: những endpoint
+ * đi qua đây giữ đơn hàng, mà một đơn "không tìm thấy" vì thiếu biến môi trường
+ * thì trông y như một đơn không tồn tại — hỏng cùng một cách nhưng mất hàng giờ
+ * mới đoán ra.
+ */
+export async function warehouseFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  if (!isWarehouseConfigured()) {
+    throw new Error("Chưa cấu hình WAREHOUSE_API_URL nên không gọi được trang quản trị.");
+  }
+  if (!WEBHOOK_SECRET) {
+    throw new Error("Chưa cấu hình WAREHOUSE_WEBHOOK_SECRET nên trang quản trị sẽ từ chối.");
+  }
+
+  return fetch(`${BASE}${path}`, {
+    ...init,
+    // đơn hàng đổi từng giây, không có gì ở đây được phép đọc từ bộ đệm
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+      "X-Storefront-Secret": WEBHOOK_SECRET,
+      ...(init.body ? { "Content-Type": "application/json" } : {}),
+      ...init.headers,
+    },
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+}
 
 /**
  * Tạo đơn bên quản trị. Chỉ gửi id biến thể và số lượng — giá do bên đó tự
