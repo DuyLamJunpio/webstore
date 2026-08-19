@@ -15,11 +15,16 @@ import { useCart } from "@/lib/cart";
 import { formatPrice } from "@/lib/data";
 import {
   defaultMethod,
+  enabledMethods,
   itemsToFreeShipping,
   shippingFeeFor,
-  useSales,
+  MO_TA_PHUONG_THUC,
+  NHAN_NUT_DANG_GUI,
+  NHAN_NUT_DAT,
+  TEN_PHUONG_THUC,
   type PaymentMethodKey,
 } from "@/lib/sales";
+import { useSales } from "@/lib/sales-context";
 import { ArrowRight } from "../icons";
 
 /** the shop has no accounts, so the last address typed is the only "profile" there is */
@@ -149,6 +154,7 @@ function CheckoutFields({
   subtotal,
 }: Pick<ReturnType<typeof useCart>, "items" | "count" | "subtotal">) {
   const sales = useSales();
+  const [method, setMethod] = useState<PaymentMethodKey>(() => defaultMethod(sales));
   const router = useRouter();
 
   const [customer, setCustomer] = useState<CustomerInfo>(readDraft);
@@ -230,15 +236,13 @@ function CheckoutFields({
    * Hai hình thức có thể ra hai mức phí khác nhau, nên tính sẵn cả hai: bảng tổng
    * kết theo hình thức của nút chính, còn nút kia tự nói mức của mình.
    */
-  const chuyenKhoanMo = sales.bank_transfer.enabled;
-  const codMo = sales.cod.enabled;
-  const hinhThucChinh = defaultMethod(sales);
+  const cachChon = enabledMethods(sales);
 
-  const phiChuyenKhoan = shippingFeeFor(sales, "bank_transfer", count);
-  const phiCod = shippingFeeFor(sales, "cod", count);
-
-  const shipping = hinhThucChinh === "cod" ? phiCod : phiChuyenKhoan;
-  const conThieuDeMienPhi = itemsToFreeShipping(sales, hinhThucChinh, count);
+  // Phí giao hàng, ngưỡng miễn phí và tổng tiền đều tính theo hình thức khách
+  // đang chọn: chủ shop khai riêng từng hình thức bên trang quản trị, nên hai
+  // cách trả tiền có thể ra hai con số khác nhau cho cùng một giỏ.
+  const shipping = shippingFeeFor(sales, method, count);
+  const conThieuDeMienPhi = itemsToFreeShipping(sales, method, count);
   const total = subtotal + shipping;
 
   return (
@@ -246,7 +250,7 @@ function CheckoutFields({
       onSubmit={(event) => {
         event.preventDefault();
         // Bấm Enter trong ô nhập = bấm nút chính.
-        void datHang(hinhThucChinh);
+        void datHang(method);
       }}
       noValidate className="mt-10 grid gap-12 lg:grid-cols-[minmax(0,1fr)_360px]">
       <section>
@@ -377,61 +381,65 @@ function CheckoutFields({
             </div>
           </dl>
 
-          {chuyenKhoanMo && (
-            <button
-              type="submit"
-              disabled={submitting}
-              className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-ink text-sm font-medium text-cream transition-opacity hover:opacity-90 disabled:opacity-50"
-            >
-              {dangGui === "bank_transfer" ? "Đang tạo mã QR…" : "Tạo mã QR chuyển khoản"}
-              {dangGui !== "bank_transfer" && <ArrowRight />}
-            </button>
+          {/* Chọn một trong hai rồi mới đặt: phí giao hàng của mỗi hình thức do chủ
+              shop khai riêng, nên tổng tiền ở trên phải đổi theo lựa chọn trước khi
+              khách bấm. Chỉ mở một hình thức thì khỏi bắt chọn. */}
+          {cachChon.length > 1 && (
+            <fieldset className="mt-6 border-t border-line pt-5">
+              <legend className="eyebrow text-ink/60">Hình thức thanh toán</legend>
+              <div className="mt-4 flex flex-col gap-2.5">
+                {cachChon.map((key) => {
+                  const phi = shippingFeeFor(sales, key, count);
+                  return (
+                    <label
+                      key={key}
+                      className={`flex cursor-pointer gap-3 rounded-card border p-3.5 transition ${
+                        method === key ? "border-ink bg-cream" : "border-line hover:border-ink/40"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value={key}
+                        checked={method === key}
+                        onChange={() => setMethod(key)}
+                        className="mt-1 accent-ink"
+                      />
+                      <span className="min-w-0">
+                        <span className="flex flex-wrap items-baseline justify-between gap-x-3">
+                          <span className="text-[15px] font-medium">{TEN_PHUONG_THUC[key]}</span>
+                          <span className="text-[13px] text-muted">
+                            Phí giao hàng: {phi === 0 ? "miễn phí" : formatPrice(phi)}
+                          </span>
+                        </span>
+                        <span className="mt-0.5 block text-[13px] text-muted">
+                          {MO_TA_PHUONG_THUC[key]}
+                        </span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
           )}
 
-          {codMo && (
-            <>
-              <button
-                type="button"
-                onClick={() => void datHang("cod")}
-                disabled={submitting}
-                className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-full border border-ink text-sm font-medium text-ink transition-colors hover:bg-ink hover:text-cream disabled:opacity-50"
-              >
-                {dangGui === "cod" ? "Đang gửi đơn…" : "Thanh toán khi nhận hàng"}
-              </button>
-
-              {/* Phí giao hàng của COD do chủ shop khai riêng, có thể khác mức của
-                  chuyển khoản, nên nói thẳng con số khách sẽ trả nếu chọn nút này. */}
-              {chuyenKhoanMo && phiCod !== phiChuyenKhoan && (
-                <p className="mt-2 text-[13px] leading-relaxed text-muted">
-                  Chọn cách này thì phí giao hàng là{" "}
-                  <span className="font-medium text-ink">
-                    {phiCod === 0 ? "miễn phí" : formatPrice(phiCod)}
-                  </span>{" "}
-                  — tổng cộng{" "}
-                  <span className="font-medium text-ink">{formatPrice(subtotal + phiCod)}</span>.
-                </p>
-              )}
-            </>
-          )}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-ink text-sm font-medium text-cream transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {submitting ? NHAN_NUT_DANG_GUI[method] : NHAN_NUT_DAT[method]}
+            {!submitting && <ArrowRight />}
+          </button>
 
           <p aria-live="polite" className="mt-3 min-h-5 text-[13px] leading-relaxed text-gold-deep">
             {formError}
           </p>
 
           <p className="text-[13px] leading-relaxed text-muted">
-            {chuyenKhoanMo && (
-              <>
-                Bước tiếp theo là mã QR VietQR để chuyển khoản qua ứng dụng ngân hàng. Đơn hàng chỉ
-                được xác nhận sau khi chúng tôi nhận được tiền.
-              </>
-            )}
-            {codMo && (
-              <>
-                {chuyenKhoanMo && " "}
-                Chọn thanh toán khi nhận hàng thì đơn được gửi tới shop ngay, bạn trả tiền mặt cho
-                người giao.
-              </>
-            )}
+            {method === "cod"
+              ? "Hoá đơn được gửi thẳng tới shop, không có mã QR. Bạn trả tiền mặt cho người giao hàng."
+              : "Bước tiếp theo là mã QR VietQR để chuyển khoản qua ứng dụng ngân hàng. Đơn hàng chỉ được xác nhận sau khi chúng tôi nhận được tiền."}
           </p>
 
           <Link
