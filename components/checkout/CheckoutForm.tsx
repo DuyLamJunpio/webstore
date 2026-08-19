@@ -15,11 +15,9 @@ import { useCart } from "@/lib/cart";
 import { formatPrice } from "@/lib/data";
 import {
   defaultMethod,
-  enabledMethods,
+  itemsToFreeShipping,
   shippingFeeFor,
   useSales,
-  MO_TA_PHUONG_THUC,
-  TEN_PHUONG_THUC,
   type PaymentMethodKey,
 } from "@/lib/sales";
 import { ArrowRight } from "../icons";
@@ -151,14 +149,14 @@ function CheckoutFields({
   subtotal,
 }: Pick<ReturnType<typeof useCart>, "items" | "count" | "subtotal">) {
   const sales = useSales();
-  const cachChon = enabledMethods(sales);
-  const [method, setMethod] = useState<PaymentMethodKey>(defaultMethod(sales));
   const router = useRouter();
 
   const [customer, setCustomer] = useState<CustomerInfo>(readDraft);
   const [errors, setErrors] = useState<CustomerErrors>({});
   const [formError, setFormError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  // Nhớ đang gửi bằng hình thức nào để chỉ khoá đúng nút khách vừa bấm.
+  const [dangGui, setDangGui] = useState<PaymentMethodKey | null>(null);
+  const submitting = dangGui !== null;
 
   const update = (name: CustomerField, value: string) => {
     setCustomer((current) => ({ ...current, [name]: value }));
@@ -166,8 +164,14 @@ function CheckoutFields({
     setErrors((current) => (current[name] ? { ...current, [name]: undefined } : current));
   };
 
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  /**
+   * Đặt hàng bằng một hình thức cụ thể.
+   *
+   * Hai nút gọi cùng hàm này, chỉ khác mã hình thức gửi lên: chuyển khoản đi
+   * tiếp sang trang mã QR, còn trả khi nhận hàng thì đơn chốt luôn tại đây.
+   */
+  async function datHang(method: PaymentMethodKey) {
+    if (submitting) return;
     setFormError("");
 
     const found = validateCustomer(customer);
@@ -177,7 +181,7 @@ function CheckoutFields({
       return;
     }
 
-    setSubmitting(true);
+    setDangGui(method);
     try {
       const response = await fetch("/api/checkout", {
         method: "POST",
@@ -213,17 +217,38 @@ function CheckoutFields({
     } catch {
       setFormError("Mất kết nối. Vui lòng kiểm tra mạng và thử lại.");
     } finally {
-      setSubmitting(false);
+      setDangGui(null);
     }
   }
 
-  // Cùng phép tính máy chủ chạy lại lúc đặt hàng, nên con số khách thấy ở đây
-  // chính là con số ghi vào đơn.
-  const shipping = shippingFeeFor(sales, method, count);
+  /**
+   * Phí giao hàng do chủ shop khai trong trang quản trị, RIÊNG cho từng hình thức
+   * thanh toán: mỗi hình thức có mức phí, người trả phí (khách hay shop) và ngưỡng
+   * miễn phí theo số món của nó. Ở đây chỉ đọc kết quả — cùng phép tính máy chủ
+   * chạy lại lúc đặt hàng, nên con số khách thấy chính là con số ghi vào đơn.
+   *
+   * Hai hình thức có thể ra hai mức phí khác nhau, nên tính sẵn cả hai: bảng tổng
+   * kết theo hình thức của nút chính, còn nút kia tự nói mức của mình.
+   */
+  const chuyenKhoanMo = sales.bank_transfer.enabled;
+  const codMo = sales.cod.enabled;
+  const hinhThucChinh = defaultMethod(sales);
+
+  const phiChuyenKhoan = shippingFeeFor(sales, "bank_transfer", count);
+  const phiCod = shippingFeeFor(sales, "cod", count);
+
+  const shipping = hinhThucChinh === "cod" ? phiCod : phiChuyenKhoan;
+  const conThieuDeMienPhi = itemsToFreeShipping(sales, hinhThucChinh, count);
   const total = subtotal + shipping;
 
   return (
-    <form onSubmit={submit} noValidate className="mt-10 grid gap-12 lg:grid-cols-[minmax(0,1fr)_360px]">
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        // Bấm Enter trong ô nhập = bấm nút chính.
+        void datHang(hinhThucChinh);
+      }}
+      noValidate className="mt-10 grid gap-12 lg:grid-cols-[minmax(0,1fr)_360px]">
       <section>
         <h2 className="eyebrow text-ink/60">Thông tin nhận hàng</h2>
         <p className="mt-2 text-[13px] text-muted">
@@ -300,37 +325,6 @@ function CheckoutFields({
           />
         </div>
 
-        {/* Chỉ bày những hình thức chủ shop đang mở; một hình thức thì khỏi bắt chọn. */}
-        {cachChon.length > 1 && (
-          <fieldset className="mt-10">
-            <legend className="eyebrow text-ink/60">Hình thức thanh toán</legend>
-            <div className="mt-4 flex flex-col gap-3">
-              {cachChon.map((key) => (
-                <label
-                  key={key}
-                  className={`flex cursor-pointer gap-3 rounded-card border p-4 transition ${
-                    method === key ? "border-ink bg-surface" : "border-line hover:border-ink/40"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value={key}
-                    checked={method === key}
-                    onChange={() => setMethod(key)}
-                    className="mt-1 accent-ink"
-                  />
-                  <span>
-                    <span className="block text-[15px] font-medium">{TEN_PHUONG_THUC[key]}</span>
-                    <span className="mt-0.5 block text-[13px] text-muted">
-                      {MO_TA_PHUONG_THUC[key]}
-                    </span>
-                  </span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-        )}
       </section>
 
       <aside className="lg:sticky lg:top-[92px] lg:self-start">
@@ -370,28 +364,74 @@ function CheckoutFields({
               <dt className="text-muted">Phí giao hàng</dt>
               <dd className="font-medium">{shipping === 0 ? "Miễn phí" : formatPrice(shipping)}</dd>
             </div>
+            {/* Nói rõ vì sao ra con số đó: ngưỡng miễn phí là thứ chủ shop khai
+                bên quản trị, khách không có cách nào đoán được. */}
+            {conThieuDeMienPhi > 0 && (
+              <p className="-mt-1 text-[13px] text-muted">
+                Mua thêm {conThieuDeMienPhi} sản phẩm để được miễn phí giao hàng.
+              </p>
+            )}
             <div className="mt-1 flex justify-between border-t border-line pt-4 text-lg">
               <dt className="font-medium">Tổng cộng</dt>
               <dd className="font-medium">{formatPrice(total)}</dd>
             </div>
           </dl>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-ink text-sm font-medium text-cream transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
-            {submitting ? "Đang tạo mã QR…" : "Tạo mã QR chuyển khoản"}
-            {!submitting && <ArrowRight />}
-          </button>
+          {chuyenKhoanMo && (
+            <button
+              type="submit"
+              disabled={submitting}
+              className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-ink text-sm font-medium text-cream transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {dangGui === "bank_transfer" ? "Đang tạo mã QR…" : "Tạo mã QR chuyển khoản"}
+              {dangGui !== "bank_transfer" && <ArrowRight />}
+            </button>
+          )}
+
+          {codMo && (
+            <>
+              <button
+                type="button"
+                onClick={() => void datHang("cod")}
+                disabled={submitting}
+                className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-full border border-ink text-sm font-medium text-ink transition-colors hover:bg-ink hover:text-cream disabled:opacity-50"
+              >
+                {dangGui === "cod" ? "Đang gửi đơn…" : "Thanh toán khi nhận hàng"}
+              </button>
+
+              {/* Phí giao hàng của COD do chủ shop khai riêng, có thể khác mức của
+                  chuyển khoản, nên nói thẳng con số khách sẽ trả nếu chọn nút này. */}
+              {chuyenKhoanMo && phiCod !== phiChuyenKhoan && (
+                <p className="mt-2 text-[13px] leading-relaxed text-muted">
+                  Chọn cách này thì phí giao hàng là{" "}
+                  <span className="font-medium text-ink">
+                    {phiCod === 0 ? "miễn phí" : formatPrice(phiCod)}
+                  </span>{" "}
+                  — tổng cộng{" "}
+                  <span className="font-medium text-ink">{formatPrice(subtotal + phiCod)}</span>.
+                </p>
+              )}
+            </>
+          )}
 
           <p aria-live="polite" className="mt-3 min-h-5 text-[13px] leading-relaxed text-gold-deep">
             {formError}
           </p>
 
           <p className="text-[13px] leading-relaxed text-muted">
-            Bước tiếp theo là mã QR VietQR để chuyển khoản qua ứng dụng ngân hàng. Đơn hàng chỉ được
-            xác nhận sau khi chúng tôi nhận được tiền.
+            {chuyenKhoanMo && (
+              <>
+                Bước tiếp theo là mã QR VietQR để chuyển khoản qua ứng dụng ngân hàng. Đơn hàng chỉ
+                được xác nhận sau khi chúng tôi nhận được tiền.
+              </>
+            )}
+            {codMo && (
+              <>
+                {chuyenKhoanMo && " "}
+                Chọn thanh toán khi nhận hàng thì đơn được gửi tới shop ngay, bạn trả tiền mặt cho
+                người giao.
+              </>
+            )}
           </p>
 
           <Link
