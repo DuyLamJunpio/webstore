@@ -7,6 +7,7 @@
  */
 
 import { getCatalogue } from "@/lib/catalogue";
+import { getContent } from "@/lib/content";
 import { after } from "next/server";
 import type { NextRequest } from "next/server";
 import {
@@ -82,7 +83,14 @@ export async function POST(request: NextRequest) {
     return bad("Vui lòng kiểm tra lại thông tin nhận hàng.", 400, { fieldErrors });
   }
 
-  const priced = priceCart(await getCatalogue(), body.lines ?? []);
+  // Cài đặt bán hàng lấy lại từ trang quản trị chứ không tin phía trình duyệt:
+  // phí giao hàng và việc hình thức thanh toán có đang mở hay không đều là tiền.
+  const { sales } = await getContent();
+  if (!sales.bank_transfer.enabled) {
+    return bad("Hình thức thanh toán chuyển khoản đang tạm ngưng. Vui lòng liên hệ shop.", 503);
+  }
+
+  const priced = priceCart(await getCatalogue(), body.lines ?? [], sales, "bank_transfer");
   if (!priced.ok) return bad(priced.error);
   const cart = priced.cart;
 

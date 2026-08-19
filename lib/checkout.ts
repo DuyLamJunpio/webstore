@@ -13,17 +13,10 @@
  */
 
 import { IS_TEST_PRICING, type Catalogue } from "./data";
+import { shippingFeeFor, type PaymentMethodKey, type SalesSettings } from "./sales";
 
-/**
- * Giao hàng miễn phí từ mức này — con số kinh doanh, chỉnh thoải mái.
- *
- * Ở chế độ giá thử thì hạ về 0, tức luôn miễn phí ship. Không có dòng này thì
- * đơn 1.000 ₫ vẫn bị cộng 30.000 ₫ tiền ship và tổng ra 31.000 ₫ — đúng cái
- * khoản mà giá thử sinh ra để tránh.
- */
-export const FREE_SHIPPING_THRESHOLD = IS_TEST_PRICING ? 0 : 500_000;
-export const SHIPPING_FLAT = 30_000;
-
+// Phí giao hàng và ngưỡng miễn phí do trang quản trị khai (`lib/sales.tsx`),
+// không còn là hằng số ở đây.
 /** how long a bank-transfer QR stays valid before PayOS closes the link */
 export const PAYMENT_WINDOW_MINUTES = 15;
 
@@ -135,7 +128,12 @@ export type PriceResult = { ok: true; cart: PricedCart } | { ok: false; error: s
  * with — price, stock ceiling, product name — is looked up here, so a tampered
  * localStorage cart buys nothing it should not.
  */
-export function priceCart(catalogue: Catalogue, input: CheckoutLine[]): PriceResult {
+export function priceCart(
+  catalogue: Catalogue,
+  input: CheckoutLine[],
+  sales: SalesSettings,
+  method: PaymentMethodKey = "bank_transfer",
+): PriceResult {
   if (!Array.isArray(input) || input.length === 0) return { ok: false, error: "Giỏ hàng đang trống." };
   if (input.length > MAX_LINES) return { ok: false, error: "Giỏ hàng có quá nhiều sản phẩm." };
 
@@ -185,7 +183,9 @@ export function priceCart(catalogue: Catalogue, input: CheckoutLine[]): PriceRes
   }
 
   const subtotal = lines.reduce((sum, line) => sum + line.total, 0);
-  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FLAT;
+  const count = lines.reduce((sum, line) => sum + line.qty, 0);
+  // Ngưỡng miễn phí bên quản trị khai theo số món, nên đếm món chứ không cộng tiền.
+  const shipping = shippingFeeFor(sales, method, count);
   // PayOS only accepts whole đồng; a catalogue price with a decimal in it would
   // otherwise reach the bank rounded and no longer match what the page showed
   const total = Math.round(subtotal + shipping);
@@ -194,7 +194,7 @@ export function priceCart(catalogue: Catalogue, input: CheckoutLine[]): PriceRes
     ok: true,
     cart: {
       lines,
-      count: lines.reduce((sum, line) => sum + line.qty, 0),
+      count,
       subtotal,
       shipping,
       total,

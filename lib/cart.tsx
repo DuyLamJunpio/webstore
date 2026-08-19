@@ -15,7 +15,6 @@
  */
 
 import { useCallback, useMemo, useSyncExternalStore } from "react";
-import { FREE_SHIPPING_THRESHOLD } from "./checkout";
 
 export type CartItem = {
   /** variant id — one line per colour + size combination */
@@ -50,9 +49,6 @@ const STORAGE_KEY = "tbc.cart.v1";
 const COOKIE_KEY = "tbc_cart_id";
 const MAX_AGE_DAYS = 30;
 const MAX_AGE_MS = MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
-
-/** re-exported so cart UI keeps one import, while checkout owns the number */
-export { FREE_SHIPPING_THRESHOLD };
 
 /** stable reference — required by useSyncExternalStore's server snapshot */
 const EMPTY: Snapshot = { items: [], hydrated: false, cartId: null, isOpen: false };

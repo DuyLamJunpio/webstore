@@ -64,8 +64,12 @@ export default function ProductCard({
       </div>
 
       <div className="mt-3.5 flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-[17px] font-medium leading-snug">
+        <div className="min-w-0">
+          {/* Tên bên quản trị hay dài kiểu "Áo Phông ... Form Oversize Nam Nữ Chất
+              Liệu Cao Cấp". Để nguyên thì thẻ này cao gấp đôi thẻ bên cạnh và cả
+              hàng sản phẩm so le nhau, nên cắt ở hai dòng và giữ tên đầy đủ trong
+              tooltip. */}
+          <h3 className="line-clamp-2 text-[17px] font-medium leading-snug" title={product.name}>
             <Link href={href}>{product.name}</Link>
           </h3>
           <p className="mt-1 text-[13px] text-muted">{product.colors.length} màu</p>

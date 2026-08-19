@@ -3,13 +3,21 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect } from "react";
-import { FREE_SHIPPING_THRESHOLD, useCart } from "@/lib/cart";
+import { useCart } from "@/lib/cart";
+import { itemsToFreeShipping, useSales } from "@/lib/sales";
 import { formatPrice } from "@/lib/data";
 import QuantityStepper from "./QuantityStepper";
 import { Bag, Close } from "./icons";
 
+/**
+ * Web mới chỉ có một đường thanh toán: chuyển khoản qua PayOS. Đặt tên hằng để
+ * lúc thêm COD thì thấy ngay chỗ nào cần cho khách chọn.
+ */
+const PHUONG_THUC = "bank_transfer" as const;
+
 export default function CartDrawer() {
   const { items, count, subtotal, isOpen, closeCart, setQty, remove } = useCart();
+  const sales = useSales();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -26,8 +34,13 @@ export default function CartDrawer() {
 
   if (!isOpen) return null;
 
-  const remaining = Math.max(FREE_SHIPPING_THRESHOLD - subtotal, 0);
-  const progress = Math.min((subtotal / FREE_SHIPPING_THRESHOLD) * 100, 100);
+  // Ngưỡng miễn phí giao hàng bên quản trị khai theo SỐ MÓN, nên thanh tiến trình
+  // cũng đếm món. Không đặt ngưỡng, hoặc vốn đã miễn phí, thì cả khối này biến mất
+  // thay vì hiện một lời hứa không có thật.
+  const nguong = sales[PHUONG_THUC].freeShippingMinItems;
+  const conThieu = itemsToFreeShipping(sales, PHUONG_THUC, count);
+  const hienThanhMienPhi = !sales[PHUONG_THUC].freeShipping && nguong !== null;
+  const progress = nguong ? Math.min((count / nguong) * 100, 100) : 100;
 
   return (
     <div className="fixed inset-0 z-70" role="dialog" aria-modal="true" aria-label="Giỏ hàng">
@@ -70,21 +83,23 @@ export default function CartDrawer() {
           </div>
         ) : (
           <>
-            <div className="border-b border-line px-5 py-4">
-              <p className="text-[13px] text-muted">
-                {remaining > 0 ? (
-                  <>
-                    Mua thêm <span className="font-medium text-ink">{formatPrice(remaining)}</span>{" "}
-                    để được miễn phí giao hàng.
-                  </>
-                ) : (
-                  <span className="font-medium text-ink">Bạn đã được miễn phí giao hàng.</span>
-                )}
-              </p>
-              <div className="mt-2 h-1 overflow-hidden rounded-full bg-line">
-                <div className="h-full rounded-full bg-gold" style={{ width: `${progress}%` }} />
+            {hienThanhMienPhi && (
+              <div className="border-b border-line px-5 py-4">
+                <p className="text-[13px] text-muted">
+                  {conThieu > 0 ? (
+                    <>
+                      Mua thêm <span className="font-medium text-ink">{conThieu} sản phẩm</span> để
+                      được miễn phí giao hàng.
+                    </>
+                  ) : (
+                    <span className="font-medium text-ink">Bạn đã được miễn phí giao hàng.</span>
+                  )}
+                </p>
+                <div className="mt-2 h-1 overflow-hidden rounded-full bg-line">
+                  <div className="h-full rounded-full bg-gold" style={{ width: `${progress}%` }} />
+                </div>
               </div>
-            </div>
+            )}
 
             <ul className="flex-1 overflow-y-auto px-5">
               {items.map((line) => (
@@ -103,7 +118,8 @@ export default function CartDrawer() {
                         <Link
                           href={`/products/${line.slug}`}
                           onClick={closeCart}
-                          className="text-[15px] font-medium leading-snug"
+                          className="line-clamp-2 text-[15px] font-medium leading-snug"
+                          title={line.name}
                         >
                           {line.name}
                         </Link>

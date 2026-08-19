@@ -6,8 +6,6 @@ import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 import {
   EMPTY_CUSTOMER,
-  FREE_SHIPPING_THRESHOLD,
-  SHIPPING_FLAT,
   validateCustomer,
   type CustomerErrors,
   type CustomerField,
@@ -15,6 +13,7 @@ import {
 } from "@/lib/checkout";
 import { useCart } from "@/lib/cart";
 import { formatPrice } from "@/lib/data";
+import { shippingFeeFor, useSales } from "@/lib/sales";
 import { ArrowRight } from "../icons";
 
 /** the shop has no accounts, so the last address typed is the only "profile" there is */
@@ -143,6 +142,7 @@ function CheckoutFields({
   count,
   subtotal,
 }: Pick<ReturnType<typeof useCart>, "items" | "count" | "subtotal">) {
+  const sales = useSales();
   const router = useRouter();
 
   const [customer, setCustomer] = useState<CustomerInfo>(readDraft);
@@ -206,7 +206,9 @@ function CheckoutFields({
     }
   }
 
-  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FLAT;
+  // Cùng phép tính máy chủ chạy lại lúc đặt hàng, nên con số khách thấy ở đây
+  // chính là con số ghi vào đơn.
+  const shipping = shippingFeeFor(sales, "bank_transfer", count);
   const total = subtotal + shipping;
 
   return (

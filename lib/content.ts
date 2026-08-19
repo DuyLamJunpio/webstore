@@ -12,6 +12,8 @@
 
 import { cache } from "react";
 
+import { SALES_MAC_DINH, type SalesSettings } from "./sales";
+
 /** Nhãn cache riêng, để lưu banner không phải dựng lại cả catalogue sản phẩm. */
 export const CONTENT_TAG = "content";
 
@@ -51,6 +53,8 @@ export type SiteContent = {
   announcement: string[];
   marquee: string[];
   headings: Record<string, string>;
+  /** Hình thức thanh toán và phí giao hàng, chỉnh bên trang quản trị. */
+  sales: SalesSettings;
 };
 
 /**
@@ -88,6 +92,7 @@ const MAC_DINH: SiteContent = {
   announcement: ["Ưu đãi mùa mới", "Giảm đến 30%", "Miễn phí giao hàng từ 500.000 ₫"],
   marquee: ["Đơn giản", "Hằng ngày", "Cho mọi người"],
   headings: {},
+  sales: SALES_MAC_DINH,
 };
 
 type ApiContent = {
@@ -113,10 +118,40 @@ type ApiContent = {
   marquee?: string[];
   announcement?: string[];
   headings?: Record<string, string>;
+  sales?: Record<
+    string,
+    {
+      enabled?: boolean;
+      free_shipping?: boolean;
+      shipping_fee?: number;
+      free_shipping_min_items?: number | null;
+    }
+  >;
 };
 
 /** Trang quản trị trả đường dẫn tương đối, ghép với địa chỉ của nó. */
 const mediaUrl = (path: string) => (path.startsWith("http") ? path : `${BASE}${path}`);
+
+/**
+ * Bản quản trị cũ chưa trả khối `sales`, và một khoá thiếu cũng không được phép
+ * làm hỏng cả trang, nên mỗi trường đều lùi về mặc định riêng của nó.
+ */
+function napSales(sales: ApiContent["sales"]): SalesSettings {
+  const doc = (key: keyof SalesSettings) => {
+    const raw = sales?.[key];
+    const macDinh = SALES_MAC_DINH[key];
+    if (!raw) return macDinh;
+
+    return {
+      enabled: raw.enabled ?? macDinh.enabled,
+      freeShipping: raw.free_shipping ?? macDinh.freeShipping,
+      shippingFee: Math.max(0, raw.shipping_fee ?? macDinh.shippingFee),
+      freeShippingMinItems: raw.free_shipping_min_items ?? null,
+    };
+  };
+
+  return { bank_transfer: doc("bank_transfer"), cod: doc("cod") };
+}
 
 async function fetchContent(): Promise<SiteContent | null> {
   if (!BASE) {
@@ -166,6 +201,7 @@ async function fetchContent(): Promise<SiteContent | null> {
       marquee: data.marquee?.length ? data.marquee : MAC_DINH.marquee,
       announcement: data.announcement?.length ? data.announcement : MAC_DINH.announcement,
       headings: data.headings ?? {},
+      sales: napSales(data.sales),
     };
   } catch (error) {
     console.error("[content] không đọc được nội dung trang chủ", error);

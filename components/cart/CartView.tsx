@@ -3,13 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "@/lib/cart";
-import { FREE_SHIPPING_THRESHOLD, SHIPPING_FLAT } from "@/lib/checkout";
+import { shippingFeeFor, useSales } from "@/lib/sales";
 import { formatPrice } from "@/lib/data";
 import QuantityStepper from "../QuantityStepper";
 import { ArrowRight } from "../icons";
 
 export default function CartView() {
   const { items, count, subtotal, hydrated, clear, setQty, remove } = useCart();
+  const sales = useSales();
 
   // giỏ hàng nằm trong localStorage nên phía server chưa có gì để dựng
   if (!hydrated) {
@@ -50,7 +51,8 @@ export default function CartView() {
     );
   }
 
-  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FLAT;
+  // Phí giao hàng theo cài đặt bên quản trị, tính trên số món trong giỏ.
+  const shipping = shippingFeeFor(sales, "bank_transfer", count);
 
   return (
     <div className="mt-10 grid gap-12 lg:grid-cols-[minmax(0,1fr)_340px]">
@@ -68,7 +70,7 @@ export default function CartView() {
               <div className="flex flex-1 flex-col">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h2 className="text-[17px] font-medium leading-snug">
+                    <h2 className="line-clamp-2 text-[17px] font-medium leading-snug" title={line.name}>
                       <Link href={`/products/${line.slug}`}>{line.name}</Link>
                     </h2>
                     <p className="mt-1 text-[13px] text-muted">
