@@ -65,17 +65,6 @@ export function itemsToFreeShipping(
   return Math.max(0, config.freeShippingMinItems - itemCount);
 }
 
-/** Tên hiển thị cho khách, dùng chung ở trang thanh toán và trong thư xác nhận. */
-export const TEN_PHUONG_THUC: Record<PaymentMethodKey, string> = {
-  bank_transfer: "Chuyển khoản ngân hàng",
-  cod: "Thanh toán khi nhận hàng",
-};
-
-export const MO_TA_PHUONG_THUC: Record<PaymentMethodKey, string> = {
-  bank_transfer: "Quét mã QR ngay sau khi đặt. Đơn được xác nhận khi shop nhận được tiền.",
-  cod: "Trả tiền mặt cho người giao hàng. Shop sẽ gọi xác nhận trước khi gửi đi.",
-};
-
 /** Thứ tự bày ra cho khách; cũng là thứ tự chọn hình thức mặc định. */
 export const THU_TU_PHUONG_THUC: PaymentMethodKey[] = ["bank_transfer", "cod"];
 
