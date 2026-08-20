@@ -47,9 +47,9 @@ type FieldProps = {
   value: string;
   error?: string;
   optional?: boolean;
-  /** câu giải thích ngắn dưới ô nhập — nhường chỗ cho lỗi khi có lỗi */
   hint?: string;
   type?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   autoComplete?: string;
   placeholder?: string;
   multiline?: boolean;
@@ -64,6 +64,7 @@ function Field({
   optional,
   hint,
   type = "text",
+  inputMode,
   autoComplete,
   placeholder,
   multiline,
@@ -77,31 +78,28 @@ function Field({
     placeholder,
     autoComplete,
     "aria-invalid": error ? true : undefined,
-    // trỏ sang cả khi chỉ có gợi ý: người dùng trình đọc màn hình cũng cần biết
-    // vì sao ô này cần điền, không riêng lúc đã gõ sai
     "aria-describedby": error || hint ? `${id}-error` : undefined,
     onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       onChange(name, event.target.value),
-    className: `w-full rounded-card border bg-surface px-4 text-[15px] outline-none transition-colors placeholder:text-muted/60 focus:border-ink ${
+    className: `w-full rounded-card border bg-surface px-4 text-sm sm:text-[15px] outline-none transition-colors placeholder:text-muted/60 focus:border-ink ${
       error ? "border-gold-deep" : "border-line-strong"
     }`,
   };
 
   return (
     <div className={multiline ? "sm:col-span-2" : undefined}>
-      <label htmlFor={id} className="mb-2 block text-[13px] font-medium">
+      <label htmlFor={id} className="mb-2 block text-xs sm:text-[13px] font-medium text-ink">
         {label}
         {optional && <span className="ml-1.5 font-normal text-muted">(tuỳ chọn)</span>}
       </label>
       {multiline ? (
         <textarea {...shared} rows={3} className={`${shared.className} py-3 leading-relaxed`} />
       ) : (
-        <input {...shared} type={type} className={`${shared.className} h-12`} />
+        <input {...shared} type={type} inputMode={inputMode} className={`${shared.className} h-12`} />
       )}
-      {/* một dòng dùng chung: có lỗi thì báo lỗi, không thì nhắc nhẹ vì sao cần ô này */}
       <p
         id={`${id}-error`}
-        className={`mt-1.5 min-h-4 text-[12px] ${error ? "text-gold-deep" : "text-muted"}`}
+        className={`mt-1.5 min-h-4 text-xs ${error ? "text-gold-deep font-medium" : "text-muted"}`}
       >
         {error || hint}
       </p>
@@ -281,6 +279,7 @@ function CheckoutFields({
             value={customer.phone}
             error={errors.phone}
             type="tel"
+            inputMode="tel"
             autoComplete="tel"
             placeholder="0901 234 567"
             onChange={update}
@@ -292,6 +291,7 @@ function CheckoutFields({
             error={errors.email}
             hint="Chúng tôi gửi xác nhận đơn hàng về đây"
             type="email"
+            inputMode="email"
             autoComplete="email"
             placeholder="ban@email.com"
             onChange={update}

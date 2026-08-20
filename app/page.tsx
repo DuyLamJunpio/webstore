@@ -1,10 +1,7 @@
 import AnnouncementBar from "@/components/AnnouncementBar";
 import BestSellers from "@/components/BestSellers";
 import Categories from "@/components/Categories";
-import FacebookPage from "@/components/FacebookPage";
 import Hero from "@/components/Hero";
-import InstagramFeed from "@/components/InstagramFeed";
-import Journal from "@/components/Journal";
 import NewArrivals from "@/components/NewArrivals";
 import Newsletter from "@/components/Newsletter";
 import Promises from "@/components/Promises";
@@ -23,21 +20,19 @@ export default async function Home() {
       <Hero />
       <AnnouncementBar />
       <NewArrivals />
-      <SeasonalDrop />
       <Categories />
+      <SeasonalDrop />
       <BestSellers
         products={bestSellers}
         filters={bestSellerFilters}
-        title={heading(content, "best_sellers.title", "Bán chạy nhất")}
-        subtitle={heading(content, "best_sellers.subtitle", "Những mẫu được khách chọn nhiều nhất.")}
+        title={heading(content, "best_sellers.title", "Bán Chạy Nhất")}
+        subtitle={heading(content, "best_sellers.subtitle", "Những mẫu trang phục được khách hàng yêu thích và lựa chọn nhiều nhất.")}
       />
-      <Promises />
       <ShopeeStore />
+      <Promises />
       <Testimonials />
-      <Journal />
-      <InstagramFeed />
-      <FacebookPage />
       <Newsletter />
     </>
   );
 }
+

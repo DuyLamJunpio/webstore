@@ -9,16 +9,16 @@ export const metadata: Metadata = {
 
 export default function CartPage() {
   return (
-    <div className="shell section">
-      <nav aria-label="Đường dẫn" className="text-[13px] text-muted">
+    <div className="shell section pt-6 sm:pt-8">
+      <nav aria-label="Đường dẫn" className="flex items-center gap-2 text-xs sm:text-[13px] text-muted">
         <Link href="/" className="transition-colors hover:text-ink">
           Trang chủ
         </Link>
-        <span className="px-2">/</span>
-        <span className="text-ink">Giỏ hàng</span>
+        <span>/</span>
+        <span className="font-semibold text-ink">Giỏ hàng</span>
       </nav>
 
-      <h1 className="mt-4 font-serif text-[clamp(2.25rem,4vw,3.5rem)] font-medium leading-[1.05] tracking-[-0.015em]">
+      <h1 className="mt-4 font-serif text-[clamp(2.25rem,4vw,3.5rem)] font-medium leading-[1.05] tracking-[-0.015em] text-ink">
         Giỏ Hàng Của Bạn
       </h1>
 

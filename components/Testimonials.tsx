@@ -15,23 +15,23 @@ export default function Testimonials() {
         subtitle="Lý do khách hàng quay lại: kiểu dáng không lỗi mốt, cảm giác mặc cao cấp và sự tự tin mỗi ngày."
       />
 
-      <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-8 sm:mt-12 grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {testimonials.map((tile, i) =>
           tile.type === "quote" ? (
             <figure
               key={`q-${i}`}
-              className="flex min-h-[240px] flex-col justify-between rounded-block bg-surface p-8 ring-1 ring-line xl:p-10"
+              className="flex min-h-[220px] flex-col justify-between rounded-2xl bg-surface p-6 sm:p-8 ring-1 ring-line shadow-xs xl:p-10"
             >
               <Diamond className="h-2.5 w-2.5 text-gold" />
-              <blockquote className="mt-6 text-[17px] leading-relaxed xl:text-[19px]">
+              <blockquote className="mt-4 text-base sm:text-[17px] leading-relaxed xl:text-[19px] text-ink font-normal">
                 &ldquo;{tile.quote}&rdquo;
               </blockquote>
-              <figcaption className="mt-6 text-sm text-muted">— {tile.author}</figcaption>
+              <figcaption className="mt-4 text-xs sm:text-sm font-medium text-muted">— {tile.author}</figcaption>
             </figure>
           ) : (
             <div
               key={`i-${i}`}
-              className="relative min-h-[240px] overflow-hidden rounded-block bg-cream-dark"
+              className="relative min-h-[220px] overflow-hidden rounded-2xl bg-cream-dark"
             >
               <Image
                 src={tile.src}

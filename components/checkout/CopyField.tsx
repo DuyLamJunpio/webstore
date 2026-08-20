@@ -1,14 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Check } from "../icons";
 
-/**
- * One line of bank-transfer detail with a copy button.
- *
- * Typing an account number by hand is where transfers go wrong, so the copied
- * value is always the machine-readable one — digits only for an amount, the
- * exact memo for the reference — while the label beside it stays readable.
- */
 export default function CopyField({
   label,
   value,
@@ -17,9 +11,7 @@ export default function CopyField({
   emphasis,
 }: {
   label: string;
-  /** what lands on the clipboard */
   value: string;
-  /** what the shopper reads, when that differs */
   display?: string;
   hint?: string;
   emphasis?: boolean;
@@ -33,7 +25,6 @@ export default function CopyField({
     try {
       await navigator.clipboard.writeText(value);
     } catch {
-      // http on a LAN address has no clipboard API — leave the value selectable
       return;
     }
     setCopied(true);
@@ -44,20 +35,33 @@ export default function CopyField({
   return (
     <div className="flex items-center justify-between gap-4 border-b border-line py-3 last:border-none">
       <div className="min-w-0">
-        <p className="text-[12px] text-muted">{label}</p>
-        <p className={`mt-0.5 break-words ${emphasis ? "text-lg font-medium" : "text-[15px]"}`}>
+        <p className="text-xs text-muted font-medium">{label}</p>
+        <p className={`mt-0.5 break-words font-semibold text-ink ${emphasis ? "text-base sm:text-lg text-gold-deep" : "text-sm sm:text-[15px]"}`}>
           {display ?? value}
         </p>
-        {hint && <p className="mt-0.5 text-[12px] text-muted">{hint}</p>}
+        {hint && <p className="mt-0.5 text-xs text-muted">{hint}</p>}
       </div>
 
       <button
         type="button"
         onClick={copy}
-        className="shrink-0 rounded-full border border-line-strong px-3 py-1.5 text-[12px] font-medium transition-colors hover:border-ink"
+        aria-label={`Sao chép ${label}`}
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 ${
+          copied
+            ? "bg-[#15803d] text-white shadow-xs scale-105"
+            : "border border-line-strong bg-surface text-ink hover:border-ink active:scale-95"
+        }`}
       >
-        {copied ? "Đã chép" : "Sao chép"}
+        {copied ? (
+          <>
+            <Check className="h-3.5 w-3.5" />
+            <span>Đã chép</span>
+          </>
+        ) : (
+          <span>Sao chép</span>
+        )}
       </button>
     </div>
   );
 }
+

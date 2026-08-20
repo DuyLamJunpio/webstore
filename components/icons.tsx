@@ -155,6 +155,58 @@ export function Facebook({ className = base }: IconProps) {
   );
 }
 
+export function HomeIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden className={className}>
+      <path d="m3 8.5 7-5.5 7 5.5v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-8Z" strokeLinejoin="round" />
+      <path d="M7.5 17.5v-6h5v6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function Store({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden className={className}>
+      <path d="M3 4.5h14l-1 5.5H4L3 4.5Z" strokeLinejoin="round" />
+      <path d="M4.5 10v6.5a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V10" strokeLinejoin="round" />
+      <path d="M8 17.5v-4h4v4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function Filter({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden className={className}>
+      <path d="M3 4.5h14M5.5 10h9M8 15.5h4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function Plus({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden className={className}>
+      <path d="M10 4.5v11M4.5 10h11" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function Check({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden className={className}>
+      <path d="m4.5 10.5 3.5 3.5 7.5-8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function Sparkles({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden className={className}>
+      <path d="m10 2.5 1.8 4.7 4.7 1.8-4.7 1.8L10 15.5l-1.8-4.7-4.7-1.8 4.7-1.8L10 2.5Z" strokeLinejoin="round" />
+      <path d="m15.5 13.5.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1Z" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function Instagram({ className = base }: IconProps) {
   return (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden className={className}>
@@ -164,3 +216,4 @@ export function Instagram({ className = base }: IconProps) {
     </svg>
   );
 }
+
