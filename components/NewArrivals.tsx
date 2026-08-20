@@ -10,11 +10,11 @@ export default async function NewArrivals() {
   return (
     <section id="new-arrivals" className="shell section">
       <SectionHeading
-        title={heading(content, "new_arrivals.title", "Hàng mới đã về")}
-        action={{ label: "Xem thêm", href: "/shop?new=1" }}
+        title={heading(content, "new_arrivals.title", "Hàng Mới Về")}
+        action={{ label: "Xem tất cả", href: "/shop?new=1" }}
       />
 
-      <div className="mt-12 grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-3 lg:grid-cols-5">
+      <div className="mt-8 sm:mt-12 grid grid-cols-2 gap-x-3.5 gap-y-7 sm:gap-x-5 sm:gap-y-10 md:grid-cols-3 lg:grid-cols-5">
         {newArrivals.map((product) => (
           <ProductCard key={product.slug} product={product} />
         ))}
@@ -22,3 +22,4 @@ export default async function NewArrivals() {
     </section>
   );
 }
+

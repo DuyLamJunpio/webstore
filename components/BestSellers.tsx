@@ -19,35 +19,37 @@ export default function BestSellers({
 
   const visible = useMemo(
     () =>
-      (filter === "Tất cả" ? bestSellers : bestSellers.filter((p) => p.category === filter))
-        // dãy ngang chỉ cuộn được chừng này là hết kiên nhẫn; "Xem thêm" dẫn sang /shop
-        .slice(0, 12),
+      (filter === "Tất cả" ? bestSellers : bestSellers.filter((p) => p.category === filter)).slice(
+        0,
+        12,
+      ),
     [filter, bestSellers],
   );
 
   const scrollBy = (direction: 1 | -1) => {
     const rail = railRef.current;
     if (!rail) return;
-    rail.scrollBy({ left: direction * (rail.clientWidth * 0.8), behavior: "smooth" });
+    rail.scrollBy({ left: direction * (rail.clientWidth * 0.75), behavior: "smooth" });
   };
 
   return (
-    <section id="best-sellers" className="section">
+    <section id="best-sellers" className="section bg-surface/40 border-y border-line/60">
       <div className="shell">
-        <div className="flex flex-wrap items-end justify-between gap-6">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
           <div>
-            <h2 className="font-serif text-[clamp(2.25rem,4vw,3.5rem)] font-medium leading-[1.05] tracking-[-0.015em]">
+            <span className="eyebrow text-gold">Xu Hướng Yêu Thích</span>
+            <h2 className="mt-2 font-serif text-[clamp(2rem,3.8vw,3.25rem)] font-medium leading-[1.05] tracking-[-0.015em] text-ink">
               {title}
             </h2>
-            {subtitle ? <p className="mt-2 max-w-md text-muted">{subtitle}</p> : null}
+            {subtitle ? <p className="mt-2 max-w-md text-sm sm:text-base text-muted">{subtitle}</p> : null}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-2">
             <button
               type="button"
               onClick={() => scrollBy(-1)}
               aria-label="Sản phẩm trước"
-              className="grid h-10 w-10 place-items-center rounded-full border border-line-strong transition-colors hover:border-ink hover:bg-ink hover:text-cream"
+              className="grid h-10 w-10 place-items-center rounded-full border border-line-strong bg-surface transition-all duration-200 hover:border-ink hover:bg-ink hover:text-cream shadow-xs"
             >
               <ChevronLeft />
             </button>
@@ -55,14 +57,15 @@ export default function BestSellers({
               type="button"
               onClick={() => scrollBy(1)}
               aria-label="Sản phẩm tiếp theo"
-              className="grid h-10 w-10 place-items-center rounded-full border border-line-strong transition-colors hover:border-ink hover:bg-ink hover:text-cream"
+              className="grid h-10 w-10 place-items-center rounded-full border border-line-strong bg-surface transition-all duration-200 hover:border-ink hover:bg-ink hover:text-cream shadow-xs"
             >
               <ChevronRight />
             </button>
           </div>
         </div>
 
-        <div className="mt-8 flex flex-wrap gap-2" role="tablist" aria-label="Lọc sản phẩm bán chạy">
+        {/* ── Category filter pills ── */}
+        <div className="mt-6 sm:mt-8 flex gap-2 overflow-x-auto pb-2 scrollbar-none" role="tablist" aria-label="Lọc sản phẩm bán chạy">
           {bestSellerFilters.map((item) => {
             const isActive = filter === item;
             return (
@@ -72,10 +75,10 @@ export default function BestSellers({
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => setFilter(item)}
-                className={`h-9 rounded-full px-4 text-[13px] font-medium transition-colors ${
+                className={`h-9 shrink-0 rounded-full px-4 text-[13px] font-medium transition-all ${
                   isActive
-                    ? "bg-ink text-cream"
-                    : "border border-line-strong text-ink/70 hover:border-ink hover:text-ink"
+                    ? "bg-ink text-cream shadow-xs"
+                    : "border border-line-strong bg-surface text-ink/75 hover:border-ink hover:text-ink"
                 }`}
               >
                 {item}
@@ -85,25 +88,29 @@ export default function BestSellers({
         </div>
       </div>
 
-      <div className="shell mt-10">
-        <div ref={railRef} className="rail">
+      <div className="shell mt-8">
+        <div ref={railRef} className="rail -mx-4 px-4 sm:mx-0 sm:px-0">
           {visible.map((product) => (
-            <div key={product.slug} className="w-[62vw] shrink-0 sm:w-[38vw] lg:w-[262px]">
-              <ProductCard product={product} sizes="(max-width: 640px) 62vw, (max-width: 1024px) 38vw, 262px" />
+            <div key={product.slug} className="w-[64vw] shrink-0 sm:w-[36vw] lg:w-[268px]">
+              <ProductCard
+                product={product}
+                sizes="(max-width: 640px) 64vw, (max-width: 1024px) 36vw, 268px"
+              />
             </div>
           ))}
         </div>
 
-        <div className="mt-12 flex justify-center">
+        <div className="mt-10 flex justify-center">
           <Link
             href={filter === "Tất cả" ? "/shop" : `/shop?category=${encodeURIComponent(filter)}`}
-            className="inline-flex h-11 items-center gap-2 rounded-full border border-line-strong px-6 text-sm font-medium transition-colors hover:border-ink hover:bg-ink hover:text-cream"
+            className="inline-flex h-11 items-center gap-2 rounded-full border border-line-strong bg-surface px-6 text-sm font-semibold text-ink shadow-xs transition-all duration-200 hover:border-ink hover:bg-ink hover:text-cream hover:scale-105 active:scale-95"
           >
-            Xem thêm
-            <ArrowUpRight />
+            <span>Xem tất cả ({visible.length}+)</span>
+            <ArrowUpRight className="h-4 w-4" />
           </Link>
         </div>
       </div>
     </section>
   );
 }
+

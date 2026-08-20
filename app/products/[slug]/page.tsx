@@ -4,14 +4,11 @@ import { notFound } from "next/navigation";
 import ProductCard from "@/components/ProductCard";
 import ProductGallery from "@/components/product/ProductGallery";
 import ProductPurchase from "@/components/product/ProductPurchase";
+import StickyBuyBar from "@/components/product/StickyBuyBar";
 import { promiseIcons } from "@/components/icons";
 import { getCatalogue } from "@/lib/catalogue";
 import { galleryOf, getProduct, inStock, promises, relatedProducts } from "@/lib/data";
 
-/**
- * Dựng sẵn trang cho hàng đang bán lúc build. Sản phẩm thêm sau vẫn mở được:
- * Next dựng trang theo yêu cầu cho slug chưa có trong danh sách này.
- */
 export async function generateStaticParams() {
   const { products } = await getCatalogue();
   return products.map((product) => ({ slug: product.slug }));
@@ -34,7 +31,7 @@ export async function generateMetadata(props: PageProps<"/products/[slug]">): Pr
 }
 
 const Stars = ({ rating }: { rating: number }) => (
-  <span aria-hidden className="text-gold">
+  <span aria-hidden className="text-gold tracking-tighter">
     {"★★★★★".slice(0, Math.round(rating))}
     <span className="text-line-strong">{"★★★★★".slice(Math.round(rating))}</span>
   </span>
@@ -50,29 +47,32 @@ export default async function ProductPage(props: PageProps<"/products/[slug]">) 
   const available = inStock(product);
 
   return (
-    <div className="shell section">
-      <nav aria-label="Đường dẫn" className="text-[13px] text-muted">
+    <div className="shell section pt-6 sm:pt-8">
+      {/* ── Sticky Buy Bar on Mobile ── */}
+      {available && <StickyBuyBar product={product} />}
+
+      {/* ── Breadcrumbs ── */}
+      <nav aria-label="Đường dẫn" className="flex flex-wrap items-center gap-2 text-xs sm:text-[13px] text-muted">
         <Link href="/" className="transition-colors hover:text-ink">
           Trang chủ
         </Link>
-        <span className="px-2">/</span>
+        <span>/</span>
         <Link href="/shop" className="transition-colors hover:text-ink">
           Cửa hàng
         </Link>
-        <span className="px-2">/</span>
+        <span>/</span>
         <Link
           href={`/shop?category=${encodeURIComponent(product.category)}`}
           className="transition-colors hover:text-ink"
         >
           {product.category}
         </Link>
-        <span className="px-2">/</span>
-        <span className="text-ink">{product.name}</span>
+        <span>/</span>
+        <span className="font-semibold text-ink truncate max-w-[200px] sm:max-w-none">{product.name}</span>
       </nav>
 
-      <div className="mt-6 grid gap-10 lg:grid-cols-2 lg:gap-16">
-        {/* trần chiều rộng: trên màn hình lớn nửa lưới rộng tới ~900px, ảnh tỉ lệ
-            4/5 sẽ cao hơn cả màn hình và phải cuộn mới xem hết một tấm */}
+      <div className="mt-6 grid gap-8 lg:grid-cols-2 lg:gap-14">
+        {/* Gallery */}
         <div className="mx-auto w-full max-w-[560px] lg:mx-0 lg:sticky lg:top-[92px] lg:self-start">
           <ProductGallery
             media={galleryOf(product)}
@@ -81,53 +81,58 @@ export default async function ProductPage(props: PageProps<"/products/[slug]">) 
           />
         </div>
 
+        {/* Product Details & Purchase */}
         <div className="max-w-xl">
-          <p className="eyebrow text-gold">
+          <span className="eyebrow text-gold font-bold">
             {product.audience} · {product.category}
-          </p>
-          <h1 className="mt-3 font-serif text-[clamp(2rem,3.2vw,3rem)] font-medium leading-[1.06] tracking-[-0.015em]">
+          </span>
+          <h1 className="mt-2 font-serif text-[clamp(1.85rem,3.2vw,2.75rem)] font-medium leading-[1.08] tracking-[-0.015em] text-ink">
             {product.name}
           </h1>
 
-          <div className="mt-3 flex items-center gap-2 text-sm text-muted">
+          <div className="mt-3 flex items-center gap-2 text-xs sm:text-sm text-muted">
             <Stars rating={product.rating} />
-            <span>
-              {product.rating.toFixed(1)} · {product.reviews} đánh giá
+            <span className="font-medium text-ink">
+              {product.rating.toFixed(1)}
             </span>
+            <span>·</span>
+            <span>{product.reviews} đánh giá</span>
           </div>
 
-          <p className="mt-5 text-[15px] leading-relaxed text-muted">{product.description}</p>
+          <p className="mt-4 text-sm sm:text-[15px] leading-relaxed text-ink/80">{product.description}</p>
 
           <div className="mt-6 border-t border-line pt-6">
             <ProductPurchase product={product} />
           </div>
 
-          <section id="size-guide" className="mt-10 scroll-mt-28 border-t border-line pt-8">
-            <h2 className="eyebrow text-ink/60">Chi tiết & phom dáng</h2>
-            <ul className="mt-4 flex flex-col gap-2.5">
+          {/* Details & Fitting */}
+          <section id="size-guide" className="mt-8 scroll-mt-28 border-t border-line pt-6">
+            <h2 className="eyebrow text-ink/70 font-bold">Chi tiết & phom dáng</h2>
+            <ul className="mt-3.5 flex flex-col gap-2.5">
               {product.details.map((detail) => (
-                <li key={detail} className="flex gap-3 text-[15px] leading-relaxed">
-                  <span aria-hidden className="mt-2 h-1 w-1 shrink-0 rounded-full bg-gold" />
-                  {detail}
+                <li key={detail} className="flex gap-2.5 text-xs sm:text-sm leading-relaxed text-ink/85">
+                  <span aria-hidden className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
+                  <span>{detail}</span>
                 </li>
               ))}
-              <li className="flex gap-3 text-[15px] leading-relaxed">
-                <span aria-hidden className="mt-2 h-1 w-1 shrink-0 rounded-full bg-gold" />
-                Size có sẵn: {product.sizes.join(", ")}
+              <li className="flex gap-2.5 text-xs sm:text-sm leading-relaxed text-ink/85">
+                <span aria-hidden className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
+                <span>Size có sẵn: <strong>{product.sizes.join(", ")}</strong></span>
               </li>
             </ul>
           </section>
 
-          <section className="mt-8 grid gap-5 border-t border-line pt-8 sm:grid-cols-2">
+          {/* Shopping Promises */}
+          <section className="mt-8 grid gap-4 border-t border-line pt-6 sm:grid-cols-2">
             {promises.slice(0, 4).map((promise) => {
               const Icon = promiseIcons[promise.icon];
               return (
-                <div key={promise.title} className="flex gap-3">
+                <div key={promise.title} className="flex gap-3 rounded-xl bg-surface/60 p-3.5 ring-1 ring-line/60">
                   <Icon className="h-5 w-5 shrink-0 text-gold" />
-                  <p className="text-[13px] leading-relaxed text-muted">
-                    <span className="block font-medium text-ink">{promise.title}</span>
-                    {promise.body.split(".")[0]}.
-                  </p>
+                  <div className="text-xs leading-relaxed text-muted">
+                    <span className="block font-semibold text-ink">{promise.title}</span>
+                    <span>{promise.body.split(".")[0]}.</span>
+                  </div>
                 </div>
               );
             })}
@@ -135,17 +140,21 @@ export default async function ProductPage(props: PageProps<"/products/[slug]">) 
         </div>
       </div>
 
+      {/* ── Related Products ── */}
       {related.length > 0 && (
-        <section className="mt-20 border-t border-line pt-14">
-          <h2 className="font-serif text-[clamp(1.75rem,2.6vw,2.5rem)] font-medium leading-[1.05] tracking-[-0.015em]">
-            Có thể bạn cũng thích
-          </h2>
-          <div className="mt-10 grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4">
+        <section className="mt-16 sm:mt-20 border-t border-line pt-12 sm:pt-14">
+          <div className="mb-8">
+            <span className="eyebrow text-gold">Gợi Ý Cho Bạn</span>
+            <h2 className="mt-1.5 font-serif text-[clamp(1.75rem,2.6vw,2.5rem)] font-medium leading-[1.05] tracking-[-0.015em] text-ink">
+              Có thể bạn cũng thích
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-5 sm:gap-y-10 lg:grid-cols-4">
             {related.map((item) => (
               <ProductCard
                 key={item.slug}
                 product={item}
-                sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 300px"
+                sizes="(max-width: 640px) 48vw, (max-width: 1024px) 30vw, 280px"
               />
             ))}
           </div>
@@ -154,3 +163,4 @@ export default async function ProductPage(props: PageProps<"/products/[slug]">) 
     </div>
   );
 }
+

@@ -4,51 +4,50 @@ import { footerNav } from "@/lib/data";
 import Logo from "./Logo";
 import { ArrowUpRight, Facebook, Phone } from "./icons";
 
-const payments = ["Visa", "Mastercard", "JCB", "Momo", "VNPay"];
+const payments = ["VietQR", "Visa", "Mastercard", "JCB", "Momo", "VNPay"];
 
 export default function Footer() {
   return (
-    <footer className="bg-ink text-cream">
-      <div className="shell py-16 md:py-20">
+    <footer className="bg-ink text-cream pb-24 lg:pb-0">
+      <div className="shell py-14 md:py-20">
         <div className="grid gap-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,2fr)]">
           <div>
             <Logo variant="stacked" align="left" />
-            <p className="mt-7 max-w-xs text-sm leading-relaxed text-cream/60">
-              Đồ cơ bản được chọn lọc kỹ cho nam, nữ và trẻ em — sản xuất số lượng nhỏ từ nguyên
-              liệu có nguồn gốc trách nhiệm.
+            <p className="mt-6 max-w-xs text-xs sm:text-sm leading-relaxed text-cream/65">
+              Thời trang thiết kế tối giản, sản xuất số lượng giới hạn từ chất liệu cao cấp và an toàn cho làn da.
             </p>
 
             <div className="mt-8">
-              <p className="text-sm font-medium">Đăng ký nhận tin</p>
-              <p className="mt-2 max-w-xs text-sm leading-relaxed text-cream/60">
-                Biết sớm về hàng mới về, ưu đãi riêng và cập nhật phong cách theo mùa.
+              <p className="text-sm font-semibold text-cream">Đăng ký nhận ưu đãi</p>
+              <p className="mt-1.5 max-w-xs text-xs sm:text-sm leading-relaxed text-cream/60">
+                Nhận thông báo về hàng mới về, ưu đãi riêng và mã giảm giá đặc biệt.
               </p>
               <Link
                 href="/#newsletter"
-                className="mt-5 inline-flex h-11 items-center gap-2 rounded-full border border-cream/25 px-5 text-sm font-medium transition-colors hover:bg-gold hover:border-gold hover:text-cream"
+                className="mt-4 inline-flex h-10 items-center gap-2 rounded-full border border-cream/30 bg-cream/5 px-5 text-xs sm:text-sm font-semibold text-cream shadow-xs transition-transform hover:scale-105 hover:border-gold hover:bg-gold hover:text-cream active:scale-95"
               >
-                Đăng ký
-                <ArrowUpRight />
+                <span>Đăng ký ngay</span>
+                <ArrowUpRight className="h-3.5 w-3.5" />
               </Link>
             </div>
 
-            <div className="mt-10">
-              <p className="eyebrow text-gold">Liên hệ</p>
+            <div className="mt-8">
+              <p className="eyebrow text-gold font-bold">Chăm Sóc Khách Hàng</p>
 
               <a
                 href={CONTACT.phoneHref}
-                className="mt-4 inline-flex items-center gap-2.5 text-lg font-medium transition-colors hover:text-gold"
+                className="mt-3 inline-flex items-center gap-2.5 text-base sm:text-lg font-bold text-cream transition-colors hover:text-gold"
               >
-                <Phone className="h-[18px] w-[18px] text-gold" />
-                {CONTACT.phoneDisplay}
+                <Phone className="h-4 w-4 text-gold" />
+                <span>{CONTACT.phoneDisplay}</span>
               </a>
 
-              <div className="mt-4 flex flex-wrap items-center gap-2.5">
+              <div className="mt-3 flex flex-wrap items-center gap-2">
                 <a
                   href={CONTACT.zaloUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex h-9 items-center rounded-full border border-cream/25 px-3.5 text-[13px] font-medium transition-colors hover:border-gold hover:text-gold"
+                  className="inline-flex h-8 items-center rounded-full border border-cream/25 bg-cream/5 px-3.5 text-xs font-medium text-cream/90 transition-colors hover:border-gold hover:text-gold"
                 >
                   Nhắn Zalo
                 </a>
@@ -56,27 +55,22 @@ export default function Footer() {
                   href={CONTACT.facebookUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex h-9 items-center gap-2 rounded-full border border-cream/25 px-3.5 text-[13px] font-medium transition-colors hover:border-gold hover:text-gold"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-full border border-cream/25 bg-cream/5 px-3.5 text-xs font-medium text-cream/90 transition-colors hover:border-gold hover:text-gold"
                 >
-                  <Facebook className="h-4 w-4" />
-                  Fanpage
+                  <Facebook className="h-3.5 w-3.5" />
+                  <span>Fanpage</span>
                 </a>
               </div>
             </div>
           </div>
 
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-8 grid-cols-2 lg:grid-cols-4">
             {footerNav.map((column) => (
               <nav key={column.title} aria-label={column.title}>
-                <h3 className="eyebrow text-gold">{column.title}</h3>
-                <ul className="mt-5 flex flex-col gap-3">
+                <h3 className="eyebrow text-gold font-bold">{column.title}</h3>
+                <ul className="mt-4 flex flex-col gap-2.5">
                   {column.links.map((link) => {
-                    const style = "text-sm text-cream/70 transition-colors hover:text-gold";
-                    // Ba loại đích khác nhau, không gộp được:
-                    //   "/..."   điều hướng trong ứng dụng → next/link
-                    //   "http.." sang trang khác → tab mới, kèm `noopener` để
-                    //            trang đích không với tới `window.opener`
-                    //   "tel:"   giao cho hệ điều hành → thẻ a, cùng tab
+                    const style = "text-xs sm:text-sm text-cream/70 transition-colors hover:text-gold";
                     if (link.href.startsWith("/")) {
                       return (
                         <li key={link.label}>
@@ -108,17 +102,17 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-14 flex flex-col gap-6 border-t border-cream/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-[13px] text-cream/50">
-            © {new Date().getFullYear()} The Basic Concept. Bảo lưu mọi quyền.
+        <div className="mt-12 flex flex-col gap-5 border-t border-cream/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-cream/50">
+            © {new Date().getFullYear()} The Basic Concept. Tất cả các quyền được bảo lưu.
           </p>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[13px] text-cream/45">Thanh toán bảo mật qua</span>
+            <span className="text-xs text-cream/50">Thanh toán an toàn:</span>
             {payments.map((label) => (
               <span
                 key={label}
-                className="rounded-md border border-cream/15 px-2.5 py-1 text-[11px] text-cream/65"
+                className="rounded-md border border-cream/15 bg-cream/5 px-2 py-0.5 text-[10px] font-semibold text-cream/70"
               >
                 {label}
               </span>
@@ -129,3 +123,4 @@ export default function Footer() {
     </footer>
   );
 }
+

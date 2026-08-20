@@ -4,36 +4,37 @@
   --font-sans: var(--font-be-vietnam), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-playfair), ui-serif, Georgia, serif;
 
-  /* The Basic Concept — đen nâu / nâu kim / be */
-  --color-ink: #1c1714;
-  --color-ink-soft: #2b2320;
-  --color-gold: #a8804b;
-  --color-gold-soft: #c4a176;
-  --color-gold-deep: #8a6437;
-  --color-muted: #7c6a57;
-  --color-cream: #f5efe6;
-  --color-cream-dark: #eae1d3;
-  --color-surface: #fbf8f2;
-  --color-line: rgba(28, 23, 20, 0.1);
-  --color-line-strong: rgba(28, 23, 20, 0.18);
+  /* The Basic Concept — sang trọng, ấm áp: đen nâu / nâu kim / be / trắng sứ */
+  --color-ink: #181412;
+  --color-ink-soft: #27211e;
+  --color-gold: #b38b59;
+  --color-gold-soft: #ccaF8a;
+  --color-gold-deep: #8c6436;
+  --color-muted: #786757;
+  --color-cream: #faf7f2;
+  --color-cream-dark: #f0e9df;
+  --color-surface: #ffffff;
+  --color-line: rgba(24, 20, 18, 0.08);
+  --color-line-strong: rgba(24, 20, 18, 0.15);
 
-  --radius-card: 12px;
-  --radius-block: 20px;
+  --radius-card: 14px;
+  --radius-block: 22px;
 }
 
 :root {
   --background: var(--color-cream);
   --foreground: var(--color-ink);
-  --header-height: 76px;
+  --header-height: 72px;
+  --mobile-bottom-nav-height: 64px;
 }
 
 * {
   min-width: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html {
   scroll-behavior: smooth;
-  /* the header is sticky, so anchored sections need room above them */
   scroll-padding-top: calc(var(--header-height) + 16px);
 }
 
@@ -41,7 +42,9 @@ body {
   background: var(--background);
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
 }
 
 ::selection {
@@ -49,14 +52,25 @@ body {
   color: var(--color-cream);
 }
 
-/* ── shared layout helpers ─────────────────────────────────────────── */
-/* full-bleed: sections span the whole viewport, only the gutter is reserved */
-.shell {
-  width: 100%;
-  padding-inline: clamp(16px, 3.2vw, 64px);
+/* ── safe area insets for iOS devices ──────────────────────────────── */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.mb-safe {
+  margin-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* for centred copy that would be unreadable at full viewport width */
+/* ── shared layout helpers ─────────────────────────────────────────── */
+.shell {
+  width: 100%;
+  max-width: 1400px;
+  margin-inline: auto;
+  padding-inline: clamp(16px, 3.5vw, 48px);
+}
+
 .measure {
   max-width: 62ch;
   margin-inline: auto;
@@ -66,7 +80,7 @@ body {
   background: linear-gradient(
     135deg,
     var(--color-gold-soft) 0%,
-    var(--color-gold) 42%,
+    var(--color-gold) 45%,
     var(--color-gold-deep) 100%
   );
   -webkit-background-clip: text;
@@ -74,15 +88,14 @@ body {
   color: transparent;
 }
 
-/* one vertical rhythm for every band, so stacked sections don't double up */
 .section {
-  padding-block: clamp(44px, 5.5vw, 76px);
+  padding-block: clamp(40px, 5vw, 72px);
 }
 
 .eyebrow {
   font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.18em;
+  font-weight: 600;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
@@ -109,8 +122,8 @@ body {
 /* ── product card image swap ───────────────────────────────────────── */
 .swap-front,
 .swap-back {
-  transition: opacity 0.55s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .swap:hover .swap-front {
@@ -119,17 +132,18 @@ body {
 
 .swap:hover .swap-back {
   opacity: 1;
-  transform: scale(1.03);
+  transform: scale(1.035);
 }
 
 /* ── horizontal snap rail ──────────────────────────────────────────── */
 .rail {
   display: flex;
-  gap: 20px;
+  gap: 16px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
-  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
 }
 
 .rail::-webkit-scrollbar {
@@ -140,15 +154,15 @@ body {
   scroll-snap-align: start;
 }
 
-/* ── entrance animation ────────────────────────────────────────────── */
+/* ── animations ────────────────────────────────────────────────────── */
 .rise {
-  animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(22px);
+    transform: translateY(18px);
   }
   to {
     opacity: 1;
@@ -156,16 +170,14 @@ body {
   }
 }
 
-/* ── dialog entrance (quick add) ───────────────────────────────────────── */
-/* deliberately faster than .rise — a panel the user opened should feel instant */
 .pop {
-  animation: pop 0.22s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: pop 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes pop {
   from {
     opacity: 0;
-    transform: translateY(8px) scale(0.985);
+    transform: translateY(12px) scale(0.98);
   }
   to {
     opacity: 1;
@@ -173,10 +185,73 @@ body {
   }
 }
 
+.sheet-up {
+  animation: sheetUp 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes sheetUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.25s ease-out both;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ── Skeleton shimmer ──────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-cream-dark) 0%,
+    var(--color-cream) 50%,
+    var(--color-cream-dark) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ── Glassmorphism helper ──────────────────────────────────────────── */
+.glass {
+  background: rgba(250, 247, 242, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.glass-dark {
+  background: rgba(24, 20, 18, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .marquee,
   .rise,
-  .pop {
+  .pop,
+  .sheet-up,
+  .fade-in,
+  .skeleton {
     animation: none;
   }
 
@@ -184,3 +259,4 @@ body {
     scroll-behavior: auto;
   }
 }
+
