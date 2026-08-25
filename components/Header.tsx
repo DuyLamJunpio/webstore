@@ -11,6 +11,7 @@ import { ArrowUpRight, Bag, Close, Heart, Menu, Phone, Search, Sparkles } from "
 const links = [
   { label: "Cửa hàng", href: "/shop" },
   { label: "Hàng mới", href: "/shop?new=1" },
+  { label: "In áo", href: "/in-ao" },
   { label: "Bài viết", href: "/#journal" },
   { label: "Liên hệ", href: "/#newsletter" },
 ];

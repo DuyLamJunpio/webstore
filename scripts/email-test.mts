@@ -86,6 +86,7 @@ const sample = {
     count: 1,
     subtotal: 1_700_000,
     shipping: 0,
+    prints: [],
     total: 1_700_000,
   },
   payment: {

@@ -67,14 +67,22 @@ export async function warehouseFetch(path: string, init: RequestInit = {}): Prom
   });
 }
 
+/** Tài khoản khách để lại để nhận hoàn tiền nếu mẫu in bị từ chối. */
+export type RefundAccount = {
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+};
+
 /**
- * Tạo đơn bên quản trị. Chỉ gửi id biến thể và số lượng — giá do bên đó tự
- * tính lại từ cơ sở dữ liệu, nên hai bên không thể lệch giá.
+ * Tạo đơn bên quản trị. Chỉ gửi id biến thể, số lượng và mã mẫu in — giá do bên
+ * đó tự tính lại từ cơ sở dữ liệu, nên hai bên không thể lệch giá.
  */
 export async function pushOrder(
   customer: CustomerInfo,
   cart: PricedCart,
   method: PaymentMethodKey = "bank_transfer",
+  refund?: RefundAccount | null,
 ): Promise<WarehouseResult> {
   if (!isWarehouseConfigured()) {
     return {
@@ -95,6 +103,14 @@ export async function pushOrder(
     // Trang quản trị nhận "banking" hoặc "cod"; nó tự tính phí giao hàng và hạn
     // thanh toán theo mã này, nên gửi sai là đơn ghi sai tiền.
     payment_method: method === "cod" ? "cod" : "banking",
+    // Các mẫu áo in trong đơn. Chỉ gửi MÃ — giá của chúng đã đóng băng bên quản
+    // trị từ lúc khách chốt thiết kế, và bên đó đọc lại chứ không nhận số từ đây.
+    print_design_codes: cart.prints.map((p) => p.code),
+    // Chỗ trả tiền về nếu shop từ chối thiết kế. Hỏi trước lúc đặt rẻ hơn nhiều
+    // so với gọi điện đòi số tài khoản khi khách đang bực.
+    refund_bank_name: refund?.bankName || null,
+    refund_account_number: refund?.accountNumber || null,
+    refund_account_name: refund?.accountName || null,
     items: cart.lines.map((line) => ({
       // id này là id biến thể bên quản trị, web đọc thẳng từ đó nên luôn khớp
       variant_id: Number(line.id),
