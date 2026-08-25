@@ -109,11 +109,29 @@ export type PricedLine = {
   total: number;
 };
 
+/**
+ * Mẫu áo in trong đơn, nếu có.
+ *
+ * Cố ý KHÔNG phải một `PricedLine`: nó không có biến thể trong catalogue, và giá
+ * của nó đến từ bảng giá in đã đóng băng chứ không từ `product.price`. Gộp chung
+ * vào `lines` là mời mọi chỗ đọc giỏ hàng hiểu nhầm nó là hàng bán sẵn.
+ */
+export type PricedPrint = {
+  code: string;
+  label: string;
+  qty: number;
+  /** đồng, mỗi áo */
+  unitPrice: number;
+  total: number;
+};
+
 export type PricedCart = {
   lines: PricedLine[];
   count: number;
   subtotal: number;
   shipping: number;
+  /** các mẫu áo in trong đơn; rỗng với đơn hàng bán sẵn thông thường */
+  prints: PricedPrint[];
   /** đồng, whole — this is exactly the figure handed to PayOS */
   total: number;
 };
@@ -133,8 +151,17 @@ export function priceCart(
   input: CheckoutLine[],
   sales: SalesSettings,
   method: PaymentMethodKey = "bank_transfer",
+  /**
+   * Các mẫu áo in kèm theo đơn. Máy chủ truyền vào bản đã đọc lại từ trang quản
+   * trị; trình duyệt truyền bản trong localStorage — nhưng bản đó chỉ dùng để
+   * hiện, vì con số cuối cùng luôn được máy chủ dựng lại trước khi thu tiền.
+   */
+  prints: PricedPrint[] = [],
 ): PriceResult {
-  if (!Array.isArray(input) || input.length === 0) return { ok: false, error: "Giỏ hàng đang trống." };
+  if (!Array.isArray(input)) return { ok: false, error: "Giỏ hàng không hợp lệ. Vui lòng tải lại trang." };
+
+  // Đơn chỉ có áo in là đơn hợp lệ: khách đặt in thường không mua kèm hàng bán sẵn.
+  if (input.length === 0 && prints.length === 0) return { ok: false, error: "Giỏ hàng đang trống." };
   if (input.length > MAX_LINES) return { ok: false, error: "Giỏ hàng có quá nhiều sản phẩm." };
 
   const lines: PricedLine[] = [];
@@ -182,8 +209,13 @@ export function priceCart(
     });
   }
 
-  const subtotal = lines.reduce((sum, line) => sum + line.total, 0);
-  const count = lines.reduce((sum, line) => sum + line.qty, 0);
+  const printTotal = prints.reduce((sum, p) => sum + p.total, 0);
+  const printQty = prints.reduce((sum, p) => sum + p.qty, 0);
+
+  const subtotal = lines.reduce((sum, line) => sum + line.total, 0) + printTotal;
+  // Áo in cũng là món phải giao, nên số lượng của nó tính vào ngưỡng miễn phí
+  // giao hàng như mọi món khác — đúng cách trang quản trị đang tính.
+  const count = lines.reduce((sum, line) => sum + line.qty, 0) + printQty;
   // Ngưỡng miễn phí bên quản trị khai theo số món, nên đếm món chứ không cộng tiền.
   const shipping = shippingFeeFor(sales, method, count);
   // PayOS only accepts whole đồng; a catalogue price with a decimal in it would
@@ -197,6 +229,7 @@ export function priceCart(
       count,
       subtotal,
       shipping,
+      prints,
       total,
     },
   };

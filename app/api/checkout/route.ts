@@ -20,7 +20,9 @@ import {
   validateCustomer,
   type CheckoutLine,
   type CustomerInfo,
+  type PricedPrint,
 } from "@/lib/checkout";
+import { fetchPrintDesign, printLineLabel } from "@/lib/print-order";
 import { reserveOrder, saveOrder, type Order, type OrderPayment } from "@/lib/orders";
 import { createPaymentLink, DESCRIPTION_MAX, isPayosConfigured, PayosError } from "@/lib/payos";
 import { buildVietQr, readFallbackBank } from "@/lib/vietqr";
@@ -62,6 +64,10 @@ type Body = {
   lines?: CheckoutLine[];
   customer?: Partial<CustomerInfo>;
   paymentMethod?: string;
+  /** mã các mẫu áo khách đã thiết kế ở /in-ao; giá đọc lại từ trang quản trị */
+  printCodes?: string[];
+  /** tài khoản nhận hoàn tiền, chỉ hỏi khi đơn có mẫu in */
+  refund?: { bankName?: string; accountNumber?: string; accountName?: string };
 };
 
 const bad = (error: string, status = 400, extra: Record<string, unknown> = {}) =>
@@ -100,14 +106,53 @@ export async function POST(request: NextRequest) {
     return bad("Hình thức thanh toán này đang tạm ngưng. Vui lòng chọn cách khác.", 503);
   }
 
-  const priced = priceCart(await getCatalogue(), body.lines ?? [], sales, method);
+  /*
+   * Mẫu áo in: đọc lại từ trang quản trị để lấy GIÁ ĐÃ ĐÓNG BĂNG. Trình duyệt
+   * chỉ được nói mã, không được nói tiền — cùng nguyên tắc với `priceCart`.
+   */
+  const codes = Array.from(new Set(body.printCodes ?? [])).slice(0, 20);
+  const prints: PricedPrint[] = [];
+
+  for (const code of codes) {
+    const design = await fetchPrintDesign(code);
+
+    if (!design) {
+      return bad(`Không tìm thấy mẫu thiết kế ${code}. Vui lòng thiết kế lại.`, 422);
+    }
+    // Mở lại tab cũ rồi bấm đặt lần nữa là gặp đúng nhánh này.
+    if (design.already_ordered) {
+      return bad(`Mẫu ${code} đã được đặt rồi. Vui lòng bỏ nó khỏi giỏ và đặt lại.`, 409);
+    }
+
+    prints.push({
+      code: design.code,
+      label: printLineLabel(design),
+      qty: design.qty,
+      unitPrice: design.unit_price,
+      total: design.total_price,
+    });
+  }
+
+  const priced = priceCart(await getCatalogue(), body.lines ?? [], sales, method, prints);
   if (!priced.ok) return bad(priced.error);
   const cart = priced.cart;
+
+  /*
+   * Chỉ giữ thông tin hoàn tiền khi đơn thật sự có mẫu in. Đơn hàng bán sẵn
+   * không cần, và lưu số tài khoản mà không có lý do là giữ thừa dữ liệu nhạy cảm.
+   */
+  const refund = cart.prints.length
+    ? {
+        bankName: (body.refund?.bankName ?? "").trim().slice(0, 100),
+        accountNumber: (body.refund?.accountNumber ?? "").replace(/\s/g, "").slice(0, 40),
+        accountName: (body.refund?.accountName ?? "").trim().slice(0, 120),
+      }
+    : null;
 
   // Đẩy đơn sang trang quản trị TRƯỚC khi tạo mã QR. Bên đó giữ tồn kho thật và
   // kiểm tra lại một lần nữa, nên hết hàng thì khách biết ngay tại đây chứ không
   // phải sau khi đã chuyển khoản. Tồn kho cũng được trừ ngay từ lúc này.
-  const warehouse = await pushOrder(customer, cart, method);
+  const warehouse = await pushOrder(customer, cart, method, refund);
   if (!warehouse.ok) {
     return bad(warehouse.error, warehouse.outOfStock ? 409 : 502);
   }
