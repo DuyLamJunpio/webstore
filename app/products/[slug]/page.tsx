@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ProductCard from "@/components/ProductCard";
@@ -47,7 +48,7 @@ export default async function ProductPage(props: PageProps<"/products/[slug]">) 
   const available = inStock(product);
 
   return (
-    <div className="shell section pt-6 sm:pt-8">
+    <div className="shell section pt-24 sm:pt-28">
       {/* ── Sticky Buy Bar on Mobile ── */}
       {available && <StickyBuyBar product={product} />}
 
@@ -105,10 +106,28 @@ export default async function ProductPage(props: PageProps<"/products/[slug]">) 
             <ProductPurchase product={product} />
           </div>
 
-          {/* Details & Fitting */}
+          {/* Details & Size Guide */}
           <section id="size-guide" className="mt-8 scroll-mt-28 border-t border-line pt-6">
-            <h2 className="eyebrow text-ink/70 font-bold">Chi tiết & phom dáng</h2>
-            <ul className="mt-3.5 flex flex-col gap-2.5">
+            <div className="flex items-baseline justify-between">
+              <h2 className="eyebrow text-ink font-bold">Bảng hướng dẫn chọn size</h2>
+              <span className="text-xs text-muted">Đơn vị: cm</span>
+            </div>
+
+            <div className="mt-3.5 overflow-hidden rounded-2xl border border-line bg-white shadow-xs">
+              <Image
+                src="/images/size-guide.png"
+                alt={`Bảng hướng dẫn chọn size — ${product.name}`}
+                width={1024}
+                height={704}
+                className="w-full h-auto object-contain"
+              />
+            </div>
+            <p className="mt-2 text-[11px] text-muted italic text-center">
+              * Số đo có thể chênh lệch 1–2cm do đo thủ công
+            </p>
+
+            <h3 className="eyebrow text-ink/70 font-bold mt-6">Chi tiết & phom dáng</h3>
+            <ul className="mt-3 flex flex-col gap-2.5">
               {product.details.map((detail) => (
                 <li key={detail} className="flex gap-2.5 text-xs sm:text-sm leading-relaxed text-ink/85">
                   <span aria-hidden className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />

@@ -38,27 +38,31 @@ export default function Header() {
   const printDrafts = usePrintDrafts();
   const cartCount = hydrated ? count + printDraftQty(printDrafts) : 0;
 
-  const isHome = pathname === "/";
-  // On interior pages, header is ALWAYS solid to ensure perfect readability on light background
-  const showSolidHeader = !isHome || scrolled || searchOpen || open;
+  // Trang chủ: pathname === "/" hoặc rỗng khi SSR/hydration
+  const isInterior = Boolean(pathname && pathname !== "/" && pathname !== "");
+  const showSolidHeader = isInterior || scrolled || searchOpen || open;
 
   useEffect(() => {
-    if (!isHome) return;
+    if (isInterior) {
+      setScrolled(true);
+      return;
+    }
 
-    const onScroll = () => {
+    const checkScroll = () => {
       const hero = document.getElementById("top");
-      const threshold = hero ? hero.offsetHeight - 90 : window.innerHeight * 0.7;
+      const threshold = hero ? Math.max(hero.offsetHeight - 90, 200) : 300;
       setScrolled(window.scrollY > threshold);
     };
 
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
+    // Kiểm tra vị trí cuộn ngay lập tức khi mount
+    checkScroll();
+    window.addEventListener("scroll", checkScroll, { passive: true });
+    window.addEventListener("resize", checkScroll);
     return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      window.removeEventListener("scroll", checkScroll);
+      window.removeEventListener("resize", checkScroll);
     };
-  }, [isHome]);
+  }, [pathname, isInterior]);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -314,4 +318,3 @@ export default function Header() {
     </>
   );
 }
-
