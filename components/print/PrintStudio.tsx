@@ -1026,10 +1026,10 @@ export default function PrintStudio({ catalogue, blank }: Props) {
             {donSoLuongLon ? (
               <div className="mt-3 rounded-lg border border-gold-soft bg-gold/10 px-3.5 py-3">
                 <p className="text-[12px] font-semibold text-ink">
-                  Từ {BULK_PRINT_FROM} áo — shop báo giá trực tiếp
+                  Đơn in số lượng lớn — shop báo giá trực tiếp
                 </p>
                 <p className="mt-1 text-[11.5px] leading-relaxed text-muted">
-                  Đơn đồng phục cỡ này còn thương lượng được phôi, bảng size và lịch giao, nên con số
+                  Đơn đồng phục số lượng lớn còn thương lượng được phôi, bảng size và lịch giao, nên con số
                   ở trên mới là ước lượng. Bấm nút để lưu mẫu, rồi gửi mã cho shop chốt giá.
                 </p>
                 <div className="mt-2.5 flex flex-wrap gap-2">
