@@ -12,7 +12,7 @@ import { getCatalogue } from "@/lib/catalogue";
 import { getContent, heading } from "@/lib/content";
 
 export default async function Home() {
-  const { bestSellers, bestSellerFilters } = await getCatalogue();
+  const { bestSellers, bestSellerFilters, newArrivals } = await getCatalogue();
   const content = await getContent();
 
   return (
@@ -28,7 +28,7 @@ export default async function Home() {
         title={heading(content, "best_sellers.title", "Bán Chạy Nhất")}
         subtitle={heading(content, "best_sellers.subtitle", "Những mẫu trang phục được khách hàng yêu thích và lựa chọn nhiều nhất.")}
       />
-      <ShopeeStore />
+      <ShopeeStore products={newArrivals.slice(0, 2)} />
       <Promises />
       <Testimonials />
       <Newsletter />
