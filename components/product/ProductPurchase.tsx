@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { formatPrice, type Product } from "@/lib/data";
 import { LOW_STOCK, useVariantSelection } from "@/lib/useVariantSelection";
 import QuantityStepper from "../QuantityStepper";
 import { Bag } from "../icons";
+import SizeGuideModal from "./SizeGuideModal";
 
 export default function ProductPurchase({ product }: { product: Product }) {
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
   const {
     color,
     size,
@@ -94,10 +97,8 @@ export default function ProductPurchase({ product }: { product: Product }) {
           <p className="eyebrow text-ink/70">Kích cỡ</p>
           <button
             type="button"
-            className="text-xs sm:text-[13px] text-muted underline underline-offset-4 transition-colors hover:text-ink"
-            onClick={() =>
-              document.getElementById("size-guide")?.scrollIntoView({ behavior: "smooth" })
-            }
+            className="text-xs sm:text-[13px] text-gold-deep font-semibold underline underline-offset-4 transition-colors hover:text-ink"
+            onClick={() => setShowSizeGuide(true)}
           >
             Hướng dẫn chọn size
           </button>
@@ -168,7 +169,11 @@ export default function ProductPurchase({ product }: { product: Product }) {
           Xem giỏ hàng
         </Link>
       </p>
+
+      {/* ── Modal Bảng Hướng Dẫn Chọn Size ── */}
+      {showSizeGuide && <SizeGuideModal onClose={() => setShowSizeGuide(false)} />}
     </div>
   );
 }
+
 
