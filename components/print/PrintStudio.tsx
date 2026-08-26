@@ -154,11 +154,14 @@ export default function PrintStudio({ catalogue, blank }: Props) {
     [blank.frame_width_mm, blank.frame_height_mm],
   );
 
+  /*
+   * Nhận thẳng cả asset chứ không nhận id: hình khách vừa tải lên chưa kịp có
+   * mặt trong `assets` — `setUploads` mới xếp hàng, bản đồ của lượt render này
+   * vẫn là bản đồ cũ. Tra id ở đây là trượt, và hình không bao giờ rơi xuống áo.
+   */
   const addPlacement = useCallback(
-    (assetId: number) => {
+    (asset: PrintAsset) => {
       if (!position) return;
-      const asset = assets.get(assetId);
-      if (!asset) return;
 
       const wMm = Math.min(position.max_width_mm * DROP_WIDTH_RATIO, asset.max_width_mm);
       const ratio = asset.height_px && asset.width_px ? asset.height_px / asset.width_px : 1;
@@ -168,7 +171,7 @@ export default function PrintStudio({ catalogue, blank }: Props) {
         key: nextKey(),
         position: position.key,
         kind: "image",
-        assetId,
+        assetId: asset.id,
         ...dropAt(position, wMm, hMm),
         wMm,
         hMm,
@@ -178,7 +181,7 @@ export default function PrintStudio({ catalogue, blank }: Props) {
       setDesign((d) => ({ ...d, placements: [...d.placements, placement] }));
       setSelected(placement.key);
     },
-    [assets, dropAt, position],
+    [dropAt, position],
   );
 
   /**
@@ -332,7 +335,7 @@ export default function PrintStudio({ catalogue, blank }: Props) {
 
       const asset = data as PrintAsset;
       setUploads((u) => [...u, asset]);
-      addPlacement(asset.id);
+      addPlacement(asset);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Không tải được file lên.");
     }
@@ -820,7 +823,15 @@ export default function PrintStudio({ catalogue, blank }: Props) {
               <span className="mt-0.5 block text-xs text-muted">
                 {technique ? `${technique.file_types.join(", ").toUpperCase()} · tối đa 25 MB` : "PNG, PDF, SVG"}
               </span>
-              <input type="file" accept="image/*,.pdf,.svg" hidden onChange={onUpload} disabled={busy} />
+              <input
+                type="file"
+                /* Đúng bằng luật `mimes:` bên trang quản trị — mở rộng hơn chỉ khiến
+                   khách chọn xong rồi mới bị từ chối. */
+                accept=".png,.jpg,.jpeg,.webp,.pdf,.svg,image/png,image/jpeg,image/webp,image/svg+xml,application/pdf"
+                hidden
+                onChange={onUpload}
+                disabled={busy}
+              />
             </label>
 
             {catalogue.fonts.length > 0 && (
@@ -846,7 +857,7 @@ export default function PrintStudio({ catalogue, blank }: Props) {
                         key={asset.id}
                         type="button"
                         disabled={!allowed}
-                        onClick={() => addPlacement(asset.id)}
+                        onClick={() => addPlacement(asset)}
                         title={allowed ? asset.name : `${asset.name} — không dùng được với kỹ thuật đang chọn`}
                         className="relative grid aspect-square place-items-center rounded-lg border border-line bg-cream-dark/40 p-1.5 transition-colors enabled:hover:border-gold disabled:opacity-30"
                       >
