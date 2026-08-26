@@ -7,13 +7,24 @@ import { useCart } from "@/lib/cart";
 import { defaultMethod, itemsToFreeShipping } from "@/lib/sales";
 import { useSales } from "@/lib/sales-context";
 import { formatPrice } from "@/lib/data";
+import {
+  printDraftQty,
+  printDraftTotal,
+  removePrintDraft,
+  usePrintDrafts,
+} from "@/lib/print-draft";
 import QuantityStepper from "./QuantityStepper";
 import { Bag, Close, Sparkles } from "./icons";
 
 export default function CartDrawer() {
   const { items, count, subtotal, isOpen, closeCart, setQty, remove } = useCart();
   const sales = useSales();
-  const PHUONG_THUC = defaultMethod(sales);
+  const printDrafts = usePrintDrafts();
+  const hasPrint = printDrafts.length > 0;
+  const printQty = printDraftQty(printDrafts);
+  const totalCount = count + printQty;
+  const totalSubtotal = subtotal + printDraftTotal(printDrafts);
+  const PHUONG_THUC = defaultMethod(sales, { hasPrint });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -31,9 +42,10 @@ export default function CartDrawer() {
   if (!isOpen) return null;
 
   const nguong = sales[PHUONG_THUC].freeShippingMinItems;
-  const conThieu = itemsToFreeShipping(sales, PHUONG_THUC, count);
+  const conThieu = itemsToFreeShipping(sales, PHUONG_THUC, totalCount);
   const hienThanhMienPhi = !sales[PHUONG_THUC].freeShipping && nguong !== null;
-  const progress = nguong ? Math.min((count / nguong) * 100, 100) : 100;
+  const progress = nguong ? Math.min((totalCount / nguong) * 100, 100) : 100;
+  const hasItems = items.length > 0 || hasPrint;
 
   return (
     <div className="fixed inset-0 z-70" role="dialog" aria-modal="true" aria-label="Giỏ hàng">
@@ -49,7 +61,7 @@ export default function CartDrawer() {
           <div className="flex items-center gap-2">
             <p className="text-lg font-semibold text-ink">Giỏ hàng</p>
             <span className="rounded-full bg-ink px-2 py-0.5 text-xs font-bold text-cream">
-              {count}
+              {totalCount}
             </span>
           </div>
           <button
@@ -62,7 +74,7 @@ export default function CartDrawer() {
           </button>
         </header>
 
-        {items.length === 0 ? (
+        {!hasItems ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
             <div className="grid h-16 w-16 place-items-center rounded-full bg-surface shadow-xs ring-1 ring-line">
               <Bag className="h-7 w-7 text-muted" />
@@ -157,13 +169,62 @@ export default function CartDrawer() {
                   </div>
                 </li>
               ))}
+
+              {printDrafts.map((printDraft) => (
+                <li key={printDraft.code} className="flex gap-3.5 py-4">
+                  <div className="relative grid aspect-square w-20 shrink-0 place-items-center overflow-hidden rounded-card bg-gold/8 ring-1 ring-gold-soft shadow-xs">
+                    {printDraft.thumbUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={printDraft.thumbUrl}
+                        alt=""
+                        className="h-full w-full object-contain p-2"
+                      />
+                    ) : (
+                      <Bag className="h-7 w-7 text-gold-deep" />
+                    )}
+                  </div>
+
+                  <div className="flex flex-1 flex-col justify-between">
+                    <div>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="line-clamp-2 text-sm font-semibold leading-snug text-ink">
+                            Áo in theo yêu cầu
+                          </p>
+                          <p className="mt-1 text-xs text-muted">{printDraft.label}</p>
+                        </div>
+                        <p className="shrink-0 text-sm font-bold text-ink">
+                          {formatPrice(printDraft.total)}
+                        </p>
+                      </div>
+                      <p className="mt-1 font-mono text-[11px] text-gold-deep">
+                        {printDraft.code} · {printDraft.qty} áo · giao sau {printDraft.leadDays} ngày
+                      </p>
+                    </div>
+
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <span className="rounded-full bg-cream px-3 py-1 text-xs font-semibold text-ink ring-1 ring-line">
+                        SL {printDraft.qty}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removePrintDraft(printDraft.code)}
+                        className="text-xs text-muted underline underline-offset-4 transition-colors hover:text-ink"
+                      >
+                        Xoá
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              ))}
             </ul>
 
             {/* ── Footer ── */}
             <footer className="border-t border-line bg-surface/40 px-5 py-4 pb-safe shadow-sm">
               <div className="flex items-baseline justify-between">
                 <p className="text-sm text-muted">Tạm tính</p>
-                <p className="text-lg font-bold text-ink">{formatPrice(subtotal)}</p>
+                <p className="text-lg font-bold text-ink">{formatPrice(totalSubtotal)}</p>
               </div>
               <p className="mt-0.5 text-xs text-muted">
                 Phí giao hàng được tính khi thanh toán.
@@ -192,4 +253,3 @@ export default function CartDrawer() {
     </div>
   );
 }
-

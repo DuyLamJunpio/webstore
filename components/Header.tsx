@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useCart } from "@/lib/cart";
 import { CONTACT } from "@/lib/contact";
+import { printDraftQty, usePrintDrafts } from "@/lib/print-draft";
 import Logo from "./Logo";
 import { ArrowUpRight, Bag, Close, Heart, Menu, Phone, Search, Sparkles } from "./icons";
 
@@ -34,16 +35,15 @@ export default function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const { count, hydrated, openCart } = useCart();
+  const printDrafts = usePrintDrafts();
+  const cartCount = hydrated ? count + printDraftQty(printDrafts) : 0;
 
   const isHome = pathname === "/";
   // On interior pages, header is ALWAYS solid to ensure perfect readability on light background
   const showSolidHeader = !isHome || scrolled || searchOpen || open;
 
   useEffect(() => {
-    if (!isHome) {
-      setScrolled(true);
-      return;
-    }
+    if (!isHome) return;
 
     const onScroll = () => {
       const hero = document.getElementById("top");
@@ -161,11 +161,11 @@ export default function Header() {
               <button
                 type="button"
                 onClick={openCart}
-                aria-label={`Giỏ hàng, ${hydrated ? count : 0} sản phẩm`}
+                aria-label={`Giỏ hàng, ${cartCount} sản phẩm`}
                 className={actionBtnClass}
               >
                 <Bag />
-                <Counter value={hydrated ? count : 0} />
+                <Counter value={cartCount} />
               </button>
 
               <button

@@ -6,7 +6,7 @@ import ClearCartOnPaid from "@/components/checkout/ClearCartOnPaid";
 import CopyField from "@/components/checkout/CopyField";
 import PaymentWatcher from "@/components/checkout/PaymentWatcher";
 import QrCode from "@/components/checkout/QrCode";
-import { ArrowRight, ArrowUpRight, Shield } from "@/components/icons";
+import { ArrowRight, ArrowUpRight, Bag, Shield } from "@/components/icons";
 import { bankName } from "@/lib/banks";
 import { formatAddress } from "@/lib/checkout";
 import { isOpen, syncOrderStatus } from "@/lib/order-status";
@@ -22,6 +22,7 @@ export const metadata: Metadata = {
 /** items, totals and where it is going — the same panel on every branch */
 function OrderSummary({ order }: { order: Order }) {
   const { cart, customer } = order;
+  const prints = cart.prints ?? [];
 
   return (
     <aside className="lg:sticky lg:top-[92px] lg:self-start">
@@ -47,6 +48,25 @@ function OrderSummary({ order }: { order: Order }) {
                   </p>
                 </div>
                 <p className="shrink-0 text-[14px] font-medium">{formatPrice(line.total)}</p>
+              </div>
+            </li>
+          ))}
+
+          {prints.map((print) => (
+            <li key={print.code} className="flex gap-3">
+              <div className="relative grid aspect-square w-14 shrink-0 place-items-center overflow-hidden rounded-card bg-gold/8 ring-1 ring-gold-soft">
+                <Bag className="h-6 w-6 text-gold-deep" />
+                <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-ink px-1 text-[11px] font-medium text-cream">
+                  {print.qty}
+                </span>
+              </div>
+              <div className="flex flex-1 items-start justify-between gap-3">
+                <div>
+                  <p className="text-[14px] font-medium leading-snug">Áo in theo yêu cầu</p>
+                  <p className="mt-0.5 text-[12px] text-muted">{print.label}</p>
+                  <p className="mt-0.5 font-mono text-[11px] text-gold-deep">{print.code}</p>
+                </div>
+                <p className="shrink-0 text-[14px] font-medium">{formatPrice(print.total)}</p>
               </div>
             </li>
           ))}

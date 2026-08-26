@@ -6,12 +6,20 @@ import { useCart } from "@/lib/cart";
 import { defaultMethod, shippingFeeFor } from "@/lib/sales";
 import { useSales } from "@/lib/sales-context";
 import { formatPrice } from "@/lib/data";
+import {
+  clearPrintDrafts,
+  printDraftQty,
+  printDraftTotal,
+  removePrintDraft,
+  usePrintDrafts,
+} from "@/lib/print-draft";
 import QuantityStepper from "../QuantityStepper";
 import { ArrowRight, Bag } from "../icons";
 
 export default function CartView() {
   const { items, count, subtotal, hydrated, clear, setQty, remove } = useCart();
   const sales = useSales();
+  const printDrafts = usePrintDrafts();
 
   if (!hydrated) {
     return (
@@ -32,7 +40,13 @@ export default function CartView() {
     );
   }
 
-  if (items.length === 0) {
+  const hasPrint = printDrafts.length > 0;
+  const printQty = printDraftQty(printDrafts);
+  const printTotal = printDraftTotal(printDrafts);
+  const totalCount = count + printQty;
+  const totalSubtotal = subtotal + printTotal;
+
+  if (items.length === 0 && !hasPrint) {
     return (
       <div className="mt-8 rounded-block border border-line bg-surface px-6 py-16 text-center shadow-xs">
         <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-cream ring-1 ring-line text-muted">
@@ -53,7 +67,11 @@ export default function CartView() {
     );
   }
 
-  const shipping = shippingFeeFor(sales, defaultMethod(sales), count);
+  const shipping = shippingFeeFor(sales, defaultMethod(sales, { hasPrint }), totalCount);
+  const clearAll = () => {
+    clear();
+    clearPrintDrafts();
+  };
 
   return (
     <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -103,6 +121,55 @@ export default function CartView() {
               </div>
             </li>
           ))}
+
+          {printDrafts.map((printDraft) => (
+            <li key={printDraft.code} className="flex gap-4 py-5 first:pt-0">
+              <div className="relative grid aspect-square w-24 shrink-0 place-items-center overflow-hidden rounded-card bg-gold/8 ring-1 ring-gold-soft shadow-xs sm:w-28">
+                {printDraft.thumbUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={printDraft.thumbUrl}
+                    alt=""
+                    className="h-full w-full object-contain p-3"
+                  />
+                ) : (
+                  <Bag className="h-8 w-8 text-gold-deep" />
+                )}
+              </div>
+
+              <div className="flex flex-1 flex-col justify-between">
+                <div>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h2 className="text-sm font-semibold leading-snug text-ink sm:text-base">
+                        Áo in theo yêu cầu
+                      </h2>
+                      <p className="mt-1 text-xs text-muted sm:text-[13px]">{printDraft.label}</p>
+                    </div>
+                    <p className="text-sm font-bold text-ink sm:text-base">
+                      {formatPrice(printDraft.total)}
+                    </p>
+                  </div>
+                  <p className="mt-1 font-mono text-[11px] text-gold-deep">
+                    {printDraft.code} · {printDraft.qty} áo · {formatPrice(printDraft.unitPrice)}/áo
+                  </p>
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-center gap-4">
+                  <span className="rounded-full bg-surface px-3 py-1 text-xs font-semibold text-ink ring-1 ring-line">
+                    Giao sau {printDraft.leadDays} ngày
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removePrintDraft(printDraft.code)}
+                    className="text-xs text-muted underline underline-offset-4 transition-colors hover:text-ink"
+                  >
+                    Xoá
+                  </button>
+                </div>
+              </div>
+            </li>
+          ))}
         </ul>
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
@@ -114,7 +181,7 @@ export default function CartView() {
           </Link>
           <button
             type="button"
-            onClick={clear}
+            onClick={clearAll}
             className="text-xs sm:text-sm text-muted underline underline-offset-4 transition-colors hover:text-ink"
           >
             Xoá toàn bộ giỏ hàng
@@ -129,8 +196,8 @@ export default function CartView() {
 
           <dl className="mt-5 flex flex-col gap-3 text-sm">
             <div className="flex justify-between">
-              <dt className="text-muted">Tạm tính ({count} món)</dt>
-              <dd className="font-semibold text-ink">{formatPrice(subtotal)}</dd>
+              <dt className="text-muted">Tạm tính ({totalCount} món)</dt>
+              <dd className="font-semibold text-ink">{formatPrice(totalSubtotal)}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-muted">Phí giao hàng</dt>
@@ -144,7 +211,7 @@ export default function CartView() {
             </div>
             <div className="mt-2 flex justify-between border-t border-line pt-4 text-base sm:text-lg">
               <dt className="font-bold text-ink">Tổng cộng</dt>
-              <dd className="font-bold text-ink">{formatPrice(subtotal + shipping)}</dd>
+              <dd className="font-bold text-ink">{formatPrice(totalSubtotal + shipping)}</dd>
             </div>
           </dl>
 
@@ -164,4 +231,3 @@ export default function CartView() {
     </div>
   );
 }
-

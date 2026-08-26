@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCart } from "@/lib/cart";
+import { printDraftQty, usePrintDrafts } from "@/lib/print-draft";
 import { Bag, HomeIcon, Sparkles, Store } from "./icons";
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
   const { count, hydrated, openCart } = useCart();
+  const printDrafts = usePrintDrafts();
+  const cartCount = hydrated ? count + printDraftQty(printDrafts) : 0;
 
   // Ẩn thanh bottom nav khi ở trang thanh toán hoặc trang chi tiết sản phẩm để nhường không gian cho thanh Mua hàng
   if (pathname.startsWith("/checkout") || pathname.startsWith("/products/")) {
@@ -59,14 +62,14 @@ export default function MobileBottomNav() {
       <button
         type="button"
         onClick={openCart}
-        aria-label={`Giỏ hàng, ${hydrated ? count : 0} sản phẩm`}
+        aria-label={`Giỏ hàng, ${cartCount} sản phẩm`}
         className="relative flex flex-1 flex-col items-center justify-center gap-1 py-1 text-[11px] font-medium text-muted transition-colors hover:text-ink"
       >
         <div className="relative grid h-6 w-6 place-items-center rounded-full">
           <Bag className="h-5 w-5" />
-          {hydrated && count > 0 && (
+          {cartCount > 0 && (
             <span className="absolute -right-2 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-gold px-1 text-[9px] font-bold text-cream">
-              {count}
+              {cartCount}
             </span>
           )}
         </div>

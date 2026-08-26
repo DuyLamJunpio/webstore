@@ -98,6 +98,14 @@ export function clearPrintDrafts() {
   write([]);
 }
 
+export function printDraftQty(drafts: PrintDraft[]): number {
+  return drafts.reduce((sum, draft) => sum + draft.qty, 0);
+}
+
+export function printDraftTotal(drafts: PrintDraft[]): number {
+  return drafts.reduce((sum, draft) => sum + draft.total, 0);
+}
+
 export function usePrintDrafts(): PrintDraft[] {
   return useSyncExternalStore(
     (listener) => {
