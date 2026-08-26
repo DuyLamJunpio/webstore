@@ -12,7 +12,9 @@ import {
   type CustomerInfo,
 } from "@/lib/checkout";
 import { useCart } from "@/lib/cart";
+import { CONTACT } from "@/lib/contact";
 import { clearPrintDrafts, usePrintDrafts } from "@/lib/print-draft";
+import { BULK_PRINT_FROM, isBulkPrint } from "@/lib/print-bulk";
 import { formatPrice } from "@/lib/data";
 import {
   defaultMethod,
@@ -22,6 +24,7 @@ import {
   MO_TA_PHUONG_THUC,
   NHAN_NUT_DANG_GUI,
   NHAN_NUT_DAT,
+  PHUONG_THUC_CHO_DON_IN,
   TEN_PHUONG_THUC,
   type PaymentMethodKey,
 } from "@/lib/sales";
@@ -156,11 +159,16 @@ function CheckoutFields({
   subtotal,
 }: Pick<ReturnType<typeof useCart>, "items" | "count" | "subtotal">) {
   const sales = useSales();
-  const [method, setMethod] = useState<PaymentMethodKey>(() => defaultMethod(sales));
   const router = useRouter();
   // Mẫu áo in khách vừa chốt ở /in-ao, nếu có. Bản này chỉ để hiện — máy chủ
   // đọc lại giá đã đóng băng theo mã trước khi thu tiền.
   const printDrafts = usePrintDrafts();
+  const coAoIn = printDrafts.length > 0;
+  // Nhớ hình thức khách bấm; hình thức THẬT SỰ dùng được lọc lại ở dưới, vì
+  // đơn có áo in chỉ còn đúng một cách trả tiền.
+  const [daChon, setDaChon] = useState<PaymentMethodKey>(() =>
+    defaultMethod(sales, { hasPrint: coAoIn }),
+  );
 
   const [customer, setCustomer] = useState<CustomerInfo>(readDraft);
   /*
@@ -260,7 +268,17 @@ function CheckoutFields({
    * Hai hình thức có thể ra hai mức phí khác nhau, nên tính sẵn cả hai: bảng tổng
    * kết theo hình thức của nút chính, còn nút kia tự nói mức của mình.
    */
-  const cachChon = enabledMethods(sales);
+  const cachChon = enabledMethods(sales, { hasPrint: coAoIn });
+
+  /*
+   * Hình thức thật sự dùng = thứ khách đã bấm, NẾU nó còn trong danh sách đang
+   * mở. Thêm một mẫu in vào giỏ sau khi đã chọn "trả khi nhận hàng" thì lựa
+   * chọn cũ tự rơi về chuyển khoản, chứ không kẹt lại ở một cách trả tiền mà
+   * máy chủ sẽ từ chối ngay sau đó.
+   */
+  const method: PaymentMethodKey = cachChon.includes(daChon)
+    ? daChon
+    : (cachChon[0] ?? PHUONG_THUC_CHO_DON_IN);
 
   // Phí giao hàng, ngưỡng miễn phí và tổng tiền đều tính theo hình thức khách
   // đang chọn: chủ shop khai riêng từng hình thức bên trang quản trị, nên hai
@@ -270,6 +288,8 @@ function CheckoutFields({
   // cho khách hai con số phí giao hàng khác nhau.
   const printQty = printDrafts.reduce((sum, d) => sum + d.qty, 0);
   const printTotal = printDrafts.reduce((sum, d) => sum + d.total, 0);
+  // Ghép nhiều mẫu nhỏ vẫn ra một đơn đồng phục lớn, nên ngưỡng tính trên cả đơn.
+  const donSoLuongLon = isBulkPrint(printQty);
   const soMon = count + printQty;
   const shipping = shippingFeeFor(sales, method, soMon);
   const conThieuDeMienPhi = itemsToFreeShipping(sales, method, soMon);
@@ -279,6 +299,9 @@ function CheckoutFields({
     <form
       onSubmit={(event) => {
         event.preventDefault();
+        // Đơn in số lượng lớn không chốt online: nút đã đổi thành ô liên hệ,
+        // đây là chốt chặn cho phím Enter trong ô nhập.
+        if (donSoLuongLon) return;
         // Bấm Enter trong ô nhập = bấm nút chính.
         void datHang(method);
       }}
@@ -483,7 +506,8 @@ function CheckoutFields({
 
           {/* Chọn một trong hai rồi mới đặt: phí giao hàng của mỗi hình thức do chủ
               shop khai riêng, nên tổng tiền ở trên phải đổi theo lựa chọn trước khi
-              khách bấm. Chỉ mở một hình thức thì khỏi bắt chọn. */}
+              khách bấm. Chỉ mở một hình thức thì khỏi bắt chọn — đơn có áo in luôn
+              rơi vào trường hợp này, và ô giải thích ngay bên dưới nói vì sao. */}
           {cachChon.length > 1 && (
             <fieldset className="mt-6 border-t border-line pt-5">
               <legend className="eyebrow text-ink/60">Hình thức thanh toán</legend>
@@ -502,7 +526,7 @@ function CheckoutFields({
                         name="paymentMethod"
                         value={key}
                         checked={method === key}
-                        onChange={() => setMethod(key)}
+                        onChange={() => setDaChon(key)}
                         className="mt-1 accent-ink"
                       />
                       <span className="min-w-0">
@@ -523,24 +547,79 @@ function CheckoutFields({
             </fieldset>
           )}
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-ink text-sm font-medium text-cream transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
-            {submitting ? NHAN_NUT_DANG_GUI[method] : NHAN_NUT_DAT[method]}
-            {!submitting && <ArrowRight />}
-          </button>
+          {/* Mất lựa chọn "trả khi nhận hàng" mà không ai nói gì là khách tưởng
+              trang lỗi. Nói thẳng luật, và nói cả lý do. */}
+          {coAoIn && !donSoLuongLon && (
+            <div className="mt-6 rounded-card border border-line bg-cream-dark/30 p-4">
+              <p className="text-[13px] font-medium text-ink">
+                Đơn có áo in: {TEN_PHUONG_THUC[PHUONG_THUC_CHO_DON_IN].toLowerCase()} trước
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-muted">
+                Áo in là hàng làm riêng theo thiết kế của bạn nên shop không nhận trả khi nhận
+                hàng. Chuyển khoản xong shop mới duyệt file và đưa xuống xưởng. File không in
+                được thì shop hoàn tiền đầy đủ vào tài khoản bạn điền ở trên.
+              </p>
+            </div>
+          )}
+
+          {/* Đơn đồng phục lớn dừng ở đây và chuyển sang người thật: con số phía
+              trên chưa phải giá cuối, còn thương lượng phôi, bảng size và lịch
+              giao theo đợt. Thu tiền theo một báo giá tự động rồi gọi lại xin
+              sửa là cách tệ nhất để mở đầu một đơn lớn. */}
+          {donSoLuongLon ? (
+            <div className="mt-6 rounded-card border border-gold-soft bg-gold/8 p-4">
+              <p className="text-[15px] font-medium text-ink">
+                Đơn {printQty} áo in — shop báo giá trực tiếp
+              </p>
+              <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
+                Từ {BULK_PRINT_FROM} áo trở lên, shop chốt giá và lịch giao với bạn qua Zalo hoặc
+                điện thoại — đơn lớn còn thương lượng được phôi, bảng size và chia đợt giao. Bạn
+                nhắn kèm mã mẫu bên dưới, shop mở đúng thiết kế bạn vừa dựng.
+              </p>
+
+              <div className="mt-3.5 flex flex-wrap gap-2.5">
+                <a
+                  href={CONTACT.zaloUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-full bg-ink px-5 py-3 text-[13px] font-semibold text-cream transition-colors hover:bg-gold-deep"
+                >
+                  Nhắn Zalo
+                </a>
+                <a
+                  href={CONTACT.phoneHref}
+                  className="rounded-full border border-line-strong px-5 py-3 text-[13px] font-semibold text-ink transition-colors hover:border-ink"
+                >
+                  Gọi {CONTACT.phoneDisplay}
+                </a>
+              </div>
+
+              <p className="mt-3 font-mono text-[11px] text-gold-deep">
+                Mã mẫu: {printDrafts.map((draft) => draft.code).join(", ")}
+              </p>
+            </div>
+          ) : (
+            <button
+              type="submit"
+              disabled={submitting}
+              className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-ink text-sm font-medium text-cream transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {submitting ? NHAN_NUT_DANG_GUI[method] : NHAN_NUT_DAT[method]}
+              {!submitting && <ArrowRight />}
+            </button>
+          )}
 
           <p aria-live="polite" className="mt-3 min-h-5 text-[13px] leading-relaxed text-gold-deep">
             {formError}
           </p>
 
-          <p className="text-[13px] leading-relaxed text-muted">
-            {method === "cod"
-              ? "Hoá đơn được gửi thẳng tới shop, không có mã QR. Bạn trả tiền mặt cho người giao hàng."
-              : "Bước tiếp theo là mã QR VietQR để chuyển khoản qua ứng dụng ngân hàng. Đơn hàng chỉ được xác nhận sau khi chúng tôi nhận được tiền."}
-          </p>
+          {!donSoLuongLon && (
+            <p className="text-[13px] leading-relaxed text-muted">
+              {method === "cod"
+                ? "Hoá đơn được gửi thẳng tới shop, không có mã QR. Bạn trả tiền mặt cho người giao hàng."
+                : "Bước tiếp theo là mã QR VietQR để chuyển khoản qua ứng dụng ngân hàng. Đơn hàng chỉ được xác nhận sau khi chúng tôi nhận được tiền."}
+            </p>
+          )}
 
           <Link
             href="/cart"

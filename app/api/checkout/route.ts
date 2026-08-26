@@ -8,7 +8,9 @@
 
 import { getCatalogue } from "@/lib/catalogue";
 import { getContent } from "@/lib/content";
-import type { PaymentMethodKey } from "@/lib/sales";
+import { CONTACT } from "@/lib/contact";
+import { BULK_PRINT_FROM, isBulkPrint } from "@/lib/print-bulk";
+import { PHUONG_THUC_CHO_DON_IN, TEN_PHUONG_THUC, type PaymentMethodKey } from "@/lib/sales";
 import { after } from "next/server";
 import type { NextRequest } from "next/server";
 import {
@@ -111,6 +113,19 @@ export async function POST(request: NextRequest) {
    * chỉ được nói mã, không được nói tiền — cùng nguyên tắc với `priceCart`.
    */
   const codes = Array.from(new Set(body.printCodes ?? [])).slice(0, 20);
+
+  /*
+   * Áo in là hàng làm riêng — không bán lại được cho ai nếu khách từ chối nhận.
+   * Trang thanh toán đã giấu lựa chọn trả-khi-nhận-hàng khi giỏ có mẫu in, chỗ
+   * này là hàng rào thật: một request tự soạn cũng không lách qua được.
+   */
+  if (codes.length > 0 && method !== PHUONG_THUC_CHO_DON_IN) {
+    return bad(
+      `Đơn có áo in theo yêu cầu chỉ nhận ${TEN_PHUONG_THUC[PHUONG_THUC_CHO_DON_IN].toLowerCase()} trước. `
+        + "Vui lòng chọn lại hình thức thanh toán.",
+    );
+  }
+
   const prints: PricedPrint[] = [];
 
   for (const code of codes) {
@@ -131,6 +146,21 @@ export async function POST(request: NextRequest) {
       unitPrice: design.unit_price,
       total: design.total_price,
     });
+  }
+
+  /*
+   * Đơn in số lượng lớn KHÔNG chốt online. Studio đã chặn từng mẫu một, nhưng
+   * khách hoàn toàn có thể ghép nhiều mẫu nhỏ thành một đơn đồng phục lớn —
+   * ngưỡng phải tính trên cả đơn thì mới đúng thứ shop cần báo giá tay.
+   */
+  const printQty = prints.reduce((sum, print) => sum + print.qty, 0);
+  if (isBulkPrint(printQty)) {
+    return bad(
+      `Đơn in từ ${BULK_PRINT_FROM} áo trở lên shop báo giá trực tiếp (đơn của bạn ${printQty} áo). `
+        + `Vui lòng nhắn Zalo hoặc gọi ${CONTACT.phoneDisplay} kèm mã mẫu ${codes.join(", ")} `
+        + "để shop chốt giá và lịch giao.",
+      422,
+    );
   }
 
   const priced = priceCart(await getCatalogue(), body.lines ?? [], sales, method, prints);

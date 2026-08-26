@@ -3,6 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import SectionHeading from "@/components/SectionHeading";
 import { bookableBlanks, coverMockup, getPrintCatalogue } from "@/lib/print-catalogue";
+import { BULK_PRINT_FROM } from "@/lib/print-bulk";
+import { CONTACT } from "@/lib/contact";
 import { formatPrice } from "@/lib/data";
 
 export const metadata: Metadata = {
@@ -135,7 +137,10 @@ export default async function PrintLandingPage() {
         <ol className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { t: "Thiết kế", d: "Kéo hình của bạn lên áo, hoặc chọn sticker có sẵn. Giá đổi theo từng thay đổi." },
-            { t: "Đặt và thanh toán", d: "Chốt số lượng, điền thông tin nhận hàng, chuyển khoản hoặc trả khi nhận." },
+            {
+              t: "Đặt và thanh toán",
+              d: `Chốt số lượng, điền thông tin nhận hàng rồi chuyển khoản. Áo in là hàng làm riêng nên shop không nhận trả khi nhận hàng. Từ ${BULK_PRINT_FROM} áo trở lên, shop báo giá trực tiếp.`,
+            },
             { t: "Shop duyệt thiết kế", d: "Nhân viên kiểm file có đủ nét và in được không. Không đạt thì shop báo lại và hoàn tiền." },
             { t: "In và giao", d: "Duyệt xong mới vào xưởng. Thời gian tuỳ kỹ thuật, hiện sẵn ở bước chọn." },
           ].map((step, i) => (
@@ -146,6 +151,41 @@ export default async function PrintLandingPage() {
             </li>
           ))}
         </ol>
+      </section>
+
+      {/* ── Đơn lớn ── */}
+      <section className="shell mt-16">
+        <div className="rounded-block border border-gold-soft bg-gold/8 px-6 py-8 sm:px-10 sm:py-10">
+          <div className="measure">
+            <p className="eyebrow text-gold-deep">Đồng phục số lượng lớn</p>
+            <h2 className="mt-3 font-serif text-2xl sm:text-3xl text-ink text-balance">
+              Từ {BULK_PRINT_FROM} áo trở lên, shop báo giá trực tiếp
+            </h2>
+            <p className="mt-4 text-muted">
+              Áo đồng phục công ty, áo sự kiện, đơn hàng trăm chiếc — những đơn này còn thương lượng
+              được phôi, bảng size của cả tập thể và lịch giao theo đợt, nên bảng giá tự động không
+              nói hết được. Bạn cứ dựng mẫu trong studio như thường, lưu lại lấy mã, rồi gửi mã cho
+              shop chốt giá.
+            </p>
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <a
+              href={CONTACT.zaloUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full bg-ink px-7 py-3.5 text-sm font-semibold text-cream transition-colors hover:bg-gold-deep"
+            >
+              Nhắn Zalo cho shop
+            </a>
+            <a
+              href={CONTACT.phoneHref}
+              className="rounded-full border border-line-strong bg-surface px-6 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-ink"
+            >
+              Gọi {CONTACT.phoneDisplay}
+            </a>
+          </div>
+        </div>
       </section>
     </main>
   );
