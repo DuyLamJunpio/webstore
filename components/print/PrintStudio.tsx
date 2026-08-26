@@ -525,7 +525,7 @@ export default function PrintStudio({ catalogue, blank }: Props) {
     .join("");
 
   return (
-    <main className="shell py-8 sm:py-12">
+    <main className="shell pt-24 pb-12 sm:pt-28">
       {fontFaces && <style>{fontFaces}</style>}
 
       <nav className="mb-5 text-sm text-muted">

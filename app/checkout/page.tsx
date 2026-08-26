@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function CheckoutPage() {
   return (
-    <div className="shell section pt-6 sm:pt-8">
+    <div className="shell section pt-24 sm:pt-28">
       <nav aria-label="Đường dẫn" className="flex items-center gap-2 text-xs sm:text-[13px] text-muted">
         <Link href="/" className="transition-colors hover:text-ink">
           Trang chủ

@@ -48,7 +48,7 @@ export default async function ProductPage(props: PageProps<"/products/[slug]">) 
   const available = inStock(product);
 
   return (
-    <div className="shell section pt-6 sm:pt-8">
+    <div className="shell section pt-24 sm:pt-28">
       {/* ── Sticky Buy Bar on Mobile ── */}
       {available && <StickyBuyBar product={product} />}
 
