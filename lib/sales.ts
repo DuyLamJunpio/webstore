@@ -90,9 +90,32 @@ export const NHAN_NUT_DANG_GUI: Record<PaymentMethodKey, string> = {
 /** Thứ tự bày ra cho khách; cũng là thứ tự chọn hình thức mặc định. */
 export const THU_TU_PHUONG_THUC: PaymentMethodKey[] = ["bank_transfer", "cod"];
 
-/** Các hình thức chủ shop đang mở, giữ đúng thứ tự bày. */
-export const enabledMethods = (settings: SalesSettings): PaymentMethodKey[] =>
-  THU_TU_PHUONG_THUC.filter((key) => settings[key]?.enabled);
+/**
+ * Đơn có áo in theo yêu cầu chỉ nhận CHUYỂN KHOẢN TRƯỚC.
+ *
+ * Áo in là hàng làm riêng cho một người: in tên lớp lên rồi thì không bán lại
+ * cho ai được nữa. Khách đổi ý và từ chối nhận một đơn trả-khi-nhận-hàng là
+ * shop ôm trọn cả phôi lẫn công in. Tiền vào tài khoản cũng chính là tín hiệu
+ * để shop bắt đầu duyệt file và đưa xuống xưởng.
+ *
+ * Luật này không nằm trong trang quản trị vì nó không phải một tuỳ chọn kinh
+ * doanh — nó là điều kiện để nhận đơn in.
+ */
+export const PHUONG_THUC_CHO_DON_IN: PaymentMethodKey = "bank_transfer";
+
+/**
+ * Các hình thức chủ shop đang mở, giữ đúng thứ tự bày.
+ *
+ * Giỏ có mẫu áo in (`hasPrint`) thì chỉ còn đúng một cách trả tiền, và trang
+ * thanh toán khỏi bày ra một lựa chọn mà máy chủ sẽ từ chối ngay sau đó.
+ */
+export const enabledMethods = (
+  settings: SalesSettings,
+  options: { hasPrint?: boolean } = {},
+): PaymentMethodKey[] => {
+  const thuTu = options.hasPrint ? [PHUONG_THUC_CHO_DON_IN] : THU_TU_PHUONG_THUC;
+  return thuTu.filter((key) => settings[key]?.enabled);
+};
 
 /**
  * Hình thức chọn sẵn khi mở trang thanh toán, và cũng là hình thức dùng để ước
@@ -101,5 +124,7 @@ export const enabledMethods = (settings: SalesSettings): PaymentMethodKey[] =>
  * Tắt hết thì trả về chuyển khoản: máy chủ vẫn chặn đơn, nhưng giao diện không
  * được phép vỡ vì thiếu giá trị.
  */
-export const defaultMethod = (settings: SalesSettings): PaymentMethodKey =>
-  enabledMethods(settings)[0] ?? "bank_transfer";
+export const defaultMethod = (
+  settings: SalesSettings,
+  options: { hasPrint?: boolean } = {},
+): PaymentMethodKey => enabledMethods(settings, options)[0] ?? PHUONG_THUC_CHO_DON_IN;

@@ -21,7 +21,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useMemo, useRef, useState } from "react";
+import { CONTACT } from "@/lib/contact";
 import { formatPrice } from "@/lib/data";
+import { BULK_PRINT_FROM, isBulkPrint } from "@/lib/print-bulk";
 import { addPrintDraft } from "@/lib/print-draft";
 import {
   boundingBox,
@@ -101,7 +103,9 @@ export default function PrintStudio({ catalogue, blank }: Props) {
   const [selected, setSelected] = useState<string | null>(null);
   const [uploads, setUploads] = useState<PrintAsset[]>([]);
   const [busy, setBusy] = useState(false);
-  const [submitted, setSubmitted] = useState<{ code: string; total: number } | null>(null);
+  const [submitted, setSubmitted] = useState<{ code: string; total: number; bulk: boolean } | null>(
+    null,
+  );
   const [notice, setNotice] = useState<string | null>(null);
 
   const stageRef = useRef<HTMLDivElement>(null);
@@ -117,6 +121,14 @@ export default function PrintStudio({ catalogue, blank }: Props) {
   const position = positions.find((p) => p.key === positionKey) ?? positions[0];
 
   const result = useMemo(() => quote(design, blank, catalogue, assets), [design, blank, catalogue, assets]);
+
+  /*
+   * Đơn số lượng lớn: studio vẫn dựng và vẫn lưu mẫu, nhưng không cho vào giỏ.
+   * Bảng giá tự động không biết chuyện thương lượng phôi, bảng size cả tập thể
+   * hay chia đợt giao — với đơn đồng phục cỡ này, con số nó đưa ra chỉ là ước
+   * lượng, và thu tiền theo một ước lượng là hứa sai với khách.
+   */
+  const donSoLuongLon = isBulkPrint(design.qty);
 
   /**
    * Tấm mockup đang hiện: ưu tiên đúng màu, rồi đúng góc chụp mà vị trí đang
@@ -380,18 +392,23 @@ export default function PrintStudio({ catalogue, blank }: Props) {
        * Cất mẫu vừa chốt rồi đưa thẳng sang trang thanh toán. Dừng lại ở một
        * màn hình "đây là mã của bạn" nghe thì lịch sự, nhưng đó là chỗ khách
        * rời đi nhiều nhất — họ vừa thiết kế xong và đang muốn trả tiền.
+       *
+       * Trừ đơn số lượng lớn: mẫu vẫn được LƯU (khách cần cái mã để shop mở
+       * đúng thiết kế), nhưng không vào giỏ — giá của đơn đó do người thật chốt.
        */
-      addPrintDraft({
-        code: data.code,
-        label: `${blank.name} · ${design.colorName} · size ${design.size}`,
-        qty: design.qty,
-        unitPrice: data.unit_price,
-        total: data.total_price,
-        thumbUrl: assets.get(design.placements[0]?.assetId ?? -1)?.url ?? null,
-        leadDays: Math.max(blank.lead_days, technique?.lead_days ?? 0),
-      });
+      if (!donSoLuongLon) {
+        addPrintDraft({
+          code: data.code,
+          label: `${blank.name} · ${design.colorName} · size ${design.size}`,
+          qty: design.qty,
+          unitPrice: data.unit_price,
+          total: data.total_price,
+          thumbUrl: assets.get(design.placements[0]?.assetId ?? -1)?.url ?? null,
+          leadDays: Math.max(blank.lead_days, technique?.lead_days ?? 0),
+        });
+      }
 
-      setSubmitted({ code: data.code, total: data.total_price });
+      setSubmitted({ code: data.code, total: data.total_price, bulk: donSoLuongLon });
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Không lưu được thiết kế.");
     }
@@ -405,6 +422,56 @@ export default function PrintStudio({ catalogue, blank }: Props) {
     !!bbox && !!position && (bbox.w > position.max_width_mm + 0.5 || bbox.h > position.max_height_mm + 0.5);
   const selectedPlacement = design.placements.find((p) => p.key === selected);
   const canSubmit = design.placements.length > 0 && result.errors.length === 0 && !busy;
+
+  // ── Đơn lớn: mẫu đã lưu, còn giá thì shop báo tay ───────────────────
+  if (submitted?.bulk) {
+    return (
+      <main className="shell py-20 text-center">
+        <p className="eyebrow text-gold-deep">Đã lưu mẫu — chờ shop báo giá</p>
+        <h1 className="mt-3 font-serif text-3xl sm:text-4xl text-ink">Đơn {design.qty} áo</h1>
+        <p className="mt-5 font-mono text-2xl font-bold tracking-wider text-ink">{submitted.code}</p>
+
+        <p className="measure mt-5 text-muted">
+          Từ {BULK_PRINT_FROM} áo trở lên shop báo giá trực tiếp chứ không chốt online. Bạn nhắn cho
+          shop <strong className="text-ink">kèm mã ở trên</strong> — shop mở đúng thiết kế bạn vừa
+          dựng, rồi chốt giá, bảng size và lịch giao với bạn.
+        </p>
+        <p className="measure mt-3 text-muted">
+          Con số {formatPrice(submitted.total)} studio vừa tính chỉ là{" "}
+          <strong className="text-ink">ước lượng</strong>: đơn cỡ này còn thương lượng được phôi và
+          chia đợt giao, nên giá cuối thường khác.
+        </p>
+
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <a
+            href={CONTACT.zaloUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full bg-ink px-7 py-3.5 text-sm font-semibold text-cream transition-colors hover:bg-gold-deep"
+          >
+            Nhắn Zalo cho shop
+          </a>
+          <a
+            href={CONTACT.phoneHref}
+            className="rounded-full border border-line-strong px-6 py-3.5 text-sm font-semibold text-ink"
+          >
+            Gọi {CONTACT.phoneDisplay}
+          </a>
+          <Link
+            href="/in-ao"
+            className="rounded-full border border-line-strong px-6 py-3.5 text-sm font-semibold text-ink"
+          >
+            Thiết kế thêm mẫu
+          </Link>
+        </div>
+
+        <p className="measure mt-6 text-xs text-muted">
+          Mẫu này KHÔNG nằm trong giỏ hàng và chưa có gì được in. Cần ít áo hơn thì quay lại studio,
+          hạ số lượng xuống dưới {BULK_PRINT_FROM} và đặt thẳng trên web.
+        </p>
+      </main>
+    );
+  }
 
   // ── Đặt xong ───────────────────────────────────────────────────────
   if (submitted) {
@@ -939,19 +1006,57 @@ export default function PrintStudio({ catalogue, blank }: Props) {
               </span>
             </div>
 
+            {/* Đơn đồng phục lớn không đi qua giỏ hàng: nút vẫn lưu mẫu để khách
+                có mã đưa cho shop, nhưng nói thẳng bước tiếp theo là nhắn tin. */}
             <button
               type="button"
               onClick={onSubmit}
               disabled={!canSubmit}
               className="mt-5 w-full rounded-full bg-ink px-6 py-3.5 text-sm font-semibold text-cream transition-colors hover:bg-gold-deep disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {busy ? "Đang gửi…" : design.placements.length ? "Thêm vào giỏ hàng" : "Thêm hình để tiếp tục"}
+              {busy
+                ? "Đang gửi…"
+                : !design.placements.length
+                  ? "Thêm hình để tiếp tục"
+                  : donSoLuongLon
+                    ? "Lưu mẫu & liên hệ shop"
+                    : "Thêm vào giỏ hàng"}
             </button>
 
-            <p className="mt-3 text-[11.5px] leading-relaxed text-muted">
-              Shop <b className="text-ink">duyệt file thiết kế</b> trước khi in. File chưa đủ nét hoặc không in
-              được thì shop báo lại và hoàn tiền đầy đủ.
-            </p>
+            {donSoLuongLon ? (
+              <div className="mt-3 rounded-lg border border-gold-soft bg-gold/10 px-3.5 py-3">
+                <p className="text-[12px] font-semibold text-ink">
+                  Từ {BULK_PRINT_FROM} áo — shop báo giá trực tiếp
+                </p>
+                <p className="mt-1 text-[11.5px] leading-relaxed text-muted">
+                  Đơn đồng phục cỡ này còn thương lượng được phôi, bảng size và lịch giao, nên con số
+                  ở trên mới là ước lượng. Bấm nút để lưu mẫu, rồi gửi mã cho shop chốt giá.
+                </p>
+                <div className="mt-2.5 flex flex-wrap gap-2">
+                  <a
+                    href={CONTACT.zaloUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-full border border-line-strong bg-surface px-3.5 py-2 text-[11.5px] font-semibold text-ink transition-colors hover:border-ink"
+                  >
+                    Nhắn Zalo
+                  </a>
+                  <a
+                    href={CONTACT.phoneHref}
+                    className="rounded-full border border-line-strong bg-surface px-3.5 py-2 text-[11.5px] font-semibold text-ink transition-colors hover:border-ink"
+                  >
+                    Gọi {CONTACT.phoneDisplay}
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <p className="mt-3 text-[11.5px] leading-relaxed text-muted">
+                Shop <b className="text-ink">duyệt file thiết kế</b> trước khi in. File chưa đủ nét hoặc không
+                in được thì shop báo lại và hoàn tiền đầy đủ. Thanh toán bằng{" "}
+                <b className="text-ink">chuyển khoản trước</b> — áo in là hàng làm riêng nên shop không nhận
+                trả khi nhận hàng.
+              </p>
+            )}
           </div>
 
           {blank.template_url && (
