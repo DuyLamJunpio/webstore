@@ -44,7 +44,7 @@ async function fetchCatalogue(): Promise<PrintCatalogue | null> {
     const data = (await response.json()) as PrintCatalogue;
 
     // Sai kiểu là lỗi thật phía quản trị, không phải "chưa có phôi nào".
-    if (!Array.isArray(data?.blanks) || !Array.isArray(data?.techniques)) {
+    if (!Array.isArray(data?.blanks) || !Array.isArray(data?.techniques) || !Array.isArray(data?.positions)) {
       console.error("[in-ao] trang quản trị trả về dữ liệu sai kiểu");
       return null;
     }
@@ -62,7 +62,7 @@ export const getPrintCatalogue = cache(fetchCatalogue);
 /**
  * Chỉ những phôi thật sự đặt được.
  *
- * Phôi chưa khai vùng in hoặc chưa gắn kỹ thuật nào có giá thì studio không
+ * Phôi tắt hết vị trí in hoặc chưa gắn kỹ thuật nào có giá thì studio không
  * dựng nổi màn hình — bày ra chỉ để khách bấm vào rồi gặp trang trống.
  */
 export function bookableBlanks(catalogue: PrintCatalogue) {
@@ -73,7 +73,7 @@ export function bookableBlanks(catalogue: PrintCatalogue) {
   );
 
   return catalogue.blanks.filter(
-    (blank) => blank.zones.length > 0 && blank.technique_ids.some((id) => priced.has(id)),
+    (blank) => blank.position_keys.length > 0 && blank.technique_ids.some((id) => priced.has(id)),
   );
 }
 

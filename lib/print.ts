@@ -11,7 +11,7 @@
  * Vì là bản sao nên nó phải đi đúng SÁU BƯỚC theo đúng thứ tự của bản PHP:
  *
  *   1. giá phôi (+ phụ thu size)
- *   2. giá in cơ bản — ma trận kỹ thuật × bậc khổ, tính cho từng vùng
+ *   2. giá in cơ bản — ma trận kỹ thuật × bậc khổ, tính cho từng vị trí
  *   3. phụ phí CỘNG
  *   4. hệ số NHÂN
  *   5. chiết khấu số lượng
@@ -54,6 +54,8 @@ export type PrintRule = {
   enabled: boolean;
   when: {
     technique_ids?: number[];
+    position_keys?: string[];
+    /** tên cũ của `position_keys`, còn trong các bảng giá đã xuất bản từ trước */
     zone_keys?: string[];
     tier_ids?: number[];
     tone?: "light" | "dark";
@@ -65,7 +67,8 @@ export type PrintRule = {
   apply: {
     kind: "add" | "multiply" | "percent";
     amount: number;
-    per: "order" | "shirt" | "zone" | "placement" | "inkColor";
+    /** `"zone"` là tên cũ của `"position"` — xem normalisePer. */
+    per: "order" | "shirt" | "position" | "placement" | "inkColor" | "zone";
   };
 };
 
@@ -80,15 +83,20 @@ export type PrintPricingData = {
   min_charge: number;
 };
 
-export type PrintZone = {
+/**
+ * Một trong bốn chỗ in được trên áo. Định nghĩa nằm ở trang quản trị
+ * (App\Services\PrintPositions) và đi theo catalogue sang đây — KHÔNG chép lại,
+ * vì chép là sớm muộn hai bên lệch trần milimét và studio cho khách kéo một khổ
+ * mà máy chủ từ chối ngay sau đó.
+ */
+export type PrintPosition = {
   key: string;
   label: string;
-  /** kích thước THẬT trên vải — thợ in đọc con số này */
-  width_mm: number;
-  height_mm: number;
-  /** phần trăm trên ảnh mockup, chỉ để vẽ khung */
-  box: { x: number; y: number; w: number; h: number };
-  max_placements: number;
+  /** góc chụp muốn dùng, lùi dần khi phôi thiếu tấm */
+  views: string[];
+  /** trần của xưởng, không phải khung in: bên trong nó khách kéo tuỳ ý */
+  max_width_mm: number;
+  max_height_mm: number;
 };
 
 export type PrintColor = { id: number; name: string; hex: string; tone: "light" | "dark" };
@@ -119,7 +127,8 @@ export type PrintBlank = {
   sizes: string[];
   size_surcharge: Record<string, number>;
   colors: PrintColor[];
-  zones: PrintZone[];
+  /** vị trí phôi này bán được, tham chiếu vào `PrintCatalogue.positions` */
+  position_keys: string[];
   mockups: PrintMockup[];
 };
 
@@ -140,6 +149,7 @@ export type PrintAsset = {
 
 export type PrintCatalogue = PrintPricingData & {
   pricing_version_id: number | null;
+  positions: PrintPosition[];
   blanks: PrintBlank[];
   library: PrintAsset[];
   fonts: PrintFont[];
@@ -166,7 +176,9 @@ export type PlacementText = {
 
 /**
  * Một thứ đã đặt lên áo — ảnh hoặc chữ. Toạ độ tính bằng mm từ góc trên trái
- * của vùng in.
+ * của KHUNG ẢNH phôi, tức là cả chiếc áo trong tấm mockup. Không còn khung vùng
+ * in nào ở giữa để quy chiếu, nên hai số hiệu chuẩn của phôi là toàn bộ cầu nối
+ * giữa cái khách kéo trên màn hình và milimét thật trên vải.
  *
  * Hai loại dùng CHUNG một hình dạng vì mọi thứ downstream đối xử với chúng như
  * nhau: khung bao, bậc khổ, tiền in, bảng toạ độ cho thợ. Chỗ khác nhau duy nhất
@@ -175,7 +187,7 @@ export type PlacementText = {
 export type Placement = {
   /** id cục bộ trong trình duyệt, không gửi lên máy chủ */
   key: string;
-  zone: string;
+  position: string;
   kind: "image" | "text";
   /** chỉ với kind = "image" */
   assetId: number | null;
@@ -230,7 +242,7 @@ function placementBox(p: Placement) {
 }
 
 /**
- * Khung bao chung của mọi hình trong CÙNG một vùng.
+ * Khung bao chung của mọi hình trong CÙNG một vị trí.
  *
  * Đây là chỗ quyết định cách tính tiền: gộp lại rồi mới quy ra khổ, nên ba
  * sticker nhỏ nằm gọn trong A5 tính tiền A5 chứ không phải ba lần tiền.
@@ -283,7 +295,7 @@ type RuleContext = {
   tone: "light" | "dark";
   qty: number;
   inkColors: number;
-  zoneKey: string | null;
+  positionKey: string | null;
   tierId: number | null;
 };
 
@@ -292,7 +304,11 @@ function ruleMatches(rule: PrintRule, ctx: RuleContext): boolean {
   const w = rule.when;
 
   if (w.technique_ids && !w.technique_ids.includes(ctx.techniqueId)) return false;
-  if (w.zone_keys && (ctx.zoneKey === null || !w.zone_keys.includes(ctx.zoneKey))) return false;
+
+  // `zone_keys` là tên cũ, còn nằm trong các bảng giá đã xuất bản từ trước.
+  const positionKeys = w.position_keys ?? w.zone_keys;
+  if (positionKeys && (ctx.positionKey === null || !positionKeys.includes(ctx.positionKey))) return false;
+
   if (w.tier_ids && (ctx.tierId === null || !w.tier_ids.includes(ctx.tierId))) return false;
   if (w.tone && w.tone !== ctx.tone) return false;
   if (w.blank_ids && !w.blank_ids.includes(ctx.blankId)) return false;
@@ -306,13 +322,18 @@ function ruleMatches(rule: PrintRule, ctx: RuleContext): boolean {
 export const PER_LABELS: Record<PrintRule["apply"]["per"], string> = {
   order: "mỗi đơn",
   shirt: "mỗi áo",
-  zone: "mỗi vùng",
+  position: "mỗi vị trí",
   placement: "mỗi hình",
   inkColor: "mỗi màu mực",
+  zone: "mỗi vị trí",
 };
 
-/** Ba đơn vị này tính riêng cho từng vùng; hai đơn vị còn lại tính trên cả đơn. */
-const PER_ZONE_SCOPED: PrintRule["apply"]["per"][] = ["zone", "placement", "inkColor"];
+/** Đọc `per` của một quy tắc, hiểu cả tên cũ lẫn tên mới. */
+const normalisePer = (per: PrintRule["apply"]["per"] | undefined): PrintRule["apply"]["per"] =>
+  per === undefined ? "order" : per === "zone" ? "position" : per;
+
+/** Ba đơn vị này tính riêng từng vị trí; hai đơn vị còn lại tính trên cả đơn. */
+const PER_POSITION_SCOPED: PrintRule["apply"]["per"][] = ["position", "placement", "inkColor"];
 
 const line = (label: string, amount: number, meta: string | null = null, sub = false): QuoteLine => ({
   label,
@@ -328,7 +349,7 @@ const r1 = (n: number) => Math.round(n * 10) / 10;
 export function quote(
   design: DesignState,
   blank: PrintBlank,
-  pricing: PrintPricingData,
+  pricing: PrintCatalogue,
   assets: Map<number, PrintAsset>,
 ): Quote {
   const lines: QuoteLine[] = [];
@@ -345,6 +366,11 @@ export function quote(
   const color = blank.colors.find((c) => c.name === design.colorName) ?? blank.colors[0];
   const tone = color?.tone ?? "light";
 
+  // Vị trí phôi này bán được — cùng bộ dữ liệu mà máy chủ dựng lại lúc chốt.
+  const positions = new Map(
+    pricing.positions.filter((p) => blank.position_keys.includes(p.key)).map((p) => [p.key, p]),
+  );
+
   // ── BƯỚC 1 — giá phôi ──────────────────────────────────────────────
   const surcharge = blank.size_surcharge[design.size] ?? 0;
   let running = blank.base_price + surcharge;
@@ -358,49 +384,78 @@ export function quote(
   );
   if (surcharge) lines.push(line(`phụ thu size ${design.size}`, surcharge, null, true));
 
-  // ── BƯỚC 2 — giá in cơ bản, tính riêng từng vùng ───────────────────
-  const byZone = new Map<string, Placement[]>();
+  // ── BƯỚC 2 — giá in cơ bản, tính riêng từng vị trí ─────────────────
+  const byPosition = new Map<string, Placement[]>();
   for (const p of design.placements) {
-    const list = byZone.get(p.zone);
+    const list = byPosition.get(p.position);
     if (list) list.push(p);
-    else byZone.set(p.zone, [p]);
+    else byPosition.set(p.position, [p]);
   }
 
-  const zoneContexts: { zoneKey: string; zoneLabel: string; tierId: number; base: number; count: number }[] = [];
+  const positionContexts: {
+    positionKey: string;
+    positionLabel: string;
+    tierId: number;
+    base: number;
+    count: number;
+  }[] = [];
 
-  for (const [zoneKey, list] of byZone) {
-    const zone = blank.zones.find((z) => z.key === zoneKey);
-    if (!zone) continue;
+  for (const [positionKey, list] of byPosition) {
+    const position = positions.get(positionKey);
+
+    // Bỏ qua trong im lặng là hình của khách biến mất khỏi bảng kê mà vẫn nằm
+    // trong thiết kế gửi đi — khách trả tiền một đằng, xưởng in một nẻo.
+    if (!position) {
+      errors.push(`Vị trí in "${positionKey}" không còn nhận đơn trên phôi này.`);
+      continue;
+    }
 
     const bbox = boundingBox(list);
+
+    // Trần mm của vị trí — giới hạn của cái máy in, không phải khung in cũ quay
+    // lại dưới tên khác: bên trong trần đó khách kéo đi đâu, to nhỏ ra sao tuỳ ý.
+    if (bbox.w > position.max_width_mm + 0.5 || bbox.h > position.max_height_mm + 0.5) {
+      errors.push(
+        `${position.label}: khung bao ${r1(bbox.w)}×${r1(bbox.h)} mm vượt giới hạn ` +
+          `${position.max_width_mm}×${position.max_height_mm} mm của vị trí này.`,
+      );
+      continue;
+    }
+
     const tier = pickTier(bbox, pricing.tiers);
 
     if (!tier) {
-      errors.push(`${zone.label}: khung bao ${r1(bbox.w)}×${r1(bbox.h)} mm vượt bậc khổ lớn nhất.`);
+      errors.push(`${position.label}: khung bao ${r1(bbox.w)}×${r1(bbox.h)} mm vượt bậc khổ lớn nhất.`);
       continue;
     }
 
     const cell = pricing.cells[String(technique.id)]?.[String(tier.id)];
     if (cell == null) {
       errors.push(
-        `${technique.name} không nhận khổ ${tier.name} — đổi kỹ thuật hoặc thu nhỏ hình ở ${zone.label}.`,
+        `${technique.name} không nhận khổ ${tier.name} — đổi kỹ thuật hoặc thu nhỏ hình ở ${position.label}.`,
       );
       continue;
     }
 
     lines.push(
       line(
-        `${technique.name} · ${zone.label} · khổ ${tier.name}`,
+        `${technique.name} · ${position.label} · khổ ${tier.name}`,
         cell,
         `khung bao ${r1(bbox.w)} × ${r1(bbox.h)} mm · ${list.length} hình`,
       ),
     );
     running += cell;
 
-    zoneContexts.push({ zoneKey, zoneLabel: zone.label, tierId: tier.id, base: cell, count: list.length });
+    positionContexts.push({
+      positionKey,
+      positionLabel: position.label,
+      tierId: tier.id,
+      base: cell,
+      count: list.length,
+    });
   }
 
-  // Sticker có bản quyền — phí gắn với tài nguyên, không gắn với vùng. Chữ do
+  // Sticker có bản quyền — phí gắn với tài nguyên, không gắn với vị trí. Chữ do
   // khách tự gõ nên không có phí bản quyền nào.
   for (const p of design.placements) {
     const asset = p.assetId === null ? undefined : assets.get(p.assetId);
@@ -410,7 +465,7 @@ export function quote(
     }
   }
 
-  if (!zoneContexts.length && !errors.length) {
+  if (!positionContexts.length && !errors.length) {
     warnings.push("Chưa có hình nào trên áo — mới tính tiền phôi.");
   }
 
@@ -419,18 +474,19 @@ export function quote(
   // ── BƯỚC 3 — phụ phí CỘNG ──────────────────────────────────────────
   for (const rule of pricing.rules) {
     if (!rule.enabled || rule.apply.kind !== "add") continue;
-    const { per, amount } = rule.apply;
+    const { amount } = rule.apply;
+    const per = normalisePer(rule.apply.per);
 
-    if (PER_ZONE_SCOPED.includes(per)) {
-      for (const zc of zoneContexts) {
-        if (!ruleMatches(rule, { ...baseCtx, zoneKey: zc.zoneKey, tierId: zc.tierId })) continue;
+    if (PER_POSITION_SCOPED.includes(per)) {
+      for (const pc of positionContexts) {
+        if (!ruleMatches(rule, { ...baseCtx, positionKey: pc.positionKey, tierId: pc.tierId })) continue;
 
         let multiplier = 1;
         let note: string | null = null;
 
         if (per === "placement") {
-          multiplier = zc.count;
-          note = `${zc.count} hình`;
+          multiplier = pc.count;
+          note = `${pc.count} hình`;
         }
         if (per === "inkColor") {
           // Đếm từ ngưỡng của chính quy tắc trở đi: "từ màu thứ 2" với đơn 4 màu
@@ -442,13 +498,13 @@ export function quote(
         if (multiplier <= 0) continue;
 
         const delta = amount * multiplier;
-        lines.push(line(`${rule.label} — ${zc.zoneLabel}`, delta, note, true));
+        lines.push(line(`${rule.label} — ${pc.positionLabel}`, delta, note, true));
         running += delta;
       }
       continue;
     }
 
-    if (!ruleMatches(rule, { ...baseCtx, zoneKey: null, tierId: null })) continue;
+    if (!ruleMatches(rule, { ...baseCtx, positionKey: null, tierId: null })) continue;
 
     /*
      * `mỗi đơn` phải chia đều cho số áo TRƯỚC khi cộng.
@@ -470,26 +526,27 @@ export function quote(
   // ── BƯỚC 4 — hệ số NHÂN ────────────────────────────────────────────
   for (const rule of pricing.rules) {
     if (!rule.enabled) continue;
-    const { kind, per, amount } = rule.apply;
+    const { kind, amount } = rule.apply;
+    const per = normalisePer(rule.apply.per);
     if (kind !== "multiply" && kind !== "percent") continue;
 
     const factor = kind === "multiply" ? amount : 1 + amount / 100;
     const note = kind === "multiply" ? `×${amount}` : `+${amount}%`;
 
-    if (PER_ZONE_SCOPED.includes(per)) {
-      for (const zc of zoneContexts) {
-        if (!ruleMatches(rule, { ...baseCtx, zoneKey: zc.zoneKey, tierId: zc.tierId })) continue;
+    if (PER_POSITION_SCOPED.includes(per)) {
+      for (const pc of positionContexts) {
+        if (!ruleMatches(rule, { ...baseCtx, positionKey: pc.positionKey, tierId: pc.tierId })) continue;
 
-        // Nhân trên GIÁ IN CƠ BẢN của vùng, không trên tổng đang chạy: "mặt lưng
-        // khó căn hơn" nói về công in mặt lưng, không phải về tiền phôi.
-        const delta = zc.base * (factor - 1);
-        lines.push(line(`${rule.label} — ${zc.zoneLabel}`, delta, note, true));
+        // Nhân trên GIÁ IN CƠ BẢN của vị trí, không trên tổng đang chạy: "mặt
+        // sau khó căn hơn" nói về công in mặt sau, không phải về tiền phôi.
+        const delta = pc.base * (factor - 1);
+        lines.push(line(`${rule.label} — ${pc.positionLabel}`, delta, note, true));
         running += delta;
       }
       continue;
     }
 
-    if (!ruleMatches(rule, { ...baseCtx, zoneKey: null, tierId: null })) continue;
+    if (!ruleMatches(rule, { ...baseCtx, positionKey: null, tierId: null })) continue;
     const delta = running * (factor - 1);
     lines.push(line(rule.label, delta, `${note} trên toàn đơn`, true));
     running += delta;

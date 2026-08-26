@@ -42,8 +42,8 @@ export default async function PrintStudioPage(props: RouteProps) {
     );
   }
 
-  // Dùng danh sách đã lọc chứ không tra thẳng `catalogue.blanks`: một phôi chưa
-  // khai vùng in thì studio không dựng nổi màn hình, và 404 còn dễ hiểu hơn một
+  // Dùng danh sách đã lọc chứ không tra thẳng `catalogue.blanks`: một phôi tắt
+  // hết vị trí in thì studio không dựng nổi màn hình, và 404 còn dễ hiểu hơn một
   // khung áo trống không bấm được gì.
   const blank = bookableBlanks(catalogue).find((b) => b.slug === slug);
   if (!blank) notFound();
