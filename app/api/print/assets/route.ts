@@ -62,10 +62,18 @@ export async function POST(request: NextRequest) {
     const data = await response.json().catch(() => null);
 
     if (!response.ok) {
-      return Response.json(
-        { error: data?.error ?? "Không lưu được file. Vui lòng thử lại." },
-        { status: response.status },
-      );
+      /*
+       * Luật `mimes:` bên trang quản trị trả về dạng `{ message, errors }` của
+       * Laravel, không có khoá `error`, và câu chữ là tiếng Anh. Khách gửi ảnh
+       * chụp từ iPhone (HEIC) rơi đúng vào nhánh này, nên nói thẳng ra định dạng
+       * nào dùng được thay vì "vui lòng thử lại" — thử lại kiểu gì cũng hỏng.
+       */
+      const fallback =
+        response.status === 422
+          ? "File không dùng được. Chỉ nhận PNG, JPG, WEBP, PDF hoặc SVG (tối đa 25 MB). Ảnh chụp từ iPhone cần đổi sang JPG trước khi tải lên."
+          : "Không lưu được file. Vui lòng thử lại.";
+
+      return Response.json({ error: data?.error ?? fallback }, { status: response.status });
     }
 
     return Response.json(data, { status: 201 });
