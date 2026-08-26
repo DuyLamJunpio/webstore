@@ -76,14 +76,3 @@ export function bookableBlanks(catalogue: PrintCatalogue) {
     (blank) => blank.position_keys.length > 0 && blank.technique_ids.some((id) => priced.has(id)),
   );
 }
-
-/** Ảnh đại diện của một phôi: ưu tiên mockup của màu đầu tiên. */
-export function coverMockup(blank: PrintCatalogue["blanks"][number]) {
-  const firstColor = blank.colors[0];
-
-  return (
-    blank.mockups.find((m) => m.color_id === firstColor?.id) ??
-    blank.mockups[0] ??
-    null
-  );
-}

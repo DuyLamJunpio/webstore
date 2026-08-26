@@ -111,6 +111,14 @@ export type PrintMockup = {
   offset_y: number;
 };
 
+/**
+ * Danh mục phôi — dùng chung bảng danh mục với hàng bán sẵn bên trang quản trị.
+ *
+ * Không dựng một cây danh mục riêng cho phôi: "Áo thun" là "Áo thun" dù chiếc áo
+ * đó đang trên kệ hay đang chờ in hình lên.
+ */
+export type PrintBlankCategory = { id: number; name: string; slug: string };
+
 export type PrintBlank = {
   id: number;
   slug: string;
@@ -118,6 +126,12 @@ export type PrintBlank = {
   description: string | null;
   base_price: number;
   product_id: number | null;
+  /**
+   * null = phôi chưa xếp danh mục; thiếu hẳn khoá = trang quản trị đời cũ chưa
+   * biết tới danh mục phôi. Hai trường hợp cùng rơi vào nhóm "Khác" trên trang
+   * chọn phôi, nên không cần phân biệt ở chỗ nào khác.
+   */
+  category?: PrintBlankCategory | null;
   frame_width_mm: number;
   frame_height_mm: number;
   moq: number;
@@ -154,6 +168,60 @@ export type PrintCatalogue = PrintPricingData & {
   library: PrintAsset[];
   fonts: PrintFont[];
 };
+
+// ── Chọn phôi ────────────────────────────────────────────────────────
+
+/** Ảnh đại diện của một phôi: ưu tiên mockup của màu đầu tiên. */
+export function coverMockup(blank: PrintBlank) {
+  const firstColor = blank.colors[0];
+
+  return blank.mockups.find((m) => m.color_id === firstColor?.id) ?? blank.mockups[0] ?? null;
+}
+
+/** Một nút lọc trên trang chọn phôi. `slug` rỗng = nhóm phôi chưa xếp danh mục. */
+export type BlankCategoryFacet = { slug: string; name: string; count: number };
+
+/** Khoá của nhóm "chưa xếp danh mục" — rỗng vì nó không phải một danh mục thật. */
+export const UNSORTED_BLANKS = "";
+
+/**
+ * Hàng nút lọc, gom từ CHÍNH những phôi sắp bày ra.
+ *
+ * Không đọc bảng danh mục: một mục chưa có phôi nào đặt được mà vẫn hiện thành
+ * nút thì khách bấm vào một trang trống — lỗi khó chịu hơn hẳn việc thiếu một
+ * nút chưa dùng tới.
+ *
+ * Thứ tự nút đi theo thứ tự phôi từ trang quản trị, nên chủ shop xếp phôi thế
+ * nào là hàng nút hiện ra thế ấy. Nhóm "Khác" luôn đứng cuối.
+ *
+ * Trả về danh sách RỖNG khi chưa phôi nào được xếp danh mục — lúc đó một hàng
+ * nút chỉ có mỗi "Tất cả" là thứ trang trí vô nghĩa, ẩn hẳn đi thì hơn.
+ */
+export function blankCategories(blanks: PrintBlank[]): BlankCategoryFacet[] {
+  const facets = new Map<string, BlankCategoryFacet>();
+
+  for (const blank of blanks) {
+    const category = blank.category ?? null;
+    const slug = category?.slug ?? UNSORTED_BLANKS;
+    const existing = facets.get(slug);
+
+    if (existing) {
+      existing.count += 1;
+      continue;
+    }
+
+    facets.set(slug, { slug, name: category?.name ?? "Khác", count: 1 });
+  }
+
+  const unsorted = facets.get(UNSORTED_BLANKS);
+  facets.delete(UNSORTED_BLANKS);
+
+  if (facets.size === 0) {
+    return [];
+  }
+
+  return unsorted ? [...facets.values(), unsorted] : [...facets.values()];
+}
 
 // ── Thiết kế của khách ───────────────────────────────────────────────
 

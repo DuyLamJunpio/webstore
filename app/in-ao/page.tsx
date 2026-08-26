@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import Image from "next/image";
-import Link from "next/link";
 import SectionHeading from "@/components/SectionHeading";
 import { ArrowUpRight, Check, Phone, Sparkles } from "@/components/icons";
+import BlankPicker from "@/components/print/BlankPicker";
 import { CONTACT } from "@/lib/contact";
 import { formatPrice } from "@/lib/data";
-import { bookableBlanks, coverMockup, getPrintCatalogue } from "@/lib/print-catalogue";
+import { bookableBlanks, getPrintCatalogue } from "@/lib/print-catalogue";
 
 export const metadata: Metadata = {
   title: "In áo theo yêu cầu",
@@ -119,67 +118,9 @@ export default async function PrintLandingPage() {
 
       {/* ── Chọn phôi ── */}
       <section className="shell mt-6 sm:mt-10">
-        <SectionHeading title="Chọn phôi áo" subtitle="Mỗi phôi có kỹ thuật in và chỗ in riêng." />
+        <SectionHeading title="Chọn phôi áo" subtitle="Lọc theo danh mục để tìm nhanh. Mỗi phôi có kỹ thuật in và chỗ in riêng." />
 
-        {blanks.length === 0 ? (
-          <p className="measure mt-6 text-center text-muted">
-            Shop đang chuẩn bị phôi in. Bạn quay lại sau ít hôm nhé.
-          </p>
-        ) : (
-          <ul className="mt-8 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {blanks.map((blank) => {
-              const cover = coverMockup(blank);
-
-              return (
-                <li key={blank.id}>
-                  <Link
-                    href={`/in-ao/${blank.slug}`}
-                    className="group block rounded-block border border-line bg-surface overflow-hidden transition-all hover:border-line-strong hover:shadow-xs"
-                  >
-                    <div className="relative aspect-4/5 bg-cream-dark/40">
-                      {cover ? (
-                        <Image
-                          src={cover.url}
-                          alt={blank.name}
-                          fill
-                          sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
-                          className="object-contain p-4 transition-transform duration-500 group-hover:scale-[1.03]"
-                        />
-                      ) : (
-                        <span className="absolute inset-0 grid place-items-center text-xs text-muted">
-                          Chưa có ảnh
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="p-4">
-                      <h3 className="font-semibold text-ink leading-snug">{blank.name}</h3>
-                      <p className="mt-1 text-sm text-muted tabular-nums">
-                        Từ {formatPrice(blank.base_price)}
-                      </p>
-                      <p className="mt-2 flex flex-wrap gap-1.5">
-                        {blank.colors.slice(0, 6).map((color) => (
-                          <span
-                            key={color.id}
-                            title={color.name}
-                            className="h-4 w-4 rounded-full ring-1 ring-line-strong"
-                            style={{ backgroundColor: color.hex }}
-                          />
-                        ))}
-                        {blank.colors.length > 6 && (
-                          <span className="text-[11px] text-muted">+{blank.colors.length - 6}</span>
-                        )}
-                      </p>
-                      <p className="mt-2.5 text-xs text-muted">
-                        {blank.position_keys.length} chỗ in · từ {blank.moq} áo · {blank.lead_days} ngày
-                      </p>
-                    </div>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        <BlankPicker blanks={blanks} />
       </section>
 
       {/* ── Cách làm việc ── */}
