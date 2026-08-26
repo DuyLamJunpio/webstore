@@ -1,15 +1,16 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useCart } from "@/lib/cart";
 import { formatPrice, type Product } from "@/lib/data";
+import { printDraftQty, usePrintDrafts } from "@/lib/print-draft";
 import { useVariantSelection } from "@/lib/useVariantSelection";
 import { Bag } from "../icons";
 
 export default function StickyBuyBar({ product }: { product: Product }) {
   const [visible, setVisible] = useState(false);
   const { count, hydrated, openCart } = useCart();
+  const printDrafts = usePrintDrafts();
   const {
     color,
     size,
@@ -32,6 +33,8 @@ export default function StickyBuyBar({ product }: { product: Product }) {
 
   if (!visible) return null;
 
+  const cartCount = hydrated ? count + printDraftQty(printDrafts) : 0;
+
   const handleBuy = () => {
     if (!color || !size) {
       document.getElementById("product-purchase-box")?.scrollIntoView({ behavior: "smooth" });
@@ -51,9 +54,9 @@ export default function StickyBuyBar({ product }: { product: Product }) {
           className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full border border-line-strong bg-surface text-ink shadow-xs transition-transform active:scale-95"
         >
           <Bag className="h-5 w-5" />
-          {hydrated && count > 0 && (
+          {cartCount > 0 && (
             <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-gold px-1 text-[9px] font-bold text-cream">
-              {count}
+              {cartCount}
             </span>
           )}
         </button>
@@ -78,4 +81,3 @@ export default function StickyBuyBar({ product }: { product: Product }) {
     </div>
   );
 }
-

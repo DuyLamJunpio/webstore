@@ -240,11 +240,18 @@ export async function POST(request: NextRequest) {
         description,
         returnUrl: `${origin}/checkout/${ref}`,
         cancelUrl: `${origin}/checkout/${ref}?huy=1`,
-        items: cart.lines.map((line) => ({
-          name: `${line.name} (${line.color}/${line.size})`.slice(0, 100),
-          quantity: line.qty,
-          price: line.unitPrice,
-        })),
+        items: [
+          ...cart.lines.map((line) => ({
+            name: `${line.name} (${line.color}/${line.size})`.slice(0, 100),
+            quantity: line.qty,
+            price: line.unitPrice,
+          })),
+          ...cart.prints.map((print) => ({
+            name: `Áo in theo yêu cầu ${print.code}`.slice(0, 100),
+            quantity: print.qty,
+            price: print.unitPrice,
+          })),
+        ],
         buyerName: customer.fullName,
         buyerEmail: customer.email || undefined,
         buyerPhone: customer.phone,

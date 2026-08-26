@@ -13,7 +13,12 @@ import {
 } from "@/lib/checkout";
 import { useCart } from "@/lib/cart";
 import { CONTACT } from "@/lib/contact";
-import { clearPrintDrafts, usePrintDrafts } from "@/lib/print-draft";
+import {
+  clearPrintDrafts,
+  printDraftQty,
+  printDraftTotal,
+  usePrintDrafts,
+} from "@/lib/print-draft";
 import { BULK_PRINT_FROM, isBulkPrint } from "@/lib/print-bulk";
 import { formatPrice } from "@/lib/data";
 import {
@@ -286,8 +291,8 @@ function CheckoutFields({
   // Áo in cũng là món phải giao, nên số lượng của nó tính vào ngưỡng miễn phí
   // như mọi món khác — đúng cách trang quản trị đang tính, để hai bên không báo
   // cho khách hai con số phí giao hàng khác nhau.
-  const printQty = printDrafts.reduce((sum, d) => sum + d.qty, 0);
-  const printTotal = printDrafts.reduce((sum, d) => sum + d.total, 0);
+  const printQty = printDraftQty(printDrafts);
+  const printTotal = printDraftTotal(printDrafts);
   // Ghép nhiều mẫu nhỏ vẫn ra một đơn đồng phục lớn, nên ngưỡng tính trên cả đơn.
   const donSoLuongLon = isBulkPrint(printQty);
   const soMon = count + printQty;
@@ -388,7 +393,7 @@ function CheckoutFields({
 
       <aside className="lg:sticky lg:top-[92px] lg:self-start">
         <div className="rounded-block border border-line bg-surface p-6">
-          <h2 className="eyebrow text-ink/60">Đơn hàng ({count} sản phẩm)</h2>
+          <h2 className="eyebrow text-ink/60">Đơn hàng ({soMon} sản phẩm)</h2>
 
           <ul className="mt-5 flex flex-col gap-4">
             {items.map((line) => (
@@ -513,7 +518,7 @@ function CheckoutFields({
               <legend className="eyebrow text-ink/60">Hình thức thanh toán</legend>
               <div className="mt-4 flex flex-col gap-2.5">
                 {cachChon.map((key) => {
-                  const phi = shippingFeeFor(sales, key, count);
+                  const phi = shippingFeeFor(sales, key, soMon);
                   return (
                     <label
                       key={key}

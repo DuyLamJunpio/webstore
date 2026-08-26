@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { cart } from "@/lib/cart";
+import { clearPrintDrafts } from "@/lib/print-draft";
 
 /**
  * Empties the bag once an order is actually paid — not when it is created.
@@ -10,6 +11,9 @@ import { cart } from "@/lib/cart";
  * leaves the shopper exactly where they were, with everything still in it.
  */
 export default function ClearCartOnPaid() {
-  useEffect(() => cart.clear(), []);
+  useEffect(() => {
+    cart.clear();
+    clearPrintDrafts();
+  }, []);
   return null;
 }

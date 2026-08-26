@@ -21,10 +21,17 @@ import { claimConfirmationEmail, releaseConfirmationEmail, type Order } from "./
 function buildText(order: Order): string {
   const { customer, cart, payment } = order;
   const laCod = order.paymentMethod === "cod";
-  const items = cart.lines.map(
-    (line) =>
-      `- ${line.name} (${line.color} / ${line.size}) x${line.qty} — ${formatPrice(line.total)}`,
-  );
+  const prints = cart.prints ?? [];
+  const items = [
+    ...cart.lines.map(
+      (line) =>
+        `- ${line.name} (${line.color} / ${line.size}) x${line.qty} — ${formatPrice(line.total)}`,
+    ),
+    ...prints.map(
+      (print) =>
+        `- Áo in theo yêu cầu ${print.code} (${print.label}) x${print.qty} — ${formatPrice(print.total)}`,
+    ),
+  ];
 
   return [
     `Cảm ơn bạn đã đặt hàng tại The Basic Concept!`,
@@ -73,9 +80,10 @@ function buildText(order: Order): string {
 function buildHtml(order: Order): string {
   const { customer, cart, payment } = order;
   const laCod = order.paymentMethod === "cod";
+  const prints = cart.prints ?? [];
 
-  const items = cart.lines
-    .map(
+  const items = [
+    ...cart.lines.map(
       (line) => `
     <tr>
       <td style="padding:14px 0;border-bottom:1px solid ${BRAND.line};">
@@ -88,8 +96,25 @@ function buildHtml(order: Order): string {
         ${esc(formatPrice(line.total))}
       </td>
     </tr>`,
-    )
-    .join("");
+    ),
+    ...prints.map(
+      (print) => `
+    <tr>
+      <td style="padding:14px 0;border-bottom:1px solid ${BRAND.line};">
+        <div style="color:${BRAND.ink};font-size:15px;font-weight:600;">Áo in theo yêu cầu</div>
+        <div style="color:${BRAND.muted};font-size:13px;padding-top:3px;">
+          ${esc(print.label)} · SL ${print.qty}
+        </div>
+        <div style="color:${BRAND.gold};font-size:12px;padding-top:3px;font-family:monospace;">
+          ${esc(print.code)}
+        </div>
+      </td>
+      <td style="padding:14px 0;border-bottom:1px solid ${BRAND.line};text-align:right;color:${BRAND.ink};font-size:15px;font-weight:600;white-space:nowrap;">
+        ${esc(formatPrice(print.total))}
+      </td>
+    </tr>`,
+    ),
+  ].join("");
 
   const totals = `
     ${row("Tạm tính", formatPrice(cart.subtotal))}
