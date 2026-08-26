@@ -66,7 +66,7 @@ export default async function PrintLandingPage() {
 
       {/* ── Chọn phôi ── */}
       <section className="shell">
-        <SectionHeading title="Chọn phôi áo" subtitle="Mỗi phôi có bộ vùng in và kỹ thuật riêng." />
+        <SectionHeading title="Chọn phôi áo" subtitle="Mỗi phôi có kỹ thuật in và chỗ in riêng." />
 
         {blanks.length === 0 ? (
           <p className="measure mt-6 text-center text-muted">
@@ -118,7 +118,7 @@ export default async function PrintLandingPage() {
                         )}
                       </p>
                       <p className="mt-2.5 text-xs text-muted">
-                        {blank.zones.length} vùng in · từ {blank.moq} áo · {blank.lead_days} ngày
+                        {blank.position_keys.length} chỗ in · từ {blank.moq} áo · {blank.lead_days} ngày
                       </p>
                     </div>
                   </Link>

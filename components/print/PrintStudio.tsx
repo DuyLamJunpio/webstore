@@ -8,6 +8,11 @@
  *   • mm  — sự thật, lưu trong `Placement`, là thứ thợ in đọc
  *   • %   — chỉ để vẽ lên ảnh mockup, suy ra từ mm mỗi lần render
  *
+ * Cầu nối giữa hai hệ là HIỆU CHUẨN KHUNG ẢNH của phôi: cả tấm mockup ứng với
+ * `frame_width_mm` × `frame_height_mm` milimét thật. Không còn khung vùng in nào
+ * ở giữa — khách chọn một trong bốn vị trí rồi kéo hình đi đâu tuỳ ý trên áo,
+ * và mm là thứ suy thẳng ra từ chỗ khách thả tay.
+ *
  * Giá hiện ở đây do `lib/print.ts` tính cho mượt tay. Nó là BẢN SAO của bộ máy
  * bên trang quản trị; con số tính tiền thật được dựng lại ở máy chủ lúc chốt
  * thiết kế, nên một trình duyệt bị sửa cũng không mua rẻ hơn được đồng nào.
@@ -28,15 +33,35 @@ import {
   type PrintAsset,
   type PrintBlank,
   type PrintCatalogue,
+  type PrintPosition,
 } from "@/lib/print";
 
 type Props = { catalogue: PrintCatalogue; blank: PrintBlank };
 
-/** Hình mới thả vào chiếm ngần này bề rộng vùng in — đủ thấy, chưa chạm mép. */
-const DROP_WIDTH_RATIO = 0.45;
+/** Hình mới thả vào chiếm ngần này trần bề rộng của vị trí — đủ thấy, chưa kịch. */
+const DROP_WIDTH_RATIO = 0.55;
 
 /** Khung chữ mặc định: cao bằng ngần này bề rộng, xấp xỉ một dòng chữ. */
 const TEXT_BOX_RATIO = 0.24;
+
+/**
+ * Chỗ một hình mới rơi xuống, tính theo tỉ lệ khung ảnh phôi.
+ *
+ * Chỉ là ĐIỂM XUẤT PHÁT, không phải ràng buộc: thả xong khách kéo đi đâu cũng
+ * được. Nó tồn tại vì thả mọi thứ vào giữa tấm ảnh nghĩa là hình in vai rơi
+ * xuống ngang rốn, và ai cũng phải kéo lại một lần trước khi làm việc thật.
+ *
+ * Nằm ở đây chứ không ở trang quản trị vì nó không ảnh hưởng gì tới tiền hay
+ * tới xưởng — sai một chút thì khách kéo lại, hết chuyện.
+ */
+const DROP_ANCHOR: Record<string, { x: number; y: number }> = {
+  front: { x: 0.5, y: 0.36 },
+  back: { x: 0.5, y: 0.34 },
+  shoulder_left: { x: 0.25, y: 0.21 },
+  shoulder_right: { x: 0.75, y: 0.21 },
+};
+
+const CENTRE_ANCHOR = { x: 0.5, y: 0.36 };
 
 let seq = 0;
 const nextKey = () => `p${++seq}`;
@@ -66,7 +91,13 @@ export default function PrintStudio({ catalogue, blank }: Props) {
     placements: [],
   }));
 
-  const [zoneKey, setZoneKey] = useState(blank.zones[0]?.key ?? "");
+  /** Vị trí phôi này bán được, giữ nguyên thứ tự trang quản trị khai. */
+  const positions = useMemo(
+    () => catalogue.positions.filter((p) => blank.position_keys.includes(p.key)),
+    [catalogue.positions, blank.position_keys],
+  );
+
+  const [positionKey, setPositionKey] = useState(positions[0]?.key ?? "");
   const [selected, setSelected] = useState<string | null>(null);
   const [uploads, setUploads] = useState<PrintAsset[]>([]);
   const [busy, setBusy] = useState(false);
@@ -83,48 +114,62 @@ export default function PrintStudio({ catalogue, blank }: Props) {
 
   const technique = techniques.find((t) => t.id === design.techniqueId);
   const color = blank.colors.find((c) => c.name === design.colorName) ?? blank.colors[0];
-  const zone = blank.zones.find((z) => z.key === zoneKey) ?? blank.zones[0];
+  const position = positions.find((p) => p.key === positionKey) ?? positions[0];
 
   const result = useMemo(() => quote(design, blank, catalogue, assets), [design, blank, catalogue, assets]);
 
   /**
-   * Tấm mockup đang hiện: ưu tiên đúng màu và đúng góc của vùng đang chọn, rồi
-   * lùi dần. Thiếu tấm nào cũng vẫn dựng được màn hình thay vì trắng trơn.
+   * Tấm mockup đang hiện: ưu tiên đúng màu, rồi đúng góc chụp mà vị trí đang
+   * chọn muốn — mặt sau muốn tấm chụp lưng, vai muốn tấm chụp tay áo. Thiếu góc
+   * nào thì lùi dần theo danh sách của chính vị trí đó; thiếu hết thì lấy tấm
+   * nào cũng được. Hiện sai góc vẫn hơn hiện một ô trắng trơn, và mm thì không
+   * phụ thuộc vào tấm ảnh nào cả.
    */
   const mockup = useMemo(() => {
     const byColor = blank.mockups.filter((m) => m.color_id === color?.id);
 
-    return (
-      byColor.find((m) => m.view === zoneKey) ??
-      byColor.find((m) => m.view === "front") ??
-      byColor[0] ??
-      blank.mockups[0] ??
-      null
-    );
-  }, [blank.mockups, color?.id, zoneKey]);
+    for (const view of position?.views ?? ["front"]) {
+      const hit = byColor.find((m) => m.view === view) ?? blank.mockups.find((m) => m.view === view);
+      if (hit) return hit;
+    }
+
+    return byColor[0] ?? blank.mockups[0] ?? null;
+  }, [blank.mockups, color?.id, position]);
 
   // ── Đổi thiết kế ───────────────────────────────────────────────────
   const patch = useCallback((next: Partial<DesignState>) => {
     setDesign((d) => ({ ...d, ...next }));
   }, []);
 
+  /** Toạ độ góc trên trái để một khung w×h rơi đúng chỗ xuất phát của vị trí. */
+  const dropAt = useCallback(
+    (target: PrintPosition, wMm: number, hMm: number) => {
+      const anchor = DROP_ANCHOR[target.key] ?? CENTRE_ANCHOR;
+
+      return {
+        xMm: clamp(anchor.x * blank.frame_width_mm - wMm / 2, 0, blank.frame_width_mm - wMm),
+        yMm: clamp(anchor.y * blank.frame_height_mm - hMm / 2, 0, blank.frame_height_mm - hMm),
+      };
+    },
+    [blank.frame_width_mm, blank.frame_height_mm],
+  );
+
   const addPlacement = useCallback(
     (assetId: number) => {
-      if (!zone) return;
+      if (!position) return;
       const asset = assets.get(assetId);
       if (!asset) return;
 
-      const wMm = Math.min(zone.width_mm * DROP_WIDTH_RATIO, asset.max_width_mm);
+      const wMm = Math.min(position.max_width_mm * DROP_WIDTH_RATIO, asset.max_width_mm);
       const ratio = asset.height_px && asset.width_px ? asset.height_px / asset.width_px : 1;
-      const hMm = wMm * ratio;
+      const hMm = Math.min(wMm * ratio, position.max_height_mm);
 
       const placement: Placement = {
         key: nextKey(),
-        zone: zone.key,
+        position: position.key,
         kind: "image",
         assetId,
-        xMm: (zone.width_mm - wMm) / 2,
-        yMm: (zone.height_mm - hMm) / 2,
+        ...dropAt(position, wMm, hMm),
         wMm,
         hMm,
         rotation: 0,
@@ -133,7 +178,7 @@ export default function PrintStudio({ catalogue, blank }: Props) {
       setDesign((d) => ({ ...d, placements: [...d.placements, placement] }));
       setSelected(placement.key);
     },
-    [assets, zone],
+    [assets, dropAt, position],
   );
 
   /**
@@ -143,25 +188,26 @@ export default function PrintStudio({ catalogue, blank }: Props) {
    * chỉnh khung, xưởng dàn chữ cho vừa khung đó.
    */
   const addText = useCallback(() => {
-    if (!zone || !catalogue.fonts.length) return;
+    if (!position || !catalogue.fonts.length) return;
 
-    const wMm = zone.width_mm * 0.7;
+    const wMm = position.max_width_mm * 0.7;
+    const hMm = Math.min(wMm * TEXT_BOX_RATIO, position.max_height_mm);
+
     const placement: Placement = {
       key: nextKey(),
-      zone: zone.key,
+      position: position.key,
       kind: "text",
       assetId: null,
       text: { content: "Chữ của bạn", fontId: catalogue.fonts[0].id, color: "#1a1614" },
-      xMm: (zone.width_mm - wMm) / 2,
-      yMm: (zone.height_mm - wMm * TEXT_BOX_RATIO) / 2,
+      ...dropAt(position, wMm, hMm),
       wMm,
-      hMm: wMm * TEXT_BOX_RATIO,
+      hMm,
       rotation: 0,
     };
 
     setDesign((d) => ({ ...d, placements: [...d.placements, placement] }));
     setSelected(placement.key);
-  }, [catalogue.fonts, zone]);
+  }, [catalogue.fonts, dropAt, position]);
 
   const updatePlacement = useCallback((key: string, next: Partial<Placement>) => {
     setDesign((d) => ({
@@ -189,15 +235,21 @@ export default function PrintStudio({ catalogue, blank }: Props) {
     pxPerMmY: number;
   } | null>(null);
 
-  const zoneScale = useCallback(() => {
+  /**
+   * Bao nhiêu pixel màn hình cho một milimét thật.
+   *
+   * Cả khung áo trên màn hình ứng đúng với khung ảnh đã hiệu chuẩn, nên phép quy
+   * đổi chỉ là một phép chia — không còn khung vùng in nào chen vào giữa.
+   */
+  const frameScale = useCallback(() => {
     const el = stageRef.current;
-    if (!el || !zone) return { pxPerMmX: 1, pxPerMmY: 1 };
+    if (!el) return { pxPerMmX: 1, pxPerMmY: 1 };
 
     return {
-      pxPerMmX: ((zone.box.w / 100) * el.clientWidth) / zone.width_mm,
-      pxPerMmY: ((zone.box.h / 100) * el.clientHeight) / zone.height_mm,
+      pxPerMmX: el.clientWidth / blank.frame_width_mm,
+      pxPerMmY: el.clientHeight / blank.frame_height_mm,
     };
-  }, [zone]);
+  }, [blank.frame_width_mm, blank.frame_height_mm]);
 
   const onPointerDown = (event: React.PointerEvent, key: string, mode: "move" | "resize") => {
     const placement = design.placements.find((p) => p.key === key);
@@ -217,34 +269,45 @@ export default function PrintStudio({ catalogue, blank }: Props) {
       y0: placement.yMm,
       w0: placement.wMm,
       h0: placement.hMm,
-      ...zoneScale(),
+      ...frameScale(),
     };
   };
 
   const onPointerMove = (event: React.PointerEvent) => {
     const d = drag.current;
-    if (!d || !zone) return;
+    if (!d || !position) return;
 
     if (d.mode === "move") {
       const dx = (event.clientX - d.startX) / d.pxPerMmX;
       const dy = (event.clientY - d.startY) / d.pxPerMmY;
 
-      // Cho phép nhô ra một phần tư ngoài khung: khách hay muốn hình tràn mép,
+      // Cho phép nhô ra một phần tư ngoài mép áo: khách hay muốn hình tràn mép,
       // và chặn cứng ở biên làm thao tác kéo thành giật cục.
       updatePlacement(d.key, {
-        xMm: clamp(d.x0 + dx, -d.w0 * 0.25, zone.width_mm - d.w0 * 0.75),
-        yMm: clamp(d.y0 + dy, -d.h0 * 0.25, zone.height_mm - d.h0 * 0.75),
+        xMm: clamp(d.x0 + dx, -d.w0 * 0.25, blank.frame_width_mm - d.w0 * 0.75),
+        yMm: clamp(d.y0 + dy, -d.h0 * 0.25, blank.frame_height_mm - d.h0 * 0.75),
       });
       return;
     }
 
+    /*
+     * Phóng to bị chặn bởi hai thứ khác nhau và cả hai đều thật: trần của vị trí
+     * (xưởng không in nổi to hơn) và trần của chính tấm ảnh (kéo quá là vỡ nét).
+     * Giữ tỉ lệ nên phải soi cả chiều cao — hình dọc chạm trần cao trước.
+     */
     const asset = assets.get(design.placements.find((p) => p.key === d.key)?.assetId ?? -1) ?? undefined;
     const dx = (event.clientX - d.startX) / d.pxPerMmX;
-    const maxMm = Math.min(zone.width_mm, asset?.max_width_mm ?? 9999);
-    const minMm = Math.max(8, asset?.min_width_mm ?? 8);
-    const wMm = clamp(d.w0 + dx, minMm, maxMm);
+    const ratio = d.h0 / d.w0;
 
-    updatePlacement(d.key, { wMm, hMm: wMm * (d.h0 / d.w0) });
+    const maxMm = Math.min(
+      position.max_width_mm,
+      position.max_height_mm / ratio,
+      asset?.max_width_mm ?? Infinity,
+    );
+    const minMm = Math.max(8, asset?.min_width_mm ?? 8);
+    const wMm = clamp(d.w0 + dx, minMm, Math.max(minMm, maxMm));
+
+    updatePlacement(d.key, { wMm, hMm: wMm * ratio });
   };
 
   const onPointerUp = () => {
@@ -292,7 +355,7 @@ export default function PrintStudio({ catalogue, blank }: Props) {
           ink_colors: design.inkColors,
           qty: design.qty,
           placements: design.placements.map((p) => ({
-            zone: p.zone,
+            position: p.position,
             kind: p.kind,
             asset_id: p.assetId,
             text_content: p.text?.content ?? null,
@@ -332,9 +395,11 @@ export default function PrintStudio({ catalogue, blank }: Props) {
     setBusy(false);
   };
 
-  const zonePlacements = design.placements.filter((p) => p.zone === zoneKey);
-  const bbox = zonePlacements.length ? boundingBox(zonePlacements) : null;
+  const livePlacements = design.placements.filter((p) => p.position === positionKey);
+  const bbox = livePlacements.length ? boundingBox(livePlacements) : null;
   const tier = bbox ? pickTier(bbox, catalogue.tiers) : null;
+  const overCap =
+    !!bbox && !!position && (bbox.w > position.max_width_mm + 0.5 || bbox.h > position.max_height_mm + 0.5);
   const selectedPlacement = design.placements.find((p) => p.key === selected);
   const canSubmit = design.placements.length > 0 && result.errors.length === 0 && !busy;
 
@@ -505,24 +570,30 @@ export default function PrintStudio({ catalogue, blank }: Props) {
         {/* ── Khung áo ── */}
         <div>
           <div className="mb-3 flex flex-wrap justify-center gap-2">
-            {blank.zones.map((option) => (
-              <button
-                key={option.key}
-                type="button"
-                onClick={() => {
-                  setZoneKey(option.key);
-                  setSelected(null);
-                }}
-                aria-pressed={option.key === zoneKey}
-                className={`rounded-full border px-4 py-1.5 text-sm font-semibold transition-all ${
-                  option.key === zoneKey
-                    ? "border-ink bg-ink text-cream"
-                    : "border-line-strong bg-surface text-ink/80 hover:border-ink"
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
+            {positions.map((option) => {
+              const count = design.placements.filter((p) => p.position === option.key).length;
+
+              return (
+                <button
+                  key={option.key}
+                  type="button"
+                  onClick={() => {
+                    setPositionKey(option.key);
+                    setSelected(null);
+                  }}
+                  aria-pressed={option.key === positionKey}
+                  className={`rounded-full border px-4 py-1.5 text-sm font-semibold transition-all ${
+                    option.key === positionKey
+                      ? "border-ink bg-ink text-cream"
+                      : "border-line-strong bg-surface text-ink/80 hover:border-ink"
+                  }`}
+                >
+                  {option.label}
+                  {/* Đếm hình để khách biết mặt sau đang có gì mà không phải bấm sang. */}
+                  {count > 0 && <span className="ml-1.5 tabular-nums opacity-70">{count}</span>}
+                </button>
+              );
+            })}
           </div>
 
           <div
@@ -549,120 +620,100 @@ export default function PrintStudio({ catalogue, blank }: Props) {
               </span>
             )}
 
-            {blank.zones.map((option) => {
-              const active = option.key === zoneKey;
+            {/*
+              Hình vẽ thẳng lên tấm áo, không nằm trong khung nào.
+              % suy ra từ mm mỗi lần render — mm mới là thứ được lưu.
+            */}
+            {livePlacements.map((p) => {
+              const asset = p.assetId === null ? undefined : assets.get(p.assetId);
+              const dpi = dpiAt(asset, p.wMm);
+              // Chữ là vector: không có độ phân giải để mà thiếu.
+              const low = p.kind === "image" && technique ? dpi < technique.min_dpi : false;
+              const font = catalogue.fonts.find((f) => f.id === p.text?.fontId);
 
               return (
                 <div
-                  key={option.key}
-                  onPointerDown={(e) => {
-                    e.stopPropagation();
-                    if (!active) {
-                      setZoneKey(option.key);
-                      setSelected(null);
-                    }
-                  }}
-                  className={`absolute rounded-sm transition-colors ${
-                    active
-                      ? "border border-gold"
-                      : "cursor-pointer border border-dashed border-line-strong hover:border-gold"
+                  key={p.key}
+                  onPointerDown={(e) => onPointerDown(e, p.key, "move")}
+                  className={`absolute cursor-grab ${
+                    selected === p.key ? "outline outline-2 outline-gold outline-offset-1" : ""
                   }`}
                   style={{
-                    left: `${option.box.x}%`,
-                    top: `${option.box.y}%`,
-                    width: `${option.box.w}%`,
-                    height: `${option.box.h}%`,
+                    left: `${(p.xMm / blank.frame_width_mm) * 100}%`,
+                    top: `${(p.yMm / blank.frame_height_mm) * 100}%`,
+                    width: `${(p.wMm / blank.frame_width_mm) * 100}%`,
+                    height: `${(p.hMm / blank.frame_height_mm) * 100}%`,
+                    transform: `rotate(${p.rotation}deg)`,
                   }}
                 >
-                  {active &&
-                    design.placements
-                      .filter((p) => p.zone === option.key)
-                      .map((p) => {
-                        const asset = p.assetId === null ? undefined : assets.get(p.assetId);
-                        const dpi = dpiAt(asset, p.wMm);
-                        // Chữ là vector: không có độ phân giải để mà thiếu.
-                        const low = p.kind === "image" && technique ? dpi < technique.min_dpi : false;
-                        const font = catalogue.fonts.find((f) => f.id === p.text?.fontId);
+                  {p.kind === "text" ? (
+                    /*
+                     * Vẽ chữ bằng SVG chứ không bằng thẻ chữ thường: SVG co giãn
+                     * chữ vừa khít khung theo đúng tỉ lệ, không phải đoán cỡ chữ
+                     * theo pixel. Đây cũng chính là cách file giao cho xưởng được
+                     * dựng, nên cái khách thấy và cái thợ in ra là một.
+                     */
+                    <svg
+                      viewBox="0 0 200 60"
+                      preserveAspectRatio="xMidYMid meet"
+                      className="pointer-events-none h-full w-full"
+                    >
+                      <text
+                        x="100"
+                        y="30"
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fontFamily={font?.family ?? "sans-serif"}
+                        fontSize="44"
+                        fill={p.text?.color ?? "#1a1614"}
+                      >
+                        {p.text?.content}
+                      </text>
+                    </svg>
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={asset?.url ?? ""}
+                      alt={asset?.name ?? ""}
+                      className="pointer-events-none h-full w-full object-contain"
+                    />
+                  )}
 
-                        return (
-                          <div
-                            key={p.key}
-                            onPointerDown={(e) => onPointerDown(e, p.key, "move")}
-                            className={`absolute cursor-grab ${
-                              selected === p.key ? "outline outline-2 outline-gold outline-offset-1" : ""
-                            }`}
-                            style={{
-                              left: `${(p.xMm / option.width_mm) * 100}%`,
-                              top: `${(p.yMm / option.height_mm) * 100}%`,
-                              width: `${(p.wMm / option.width_mm) * 100}%`,
-                              height: `${(p.hMm / option.height_mm) * 100}%`,
-                              transform: `rotate(${p.rotation}deg)`,
-                            }}
-                          >
-                            {p.kind === "text" ? (
-                              /*
-                               * Vẽ chữ bằng SVG chứ không bằng thẻ chữ thường: SVG
-                               * co giãn chữ vừa khít khung theo đúng tỉ lệ, không
-                               * phải đoán cỡ chữ theo pixel. Đây cũng chính là cách
-                               * file giao cho xưởng được dựng, nên cái khách thấy
-                               * và cái thợ in ra là một.
-                               */
-                              <svg
-                                viewBox="0 0 200 60"
-                                preserveAspectRatio="xMidYMid meet"
-                                className="pointer-events-none h-full w-full"
-                              >
-                                <text
-                                  x="100"
-                                  y="30"
-                                  textAnchor="middle"
-                                  dominantBaseline="central"
-                                  fontFamily={font?.family ?? "sans-serif"}
-                                  fontSize="44"
-                                  fill={p.text?.color ?? "#1a1614"}
-                                >
-                                  {p.text?.content}
-                                </text>
-                              </svg>
-                            ) : (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={asset?.url ?? ""}
-                                alt={asset?.name ?? ""}
-                                className="pointer-events-none h-full w-full object-contain"
-                              />
-                            )}
+                  {low && (
+                    <span className="absolute -left-1 -top-2 rounded-full bg-[#a8452f] px-1.5 text-[9px] font-bold text-white">
+                      {Math.round(dpi)} DPI
+                    </span>
+                  )}
 
-                            {low && (
-                              <span className="absolute -left-1 -top-2 rounded-full bg-[#a8452f] px-1.5 text-[9px] font-bold text-white">
-                                {Math.round(dpi)} DPI
-                              </span>
-                            )}
-
-                            {selected === p.key && (
-                              <span
-                                onPointerDown={(e) => onPointerDown(e, p.key, "resize")}
-                                className="absolute -bottom-2 -right-2 h-4 w-4 cursor-nwse-resize rounded-full border-2 border-surface bg-gold"
-                              />
-                            )}
-                          </div>
-                        );
-                      })}
+                  {selected === p.key && (
+                    <span
+                      onPointerDown={(e) => onPointerDown(e, p.key, "resize")}
+                      className="absolute -bottom-2 -right-2 h-4 w-4 cursor-nwse-resize rounded-full border-2 border-surface bg-gold"
+                    />
+                  )}
                 </div>
               );
             })}
           </div>
 
-          <p className="mt-2.5 text-center text-xs tabular-nums text-muted">
+          {/*
+            Con số này là chỗ khách nhìn thấy tiền in đổi theo tay mình: kéo to
+            một chút là nhảy bậc khổ, và bảng kê bên phải đổi ngay theo.
+          */}
+          <p
+            className={`mt-2.5 text-center text-xs tabular-nums ${overCap ? "font-semibold text-[#a8452f]" : "text-muted"}`}
+          >
             {bbox
-              ? `Khung bao ${round1(bbox.w)} × ${round1(bbox.h)} mm → bậc ${tier?.name ?? "vượt khổ lớn nhất"}`
-              : zone
-                ? `${zone.label} — ${zone.width_mm} × ${zone.height_mm} mm · chưa có hình`
+              ? overCap
+                ? `Khung bao ${round1(bbox.w)} × ${round1(bbox.h)} mm — vượt giới hạn ${position?.max_width_mm} × ${position?.max_height_mm} mm, thu nhỏ lại giúp shop nhé`
+                : `Khung bao ${round1(bbox.w)} × ${round1(bbox.h)} mm → bậc ${tier?.name ?? "vượt khổ lớn nhất"}`
+              : position
+                ? `${position.label} — thêm hình bên dưới rồi kéo tới chỗ bạn muốn · in được tối đa ${position.max_width_mm} × ${position.max_height_mm} mm`
                 : ""}
           </p>
 
           {/* ── Chỉnh hình đang chọn ── */}
-          {selectedPlacement && zone && (
+          {selectedPlacement && position && (
             <div className="mt-4 space-y-3 rounded-card border border-line bg-surface p-4">
               {selectedPlacement.kind === "text" && (
                 <div className="space-y-2.5 border-b border-line pb-3">
@@ -719,7 +770,7 @@ export default function PrintStudio({ catalogue, blank }: Props) {
               <Slider
                 label="Rộng"
                 min={10}
-                max={Math.round(zone.width_mm)}
+                max={Math.round(position.max_width_mm)}
                 value={Math.round(selectedPlacement.wMm)}
                 suffix="mm"
                 onChange={(v) =>
@@ -741,14 +792,15 @@ export default function PrintStudio({ catalogue, blank }: Props) {
                 <button
                   type="button"
                   onClick={() =>
+                    // Chỉ căn ngang: chiều cao là chỗ khách vừa chọn bằng tay,
+                    // kéo tuột nó về giữa áo là xoá đi một quyết định của khách.
                     updatePlacement(selectedPlacement.key, {
-                      xMm: (zone.width_mm - selectedPlacement.wMm) / 2,
-                      yMm: (zone.height_mm - selectedPlacement.hMm) / 2,
+                      xMm: (blank.frame_width_mm - selectedPlacement.wMm) / 2,
                     })
                   }
                   className="rounded-lg border border-line-strong px-3 py-1.5 text-xs font-semibold text-ink hover:border-ink"
                 >
-                  Căn giữa vùng
+                  Căn giữa áo
                 </button>
                 <button
                   type="button"
