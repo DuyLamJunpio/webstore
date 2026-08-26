@@ -217,3 +217,12 @@ export function Instagram({ className = base }: IconProps) {
   );
 }
 
+export function Messenger({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden className={className}>
+      <path d="M10 2C5.58 2 2 5.34 2 9.47c0 2.35 1.18 4.45 3.03 5.81v2.85l2.74-1.51c.71.2 1.46.3 2.23.3 4.42 0 8-3.34 8-7.47S14.42 2 10 2Zm1.08 10.05-2.22-2.37-4.33 2.37 4.77-5.06 2.27 2.37 4.28-2.37-4.77 5.06Z" />
+    </svg>
+  );
+}
+
+
