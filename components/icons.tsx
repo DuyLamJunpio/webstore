@@ -225,4 +225,32 @@ export function Messenger({ className = base }: IconProps) {
   );
 }
 
+export function Mail({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden className={className}>
+      <rect x="2.5" y="4" width="15" height="12" rx="2" strokeLinejoin="round" />
+      <path d="m3 5.5 7 5 7-5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function Clock({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden className={className}>
+      <circle cx="10" cy="10" r="7.5" strokeLinejoin="round" />
+      <path d="M10 6v4.5l3 1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function MapPin({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden className={className}>
+      <path d="M10 18s6-5.5 6-10a6 6 0 1 0-12 0c0 4.5 6 10 6 10Z" strokeLinejoin="round" />
+      <circle cx="10" cy="8" r="2.5" />
+    </svg>
+  );
+}
+
+
 
