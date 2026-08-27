@@ -88,7 +88,7 @@ body {
   color: transparent;
 }
 
-.section {
+@utility section {
   padding-block: clamp(40px, 5vw, 72px);
 }
 

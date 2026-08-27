@@ -3,7 +3,7 @@ import { ArrowRight, HomeIcon, Store } from "@/components/icons";
 
 export default function NotFound() {
   return (
-    <div className="shell section flex min-h-[60vh] flex-col items-center justify-center text-center pt-28 pb-16">
+    <div className="shell flex min-h-[60vh] flex-col items-center justify-center text-center pt-28 sm:pt-32 lg:pt-36 pb-16">
       <span className="eyebrow rounded-full bg-gold/15 px-3.5 py-1 text-xs font-bold text-gold-deep">
         Lỗi 404
       </span>

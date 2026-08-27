@@ -17,7 +17,7 @@ export default async function PrintLandingPage() {
 
   if (!catalogue) {
     return (
-      <main className="shell pt-28 pb-20 text-center">
+      <main className="shell pt-28 sm:pt-32 lg:pt-36 pb-20 text-center">
         <h1 className="font-serif text-3xl text-ink">In áo theo yêu cầu</h1>
         <p className="measure mt-4 text-muted">
           Dịch vụ đang tạm ngưng nhận đơn trực tuyến. Bạn nhắn tin cho shop để được báo giá trực tiếp nhé.
@@ -33,7 +33,7 @@ export default async function PrintLandingPage() {
   return (
     <main className="pb-20">
       {/* ── Mở đầu ── */}
-      <section className="shell pt-24 pb-8 sm:pt-28">
+      <section className="shell pt-28 sm:pt-32 lg:pt-36 pb-8">
         <div className="measure text-center">
           <p className="eyebrow text-gold-deep">Dịch vụ của shop</p>
           <h1 className="mt-3 font-serif text-4xl sm:text-5xl leading-[1.1] text-ink text-balance">

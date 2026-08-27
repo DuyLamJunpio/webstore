@@ -25,29 +25,51 @@ export default async function ShopPage(props: PageProps<"/shop">) {
   const chips = activeFilters(query, catalogue.facets.priceBounds);
   const singleCategory = query.categories && query.categories.length === 1 ? query.categories[0] : undefined;
 
+  const pageTitle = query.q
+    ? `Kết quả cho “${query.q}”`
+    : singleCategory
+      ? singleCategory
+      : query.isNew
+        ? "Hàng Mới Về"
+        : query.onSale
+          ? "Sản Phẩm Đang Ưu Đãi"
+          : "Tất Cả Sản Phẩm";
+
+  const pageDescription = query.isNew
+    ? "Khám phá các thiết kế mới nhất vừa cập bến — kiểu dáng hiện đại, phom dáng chuẩn cùng chất liệu cao cấp cho vẻ ngoài tự tin mỗi ngày."
+    : query.onSale
+      ? "Những sản phẩm chất lượng với mức giá ưu đãi đặc biệt. Số lượng có hạn."
+      : "Những món đồ cơ bản chất lượng cao cho nam, nữ và trẻ em. Lựa chọn màu sắc, kích cỡ và phom dáng yêu thích của bạn.";
+
   return (
-    <div className="shell section pt-24 sm:pt-28">
+    <div className="shell pt-28 sm:pt-32 lg:pt-36 pb-16 sm:pb-24">
       {/* ── Breadcrumbs ── */}
       <nav aria-label="Đường dẫn" className="flex items-center gap-2 text-xs sm:text-[13px] text-muted">
         <Link href="/" className="transition-colors hover:text-ink">
           Trang chủ
         </Link>
         <span>/</span>
-        <span className="font-semibold text-ink">Cửa hàng</span>
-        {singleCategory && (
+        {query.isNew || query.onSale || singleCategory ? (
           <>
+            <Link href="/shop" className="transition-colors hover:text-ink">
+              Cửa hàng
+            </Link>
             <span>/</span>
-            <span className="font-medium text-gold-deep">{singleCategory}</span>
+            <span className="font-semibold text-ink">
+              {singleCategory || (query.isNew ? "Hàng mới về" : "Ưu đãi")}
+            </span>
           </>
+        ) : (
+          <span className="font-semibold text-ink">Cửa hàng</span>
         )}
       </nav>
 
       <header className="mt-4 max-w-2xl">
         <h1 className="font-serif text-[clamp(2.25rem,4vw,3.5rem)] font-medium leading-[1.05] tracking-[-0.015em] text-ink">
-          {query.q ? `Kết quả cho “${query.q}”` : singleCategory ? singleCategory : "Tất Cả Sản Phẩm"}
+          {pageTitle}
         </h1>
         <p className="mt-3 text-sm sm:text-[15px] leading-relaxed text-muted">
-          Những món đồ cơ bản chất lượng cao cho nam, nữ và trẻ em. Lựa chọn màu sắc, kích cỡ và phom dáng yêu thích của bạn.
+          {pageDescription}
         </p>
       </header>
 
