@@ -37,10 +37,12 @@ export type HeroSlide = {
 };
 
 export type Collection = {
+  id: number | string;
   title: string;
   subtitle: string | null;
   ctaLabel: string | null;
   ctaLink: string | null;
+  imageUrl: string | null;
   /** Slug các sản phẩm chủ shop đã tích, giữ đúng thứ tự đã chọn. */
   productSlugs: string[];
 };
@@ -49,6 +51,8 @@ export type SiteContent = {
   slides: HeroSlide[];
   /** Bộ sưu tập chủ shop tự chọn; chưa tạo cái nào thì null và web ẩn khối đó. */
   collection: Collection | null;
+  /** Tất cả bộ sưu tập đang bật, mỗi bộ được hiển thị thành một khối riêng. */
+  collections: Collection[];
   /** Dải chữ nhỏ trên cùng, hiện ở mọi trang. */
   announcement: string[];
   headings: Record<string, string>;
@@ -100,9 +104,20 @@ const MAC_DINH: SiteContent = {
     },
   ],
   collection: null,
+  collections: [],
   announcement: ["Ưu đãi mùa mới", "Giảm đến 30%", "Miễn phí giao hàng từ 500.000 ₫"],
   headings: {},
   sales: SALES_MAC_DINH,
+};
+
+type ApiCollection = {
+  id?: number | string;
+  title: string;
+  subtitle: string | null;
+  image?: string | null;
+  cta_label: string | null;
+  cta_link: string | null;
+  product_slugs: string[];
 };
 
 type ApiContent = {
@@ -118,13 +133,8 @@ type ApiContent = {
     cta_label: string | null;
     cta_link: string | null;
   }>;
-  collection?: {
-    title: string;
-    subtitle: string | null;
-    cta_label: string | null;
-    cta_link: string | null;
-    product_slugs: string[];
-  } | null;
+  collection?: ApiCollection | null;
+  collections?: ApiCollection[];
   announcement?: string[];
   headings?: Record<string, string>;
   sales?: Record<
@@ -195,18 +205,22 @@ async function fetchContent(): Promise<SiteContent | null> {
       ctaLink: b.cta_link,
     }));
 
+    const rawCollections = data.collections ?? (data.collection ? [data.collection] : []);
+    const collections: Collection[] = rawCollections.map((collection, index) => ({
+      id: collection.id ?? `legacy-${index}`,
+      title: collection.title,
+      subtitle: collection.subtitle,
+      ctaLabel: collection.cta_label,
+      ctaLink: collection.cta_link,
+      imageUrl: collection.image ? mediaUrl(collection.image) : null,
+      productSlugs: collection.product_slugs ?? [],
+    }));
+
     return {
       // Chưa ai thêm slide nào thì giữ ảnh mặc định, đừng để đầu trang trống.
       slides: slides.length > 0 ? slides : MAC_DINH.slides,
-      collection: data.collection
-        ? {
-            title: data.collection.title,
-            subtitle: data.collection.subtitle,
-            ctaLabel: data.collection.cta_label,
-            ctaLink: data.collection.cta_link,
-            productSlugs: data.collection.product_slugs ?? [],
-          }
-        : null,
+      collection: collections[0] ?? null,
+      collections,
       announcement: data.announcement?.length ? data.announcement : MAC_DINH.announcement,
       headings: data.headings ?? {},
       sales: napSales(data.sales),
