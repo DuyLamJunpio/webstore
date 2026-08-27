@@ -38,19 +38,19 @@ export default function Header() {
   const printDrafts = usePrintDrafts();
   const cartCount = hydrated ? count + printDraftQty(printDrafts) : 0;
 
-  // Trang chủ: pathname === "/" hoặc rỗng khi SSR/hydration
-  const isInterior = Boolean(pathname && pathname !== "/" && pathname !== "");
-  const showSolidHeader = isInterior || scrolled || searchOpen || open;
+  // Trang chủ: pathname === "/" hoặc rỗng/null khi SSR/hydration
+  const isHome = !pathname || pathname === "/" || pathname === "";
+  const showSolidHeader = !isHome || scrolled || searchOpen || open;
 
   useEffect(() => {
-    if (isInterior) {
-      setScrolled(true);
+    if (!isHome) {
       return;
     }
 
     const checkScroll = () => {
       const hero = document.getElementById("top");
-      const threshold = hero ? Math.max(hero.offsetHeight - 90, 200) : 300;
+      const heroHeight = hero ? hero.offsetHeight : (typeof window !== "undefined" ? window.innerHeight : 600);
+      const threshold = Math.max(heroHeight - 80, 200);
       setScrolled(window.scrollY > threshold);
     };
 
@@ -62,7 +62,7 @@ export default function Header() {
       window.removeEventListener("scroll", checkScroll);
       window.removeEventListener("resize", checkScroll);
     };
-  }, [pathname, isInterior]);
+  }, [isHome]);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
