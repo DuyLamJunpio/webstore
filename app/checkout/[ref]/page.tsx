@@ -112,7 +112,7 @@ function OrderSummary({ order }: { order: Order }) {
  */
 function CodConfirmation({ order }: { order: Order }) {
   return (
-    <div className="shell section pt-24 sm:pt-28">
+    <div className="shell pt-28 sm:pt-32 lg:pt-36 pb-16 sm:pb-24">
       <nav aria-label="Đường dẫn" className="text-[13px] text-muted">
         <Link href="/" className="transition-colors hover:text-ink">
           Trang chủ
@@ -174,7 +174,7 @@ export default async function OrderPage(props: PageProps<"/checkout/[ref]">) {
   const shortfall = order.status === "UNDERPAID" ? payment.amount - (order.amountPaid ?? 0) : 0;
 
   return (
-    <div className="shell section pt-24 sm:pt-28">
+    <div className="shell pt-28 sm:pt-32 lg:pt-36 pb-16 sm:pb-24">
       <nav aria-label="Đường dẫn" className="text-[13px] text-muted">
         <Link href="/" className="transition-colors hover:text-ink">
           Trang chủ
