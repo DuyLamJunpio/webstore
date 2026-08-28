@@ -71,6 +71,12 @@ export type Order = {
   customer: CustomerInfo;
   cart: PricedCart;
   payment: OrderPayment;
+  /** Chỉ đơn in cần: tài khoản nhận hoàn tiền khi thiết kế không in được. */
+  refund?: {
+    bankName: string;
+    accountNumber: string;
+    accountName: string;
+  } | null;
   /**
    * Khách chọn trả kiểu gì. Thiếu = chuyển khoản: đơn đặt trước khi web có lựa
    * chọn này đều là chuyển khoản, và đọc chúng không được phép hỏng.
@@ -79,8 +85,8 @@ export type Order = {
   /**
    * Mã đơn bên trang quản trị (Laravel), ví dụ "DH2608171ABC".
    *
-   * Trang quản trị mới là nơi giữ tồn kho và danh sách đơn thật. Giữ mã lại để
-   * báo "đã nhận tiền" đúng đơn.
+   * Chỉ có sau khi PayOS báo PAID (trừ đơn COD hàng bán sẵn). Trước đó,
+   * StorefrontOrder chỉ là phiên thanh toán nội bộ, không phải đơn hiển thị cho nhân viên.
    */
   warehouseOrderCode?: string;
 };

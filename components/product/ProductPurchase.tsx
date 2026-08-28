@@ -5,7 +5,7 @@ import { useState } from "react";
 import { formatPrice, type Product } from "@/lib/data";
 import { LOW_STOCK, useVariantSelection } from "@/lib/useVariantSelection";
 import QuantityStepper from "../QuantityStepper";
-import { Bag } from "../icons";
+import { Bag, Bolt, Spinner } from "../icons";
 import SizeGuideModal from "./SizeGuideModal";
 
 export default function ProductPurchase({ product }: { product: Product }) {
@@ -16,6 +16,7 @@ export default function ProductPurchase({ product }: { product: Product }) {
     qty,
     error,
     variant,
+    isBuying,
     price,
     stockBySize,
     colorSoldOut,
@@ -25,6 +26,7 @@ export default function ProductPurchase({ product }: { product: Product }) {
     pickColor,
     pickSize,
     addToCart,
+    buyNow,
   } = useVariantSelection(product);
 
   const discountPercent = product.comparePrice && product.comparePrice > product.price
@@ -142,19 +144,43 @@ export default function ProductPurchase({ product }: { product: Product }) {
         </div>
       </div>
 
-      {/* ── Số lượng & Nút Thêm vào giỏ ── */}
-      <div className="mt-6 flex flex-wrap items-center gap-3">
-        <QuantityStepper value={qty} onChange={setQty} max={Math.max(max, 1)} />
+      {/* ── Số lượng & Các nút Mua hàng ── */}
+      <div className="mt-6 space-y-3">
+        <div className="flex items-center gap-3">
+          <span className="text-xs sm:text-[13px] font-semibold text-ink/70">Số lượng:</span>
+          <QuantityStepper value={qty} onChange={setQty} max={Math.max(max, 1)} />
+        </div>
 
-        <button
-          type="button"
-          onClick={addToCart}
-          disabled={colorSoldOut}
-          className="inline-flex h-12 flex-1 min-w-[200px] items-center justify-center gap-2 rounded-full bg-ink px-7 text-sm font-semibold text-cream shadow-sm transition-all hover:bg-ink-soft hover:scale-[1.01] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          <Bag className="h-[18px] w-[18px]" />
-          <span>{colorSoldOut ? "Hết hàng" : "Thêm vào giỏ"}</span>
-        </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          <button
+            type="button"
+            onClick={() => addToCart()}
+            disabled={colorSoldOut}
+            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border-2 border-ink bg-surface px-6 text-sm font-semibold text-ink shadow-xs transition-all hover:bg-ink hover:text-cream active:scale-[0.98] disabled:cursor-not-allowed disabled:border-line disabled:text-muted disabled:bg-surface/50"
+          >
+            <Bag className="h-[18px] w-[18px]" />
+            <span>{colorSoldOut ? "Hết hàng" : "Thêm vào giỏ"}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={buyNow}
+            disabled={colorSoldOut || isBuying}
+            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-ink px-6 text-sm font-semibold text-cream shadow-md transition-all hover:bg-ink-soft hover:shadow-lg active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-ink/40"
+          >
+            {isBuying ? (
+              <>
+                <Spinner className="h-[18px] w-[18px] text-gold" />
+                <span>Đang xử lý…</span>
+              </>
+            ) : (
+              <>
+                <Bolt className="h-[18px] w-[18px] text-gold" />
+                <span>{colorSoldOut ? "Hết hàng" : "Mua ngay"}</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {error && (

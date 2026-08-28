@@ -179,35 +179,9 @@ export async function POST(request: NextRequest) {
       }
     : null;
 
-  // Đẩy đơn sang trang quản trị TRƯỚC khi tạo mã QR. Bên đó giữ tồn kho thật và
-  // kiểm tra lại một lần nữa, nên hết hàng thì khách biết ngay tại đây chứ không
-  // phải sau khi đã chuyển khoản. Tồn kho cũng được trừ ngay từ lúc này.
-  const warehouse = await pushOrder(customer, cart, method, refund);
-  if (!warehouse.ok) {
-    return bad(warehouse.error, warehouse.outOfStock ? 409 : 502);
-  }
-
-  /**
-   * Từ đây trở đi trang quản trị ĐÃ nhận đơn và đã trừ kho. Hỏng bước nào thì
-   * cũng không được để khách bấm lại: mỗi lần bấm là thêm một đơn trùng bên kho.
-   * Nên báo kèm mã đơn và nói thẳng là đừng đặt lại.
-   */
-  const daGhiNhan = (error: unknown) => {
-    console.error("[checkout] đơn đã sang kho nhưng không lưu được ở web", error);
-    return bad(
-      `Đơn hàng của bạn ĐÃ được ghi nhận với mã ${warehouse.orderCode ?? ""}. `
-        + "Trang theo dõi đơn tạm thời không mở được — vui lòng KHÔNG đặt lại, shop sẽ liên hệ với bạn.",
-      500,
-    );
-  };
-
-  let ref: string;
-  let orderCode: number;
-  try {
-    ({ ref, orderCode } = await reserveOrder());
-  } catch (error) {
-    return daGhiNhan(error);
-  }
+  // Chỉ cất phiên thanh toán nội bộ trước khi hiện QR. Đơn chuyển khoản thật và
+  // hàng đợi duyệt thiết kế chỉ được tạo sau webhook PayOS báo PAID.
+  const { ref, orderCode } = await reserveOrder();
   const createdAt = Date.now();
   let expiresAt = createdAt + PAYMENT_WINDOW_MINUTES * 60 * 1000;
 
@@ -321,13 +295,22 @@ export async function POST(request: NextRequest) {
     cart,
     payment,
     paymentMethod: method,
-    // Mã đơn bên trang quản trị, để webhook báo "đã nhận tiền" đúng đơn.
-    warehouseOrderCode: warehouse.orderCode,
+    refund,
   };
+
+  // COD không có sự kiện PAID từ PayOS. Đơn in luôn bị chặn COD ở trên, nên
+  // nhánh này chỉ giữ nguyên cách bán hàng có sẵn khi khách chọn trả lúc nhận.
+  if (method === "cod") {
+    const warehouse = await pushOrder(customer, cart, method, refund);
+    if (!warehouse.ok) return bad(warehouse.error, warehouse.outOfStock ? 409 : 502);
+    order.warehouseOrderCode = warehouse.orderCode;
+  }
+
   try {
     await saveOrder(order);
   } catch (error) {
-    return daGhiNhan(error);
+    console.error("[checkout] không lưu được phiên thanh toán", error);
+    return bad("Không lưu được phiên thanh toán. Vui lòng thử lại.", 500);
   }
 
   return Response.json({ ref, url: `/checkout/${ref}` }, { status: 201 });

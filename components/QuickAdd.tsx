@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { formatPrice, type Product } from "@/lib/data";
 import { LOW_STOCK, useVariantSelection } from "@/lib/useVariantSelection";
 import QuantityStepper from "./QuantityStepper";
-import { Bag, Close, Plus } from "./icons";
+import { Bag, Bolt, Close, Plus, Spinner } from "./icons";
 
 /**
  * Chọn biến thể nhanh ngay từ thẻ sản phẩm.
@@ -20,6 +20,7 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
     qty,
     error,
     variant,
+    isBuying,
     price,
     stockBySize,
     colorSoldOut,
@@ -29,6 +30,7 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
     pickColor,
     pickSize,
     addToCart,
+    buyNow,
   } = useVariantSelection(product);
 
   useEffect(() => {
@@ -184,16 +186,41 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
         </div>
 
         <div className="border-t border-line p-5 pb-6 sm:pb-5 pb-safe bg-surface/50">
-          <div className="flex items-center gap-3">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-xs sm:text-[13px] font-semibold text-ink/70">Số lượng:</span>
             <QuantityStepper value={qty} onChange={setQty} max={Math.max(max, 1)} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
             <button
               type="button"
               onClick={submit}
               disabled={colorSoldOut}
-              className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-ink px-6 text-sm font-semibold text-cream transition-all hover:bg-ink-soft active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40 shadow-xs"
+              className="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-full border-2 border-ink bg-surface px-3 text-xs sm:text-sm font-semibold text-ink transition-all hover:bg-ink hover:text-cream active:scale-[0.99] disabled:cursor-not-allowed disabled:border-line disabled:text-muted shadow-xs"
             >
-              <Bag className="h-[18px] w-[18px]" />
-              {colorSoldOut ? "Hết hàng" : "Thêm vào giỏ"}
+              <Bag className="h-4 w-4" />
+              <span>{colorSoldOut ? "Hết hàng" : "Thêm vào giỏ"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (buyNow()) onClose();
+              }}
+              disabled={colorSoldOut || isBuying}
+              className="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-full bg-ink px-3 text-xs sm:text-sm font-semibold text-cream shadow-sm transition-all hover:bg-ink-soft active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-ink/40"
+            >
+              {isBuying ? (
+                <>
+                  <Spinner className="h-4 w-4 text-gold" />
+                  <span>Đang xử lý…</span>
+                </>
+              ) : (
+                <>
+                  <Bolt className="h-4 w-4 text-gold" />
+                  <span>{colorSoldOut ? "Hết hàng" : "Mua ngay"}</span>
+                </>
+              )}
             </button>
           </div>
 

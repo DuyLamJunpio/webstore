@@ -13,12 +13,7 @@ import {
 } from "@/lib/checkout";
 import { useCart } from "@/lib/cart";
 import { CONTACT } from "@/lib/contact";
-import {
-  clearPrintDrafts,
-  printDraftQty,
-  printDraftTotal,
-  usePrintDrafts,
-} from "@/lib/print-draft";
+import { printDraftQty, printDraftTotal, usePrintDrafts } from "@/lib/print-draft";
 import { BULK_PRINT_FROM, isBulkPrint } from "@/lib/print-bulk";
 import { formatPrice } from "@/lib/data";
 import {
@@ -34,7 +29,7 @@ import {
   type PaymentMethodKey,
 } from "@/lib/sales";
 import { useSales } from "@/lib/sales-context";
-import { ArrowRight } from "../icons";
+import { ArrowRight, Bag, Bolt, Spinner } from "../icons";
 
 /** the shop has no accounts, so the last address typed is the only "profile" there is */
 const DRAFT_KEY = "tbc.checkout.v1";
@@ -241,6 +236,7 @@ function CheckoutFields({
           payload.error ??
             `Không tạo được đơn hàng (lỗi ${response.status}). Vui lòng thử lại hoặc liên hệ shop.`,
         );
+        setDangGui(null);
         return;
       }
 
@@ -252,14 +248,13 @@ function CheckoutFields({
         // private mode — the address just will not be remembered
       }
 
-      // Mẫu in đã vào đơn: dọn ngay, nếu không thì lần đặt sau lại kéo theo nó
-      // và máy chủ từ chối với "mẫu này đã được đặt rồi".
-      clearPrintDrafts();
+      // Giữ mẫu trong giỏ cho tới khi PayOS xác nhận. Khách đóng trang QR,
+      // chuyển thiếu tiền hoặc để QR hết hạn vẫn có thể quay lại thanh toán; ClearCartOnPaid
+      // mới dọn cả giỏ sau sự kiện PAID.
 
       router.push(payload.url);
     } catch {
       setFormError("Mất kết nối. Vui lòng kiểm tra mạng và thử lại.");
-    } finally {
       setDangGui(null);
     }
   }
@@ -301,339 +296,390 @@ function CheckoutFields({
   const total = subtotal + printTotal + shipping;
 
   return (
-    <form
-      onSubmit={(event) => {
-        event.preventDefault();
-        // Đơn in số lượng lớn không chốt online: nút đã đổi thành ô liên hệ,
-        // đây là chốt chặn cho phím Enter trong ô nhập.
-        if (donSoLuongLon) return;
-        // Bấm Enter trong ô nhập = bấm nút chính.
-        void datHang(method);
-      }}
-      noValidate className="mt-10 grid gap-12 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <section>
-        <h2 className="eyebrow text-ink/60">Thông tin nhận hàng</h2>
-        <p className="mt-2 text-[13px] text-muted">
-          Không cần tài khoản — chúng tôi chỉ dùng những thông tin này để giao đơn hàng.
-        </p>
-
-        <div className="mt-6 grid gap-x-5 sm:grid-cols-2">
-          <Field
-            name="fullName"
-            label="Họ và tên"
-            value={customer.fullName}
-            error={errors.fullName}
-            autoComplete="name"
-            placeholder="Nguyễn Văn A"
-            onChange={update}
-          />
-          <Field
-            name="phone"
-            label="Số điện thoại"
-            value={customer.phone}
-            error={errors.phone}
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            placeholder="0901 234 567"
-            onChange={update}
-          />
-          <Field
-            name="email"
-            label="Email"
-            value={customer.email}
-            error={errors.email}
-            hint="Chúng tôi gửi xác nhận đơn hàng về đây"
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            placeholder="ban@email.com"
-            onChange={update}
-          />
-          <Field
-            name="city"
-            label="Tỉnh / Thành phố"
-            value={customer.city}
-            error={errors.city}
-            autoComplete="address-level1"
-            placeholder="TP. Hồ Chí Minh"
-            onChange={update}
-          />
-          <Field
-            name="ward"
-            label="Phường / Xã"
-            value={customer.ward}
-            error={errors.ward}
-            autoComplete="address-level2"
-            placeholder="Phường Bến Nghé"
-            onChange={update}
-          />
-          <Field
-            name="address"
-            label="Địa chỉ"
-            value={customer.address}
-            error={errors.address}
-            autoComplete="street-address"
-            placeholder="Số nhà, tên đường"
-            onChange={update}
-          />
-          <Field
-            name="note"
-            label="Ghi chú cho đơn hàng"
-            value={customer.note}
-            error={errors.note}
-            optional
-            multiline
-            placeholder="Giao giờ hành chính, gọi trước khi tới…"
-            onChange={update}
-          />
-        </div>
-
-      </section>
-
-      <aside className="lg:sticky lg:top-[92px] lg:self-start">
-        <div className="rounded-block border border-line bg-surface p-6">
-          <h2 className="eyebrow text-ink/60">Đơn hàng ({soMon} sản phẩm)</h2>
-
-          <ul className="mt-5 flex flex-col gap-4">
-            {items.map((line) => (
-              <li key={line.id} className="flex gap-3">
-                <div className="relative aspect-square w-14 shrink-0 overflow-hidden rounded-card bg-cream ring-1 ring-line">
-                  <Image src={line.image} alt="" fill sizes="56px" className="object-cover" />
-                  <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-ink px-1 text-[11px] font-medium text-cream">
-                    {line.qty}
-                  </span>
-                </div>
-                <div className="flex flex-1 items-start justify-between gap-3">
-                  <div>
-                    <p className="text-[14px] font-medium leading-snug">{line.name}</p>
-                    <p className="mt-0.5 text-[12px] text-muted">
-                      {line.color} · {line.size}
-                    </p>
-                  </div>
-                  <p className="shrink-0 text-[14px] font-medium">
-                    {formatPrice(line.price * line.qty)}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-
-          {/* Áo in đứng riêng khỏi danh sách trên: nó không phải một biến thể
-              trong cửa hàng, và giá của nó đến từ bảng giá in đã chốt. */}
-          {printDrafts.map((printDraft) => (
-            <div
-              key={printDraft.code}
-              className="mt-4 flex gap-3 rounded-card border border-gold-soft bg-gold/8 p-3"
-            >
-              {printDraft.thumbUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={printDraft.thumbUrl}
-                  alt=""
-                  className="h-14 w-14 shrink-0 rounded-lg bg-surface object-contain p-1"
-                />
+    <>
+      {/* ── Processing Loading Overlay Modal ── */}
+      {submitting && (
+        <div
+          className="fixed inset-0 z-70 flex items-center justify-center bg-ink/60 p-4 backdrop-blur-md fade-in"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Đang xử lý thanh toán"
+        >
+          <div className="relative w-full max-w-sm overflow-hidden rounded-[24px] bg-cream p-7 text-center shadow-2xl ring-1 ring-line pop">
+            {/* Spinning indicator with pulse icon */}
+            <div className="relative mx-auto mb-5 grid h-16 w-16 place-items-center rounded-full bg-surface shadow-inner ring-1 ring-line">
+              <div className="absolute inset-0 rounded-full border-2 border-gold/20 border-t-gold animate-spin" />
+              {dangGui === "bank_transfer" ? (
+                <Bolt className="h-7 w-7 text-gold animate-pulse" />
+              ) : (
+                <Bag className="h-7 w-7 text-ink animate-pulse" />
               )}
-              <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-medium text-ink">Áo in theo yêu cầu</p>
-                <p className="text-xs text-muted">{printDraft.label}</p>
-                <p className="mt-0.5 font-mono text-[11px] text-gold-deep">
-                  {printDraft.code} · {printDraft.qty} áo · giao sau {printDraft.leadDays} ngày
-                </p>
-              </div>
-              <p className="shrink-0 text-[14px] font-medium">{formatPrice(printDraft.total)}</p>
             </div>
-          ))}
 
-          {printDrafts.length > 0 && (
-            <div className="mt-4 rounded-card border border-line bg-cream-dark/30 p-4">
-              <p className="text-[13px] font-medium text-ink">Tài khoản nhận hoàn tiền</p>
-              <p className="mt-1 text-xs leading-relaxed text-muted">
-                Shop duyệt file thiết kế trước khi in. Nếu file không in được, shop hoàn tiền đầy đủ
-                vào tài khoản này — điền sẵn để khỏi phải chờ shop gọi hỏi.
-              </p>
+            <h3 className="font-serif text-xl sm:text-2xl font-medium text-ink">
+              {dangGui === "bank_transfer" ? "Đang tạo mã QR VietQR" : "Đang tạo đơn hàng"}
+            </h3>
 
-              <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
-                <input
-                  type="text"
-                  value={refund.bankName}
-                  onChange={(e) => setRefund((r) => ({ ...r, bankName: e.target.value }))}
-                  placeholder="Ngân hàng"
-                  autoComplete="off"
-                  className="h-11 rounded-card border border-line-strong bg-surface px-3.5 text-sm outline-none transition-colors placeholder:text-muted/60 focus:border-ink"
-                />
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={refund.accountNumber}
-                  onChange={(e) => setRefund((r) => ({ ...r, accountNumber: e.target.value }))}
-                  placeholder="Số tài khoản"
-                  autoComplete="off"
-                  className="h-11 rounded-card border border-line-strong bg-surface px-3.5 text-sm tabular-nums outline-none transition-colors placeholder:text-muted/60 focus:border-ink"
-                />
-                <input
-                  type="text"
-                  value={refund.accountName}
-                  onChange={(e) => setRefund((r) => ({ ...r, accountName: e.target.value }))}
-                  placeholder="Tên chủ tài khoản"
-                  autoComplete="off"
-                  className="h-11 rounded-card border border-line-strong bg-surface px-3.5 text-sm uppercase outline-none transition-colors placeholder:text-muted/60 placeholder:normal-case focus:border-ink sm:col-span-2"
-                />
-              </div>
+            <p className="mt-2 text-xs sm:text-sm leading-relaxed text-muted">
+              {dangGui === "bank_transfer"
+                ? "Hệ thống đang kết nối ngân hàng và khởi tạo mã QR thanh toán cho đơn hàng của bạn."
+                : "Hệ thống đang ghi nhận thông tin đơn hàng và chuyển đến trang xác nhận."}
+            </p>
 
-              <p className="mt-2 text-[11px] text-muted">
-                Bỏ trống cũng đặt được — lúc cần shop sẽ liên hệ hỏi sau.
-              </p>
+            <div className="mt-6 flex items-center justify-center gap-2 rounded-full bg-surface/90 px-4 py-2 border border-line text-xs font-medium text-ink shadow-xs">
+              <Spinner className="h-3.5 w-3.5 text-gold" />
+              <span>Vui lòng giữ nguyên màn hình…</span>
             </div>
-          )}
+          </div>
+        </div>
+      )}
 
-          <dl className="mt-6 flex flex-col gap-3 border-t border-line pt-5 text-[15px]">
-            <div className="flex justify-between">
-              <dt className="text-muted">Tạm tính</dt>
-              <dd className="font-medium">{formatPrice(subtotal + printTotal)}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-muted">Phí giao hàng</dt>
-              <dd className="font-medium">{shipping === 0 ? "Miễn phí" : formatPrice(shipping)}</dd>
-            </div>
-            {/* Nói rõ vì sao ra con số đó: ngưỡng miễn phí là thứ chủ shop khai
-                bên quản trị, khách không có cách nào đoán được. */}
-            {conThieuDeMienPhi > 0 && (
-              <p className="-mt-1 text-[13px] text-muted">
-                Mua thêm {conThieuDeMienPhi} sản phẩm để được miễn phí giao hàng.
-              </p>
-            )}
-            <div className="mt-1 flex justify-between border-t border-line pt-4 text-lg">
-              <dt className="font-medium">Tổng cộng</dt>
-              <dd className="font-medium">{formatPrice(total)}</dd>
-            </div>
-          </dl>
-
-          {/* Chọn một trong hai rồi mới đặt: phí giao hàng của mỗi hình thức do chủ
-              shop khai riêng, nên tổng tiền ở trên phải đổi theo lựa chọn trước khi
-              khách bấm. Chỉ mở một hình thức thì khỏi bắt chọn — đơn có áo in luôn
-              rơi vào trường hợp này, và ô giải thích ngay bên dưới nói vì sao. */}
-          {cachChon.length > 1 && (
-            <fieldset className="mt-6 border-t border-line pt-5">
-              <legend className="eyebrow text-ink/60">Hình thức thanh toán</legend>
-              <div className="mt-4 flex flex-col gap-2.5">
-                {cachChon.map((key) => {
-                  const phi = shippingFeeFor(sales, key, soMon);
-                  return (
-                    <label
-                      key={key}
-                      className={`flex cursor-pointer gap-3 rounded-card border p-3.5 transition ${
-                        method === key ? "border-ink bg-cream" : "border-line hover:border-ink/40"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value={key}
-                        checked={method === key}
-                        onChange={() => setDaChon(key)}
-                        className="mt-1 accent-ink"
-                      />
-                      <span className="min-w-0">
-                        <span className="flex flex-wrap items-baseline justify-between gap-x-3">
-                          <span className="text-[15px] font-medium">{TEN_PHUONG_THUC[key]}</span>
-                          <span className="text-[13px] text-muted">
-                            Phí giao hàng: {phi === 0 ? "miễn phí" : formatPrice(phi)}
-                          </span>
-                        </span>
-                        <span className="mt-0.5 block text-[13px] text-muted">
-                          {MO_TA_PHUONG_THUC[key]}
-                        </span>
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            </fieldset>
-          )}
-
-          {/* Mất lựa chọn "trả khi nhận hàng" mà không ai nói gì là khách tưởng
-              trang lỗi. Nói thẳng luật, và nói cả lý do. */}
-          {coAoIn && !donSoLuongLon && (
-            <div className="mt-6 rounded-card border border-line bg-cream-dark/30 p-4">
-              <p className="text-[13px] font-medium text-ink">
-                Đơn có áo in: {TEN_PHUONG_THUC[PHUONG_THUC_CHO_DON_IN].toLowerCase()} trước
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-muted">
-                Áo in là hàng làm riêng theo thiết kế của bạn nên shop không nhận trả khi nhận
-                hàng. Chuyển khoản xong shop mới duyệt file và đưa xuống xưởng. File không in
-                được thì shop hoàn tiền đầy đủ vào tài khoản bạn điền ở trên.
-              </p>
-            </div>
-          )}
-
-          {/* Đơn đồng phục lớn dừng ở đây và chuyển sang người thật: con số phía
-              trên chưa phải giá cuối, còn thương lượng phôi, bảng size và lịch
-              giao theo đợt. Thu tiền theo một báo giá tự động rồi gọi lại xin
-              sửa là cách tệ nhất để mở đầu một đơn lớn. */}
-          {donSoLuongLon ? (
-            <div className="mt-6 rounded-card border border-gold-soft bg-gold/8 p-4">
-              <p className="text-[15px] font-medium text-ink">
-                Đơn {printQty} áo in — shop báo giá trực tiếp
-              </p>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
-                Từ {BULK_PRINT_FROM} áo trở lên, shop chốt giá và lịch giao với bạn qua Zalo hoặc
-                điện thoại — đơn lớn còn thương lượng được phôi, bảng size và chia đợt giao. Bạn
-                nhắn kèm mã mẫu bên dưới, shop mở đúng thiết kế bạn vừa dựng.
-              </p>
-
-              <div className="mt-3.5 flex flex-wrap gap-2.5">
-                <a
-                  href={CONTACT.zaloUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-full bg-ink px-5 py-3 text-[13px] font-semibold text-cream transition-colors hover:bg-gold-deep"
-                >
-                  Nhắn Zalo
-                </a>
-                <a
-                  href={CONTACT.phoneHref}
-                  className="rounded-full border border-line-strong px-5 py-3 text-[13px] font-semibold text-ink transition-colors hover:border-ink"
-                >
-                  Gọi {CONTACT.phoneDisplay}
-                </a>
-              </div>
-
-              <p className="mt-3 font-mono text-[11px] text-gold-deep">
-                Mã mẫu: {printDrafts.map((draft) => draft.code).join(", ")}
-              </p>
-            </div>
-          ) : (
-            <button
-              type="submit"
-              disabled={submitting}
-              className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-ink text-sm font-medium text-cream transition-opacity hover:opacity-90 disabled:opacity-50"
-            >
-              {submitting ? NHAN_NUT_DANG_GUI[method] : NHAN_NUT_DAT[method]}
-              {!submitting && <ArrowRight />}
-            </button>
-          )}
-
-          <p aria-live="polite" className="mt-3 min-h-5 text-[13px] leading-relaxed text-gold-deep">
-            {formError}
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          // Đơn in số lượng lớn không chốt online: nút đã đổi thành ô liên hệ,
+          // đây là chốt chặn cho phím Enter trong ô nhập.
+          if (donSoLuongLon) return;
+          // Bấm Enter trong ô nhập = bấm nút chính.
+          void datHang(method);
+        }}
+        noValidate
+        className="mt-10 grid gap-12 lg:grid-cols-[minmax(0,1fr)_360px]"
+      >
+        <section>
+          <h2 className="eyebrow text-ink/60">Thông tin nhận hàng</h2>
+          <p className="mt-2 text-[13px] text-muted">
+            Không cần tài khoản — chúng tôi chỉ dùng những thông tin này để giao đơn hàng.
           </p>
 
-          {!donSoLuongLon && (
-            <p className="text-[13px] leading-relaxed text-muted">
-              {method === "cod"
-                ? "Hoá đơn được gửi thẳng tới shop, không có mã QR. Bạn trả tiền mặt cho người giao hàng."
-                : "Bước tiếp theo là mã QR VietQR để chuyển khoản qua ứng dụng ngân hàng. Đơn hàng chỉ được xác nhận sau khi chúng tôi nhận được tiền."}
-            </p>
-          )}
+          <div className="mt-6 grid gap-x-5 sm:grid-cols-2">
+            <Field
+              name="fullName"
+              label="Họ và tên"
+              value={customer.fullName}
+              error={errors.fullName}
+              autoComplete="name"
+              placeholder="Nguyễn Văn A"
+              onChange={update}
+            />
+            <Field
+              name="phone"
+              label="Số điện thoại"
+              value={customer.phone}
+              error={errors.phone}
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="0901 234 567"
+              onChange={update}
+            />
+            <Field
+              name="email"
+              label="Email"
+              value={customer.email}
+              error={errors.email}
+              hint="Chúng tôi gửi xác nhận đơn hàng về đây"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              placeholder="ban@email.com"
+              onChange={update}
+            />
+            <Field
+              name="city"
+              label="Tỉnh / Thành phố"
+              value={customer.city}
+              error={errors.city}
+              autoComplete="address-level1"
+              placeholder="TP. Hồ Chí Minh"
+              onChange={update}
+            />
+            <Field
+              name="ward"
+              label="Phường / Xã"
+              value={customer.ward}
+              error={errors.ward}
+              autoComplete="address-level2"
+              placeholder="Phường Bến Nghé"
+              onChange={update}
+            />
+            <Field
+              name="address"
+              label="Địa chỉ"
+              value={customer.address}
+              error={errors.address}
+              autoComplete="street-address"
+              placeholder="Số nhà, tên đường"
+              onChange={update}
+            />
+            <Field
+              name="note"
+              label="Ghi chú cho đơn hàng"
+              value={customer.note}
+              error={errors.note}
+              optional
+              multiline
+              placeholder="Giao giờ hành chính, gọi trước khi tới…"
+              onChange={update}
+            />
+          </div>
+        </section>
 
-          <Link
-            href="/cart"
-            className="mt-4 block text-center text-[13px] text-muted underline underline-offset-4 transition-colors hover:text-ink"
-          >
-            Quay lại giỏ hàng
-          </Link>
-        </div>
-      </aside>
-    </form>
+        <aside className="lg:sticky lg:top-[92px] lg:self-start">
+          <div className="rounded-block border border-line bg-surface p-6">
+            <h2 className="eyebrow text-ink/60">Đơn hàng ({soMon} sản phẩm)</h2>
+
+            <ul className="mt-5 flex flex-col gap-4">
+              {items.map((line) => (
+                <li key={line.id} className="flex gap-3">
+                  <div className="relative aspect-square w-14 shrink-0 overflow-hidden rounded-card bg-cream ring-1 ring-line">
+                    <Image src={line.image} alt="" fill sizes="56px" className="object-cover" />
+                    <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-ink px-1 text-[11px] font-medium text-cream">
+                      {line.qty}
+                    </span>
+                  </div>
+                  <div className="flex flex-1 items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[14px] font-medium leading-snug">{line.name}</p>
+                      <p className="mt-0.5 text-[12px] text-muted">
+                        {line.color} · {line.size}
+                      </p>
+                    </div>
+                    <p className="shrink-0 text-[14px] font-medium">
+                      {formatPrice(line.price * line.qty)}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {/* Áo in đứng riêng khỏi danh sách trên: nó không phải một biến thể
+                trong cửa hàng, và giá của nó đến từ bảng giá in đã chốt. */}
+            {printDrafts.map((printDraft) => (
+              <div
+                key={printDraft.code}
+                className="mt-4 flex gap-3 rounded-card border border-gold-soft bg-gold/8 p-3"
+              >
+                {printDraft.thumbUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={printDraft.thumbUrl}
+                    alt=""
+                    className="h-14 w-14 shrink-0 rounded-lg bg-surface object-contain p-1"
+                  />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-medium text-ink">Áo in theo yêu cầu</p>
+                  <p className="text-xs text-muted">{printDraft.label}</p>
+                  <p className="mt-0.5 font-mono text-[11px] text-gold-deep">
+                    {printDraft.code} · {printDraft.qty} áo · giao sau {printDraft.leadDays} ngày
+                  </p>
+                </div>
+                <p className="shrink-0 text-[14px] font-medium">{formatPrice(printDraft.total)}</p>
+              </div>
+            ))}
+
+            {printDrafts.length > 0 && (
+              <div className="mt-4 rounded-card border border-line bg-cream-dark/30 p-4">
+                <p className="text-[13px] font-medium text-ink">Tài khoản nhận hoàn tiền</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted">
+                  Shop duyệt file thiết kế trước khi in. Nếu file không in được, shop hoàn tiền đầy đủ
+                  vào tài khoản này — điền sẵn để khỏi phải chờ shop gọi hỏi.
+                </p>
+
+                <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+                  <input
+                    type="text"
+                    value={refund.bankName}
+                    onChange={(e) => setRefund((r) => ({ ...r, bankName: e.target.value }))}
+                    placeholder="Ngân hàng"
+                    autoComplete="off"
+                    className="h-11 rounded-card border border-line-strong bg-surface px-3.5 text-sm outline-none transition-colors placeholder:text-muted/60 focus:border-ink"
+                  />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={refund.accountNumber}
+                    onChange={(e) => setRefund((r) => ({ ...r, accountNumber: e.target.value }))}
+                    placeholder="Số tài khoản"
+                    autoComplete="off"
+                    className="h-11 rounded-card border border-line-strong bg-surface px-3.5 text-sm tabular-nums outline-none transition-colors placeholder:text-muted/60 focus:border-ink"
+                  />
+                  <input
+                    type="text"
+                    value={refund.accountName}
+                    onChange={(e) => setRefund((r) => ({ ...r, accountName: e.target.value }))}
+                    placeholder="Tên chủ tài khoản"
+                    autoComplete="off"
+                    className="h-11 rounded-card border border-line-strong bg-surface px-3.5 text-sm uppercase outline-none transition-colors placeholder:text-muted/60 placeholder:normal-case focus:border-ink sm:col-span-2"
+                  />
+                </div>
+
+                <p className="mt-2 text-[11px] text-muted">
+                  Bỏ trống cũng đặt được — lúc cần shop sẽ liên hệ hỏi sau.
+                </p>
+              </div>
+            )}
+
+            <dl className="mt-6 flex flex-col gap-3 border-t border-line pt-5 text-[15px]">
+              <div className="flex justify-between">
+                <dt className="text-muted">Tạm tính</dt>
+                <dd className="font-medium">{formatPrice(subtotal + printTotal)}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-muted">Phí giao hàng</dt>
+                <dd className="font-medium">{shipping === 0 ? "Miễn phí" : formatPrice(shipping)}</dd>
+              </div>
+              {/* Nói rõ vì sao ra con số đó: ngưỡng miễn phí là thứ chủ shop khai
+                  bên quản trị, khách không có cách nào đoán được. */}
+              {conThieuDeMienPhi > 0 && (
+                <p className="-mt-1 text-[13px] text-muted">
+                  Mua thêm {conThieuDeMienPhi} sản phẩm để được miễn phí giao hàng.
+                </p>
+              )}
+              <div className="mt-1 flex justify-between border-t border-line pt-4 text-lg">
+                <dt className="font-medium">Tổng cộng</dt>
+                <dd className="font-medium">{formatPrice(total)}</dd>
+              </div>
+            </dl>
+
+            {/* Chọn một trong hai rồi mới đặt: phí giao hàng của mỗi hình thức do chủ
+                shop khai riêng, nên tổng tiền ở trên phải đổi theo lựa chọn trước khi
+                khách bấm. Chỉ mở một hình thức thì khỏi bắt chọn — đơn có áo in luôn
+                rơi vào trường hợp này, và ô giải thích ngay bên dưới nói vì sao. */}
+            {cachChon.length > 1 && (
+              <fieldset className="mt-6 border-t border-line pt-5">
+                <legend className="eyebrow text-ink/60">Hình thức thanh toán</legend>
+                <div className="mt-4 flex flex-col gap-2.5">
+                  {cachChon.map((key) => {
+                    const phi = shippingFeeFor(sales, key, soMon);
+                    return (
+                      <label
+                        key={key}
+                        className={`flex cursor-pointer gap-3 rounded-card border p-3.5 transition ${
+                          method === key ? "border-ink bg-cream" : "border-line hover:border-ink/40"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value={key}
+                          checked={method === key}
+                          onChange={() => setDaChon(key)}
+                          className="mt-1 accent-ink"
+                        />
+                        <span className="min-w-0">
+                          <span className="flex flex-wrap items-baseline justify-between gap-x-3">
+                            <span className="text-[15px] font-medium">{TEN_PHUONG_THUC[key]}</span>
+                            <span className="text-[13px] text-muted">
+                              Phí giao hàng: {phi === 0 ? "miễn phí" : formatPrice(phi)}
+                            </span>
+                          </span>
+                          <span className="mt-0.5 block text-[13px] text-muted">
+                            {MO_TA_PHUONG_THUC[key]}
+                          </span>
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            )}
+
+            {/* Mất lựa chọn "trả khi nhận hàng" mà không ai nói gì là khách tưởng
+                trang lỗi. Nói thẳng luật, và nói cả lý do. */}
+            {coAoIn && !donSoLuongLon && (
+              <div className="mt-6 rounded-card border border-line bg-cream-dark/30 p-4">
+                <p className="text-[13px] font-medium text-ink">
+                  Đơn có áo in: {TEN_PHUONG_THUC[PHUONG_THUC_CHO_DON_IN].toLowerCase()} trước
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-muted">
+                  Áo in là hàng làm riêng theo thiết kế của bạn nên shop không nhận trả khi nhận
+                  hàng. Chuyển khoản xong shop mới duyệt file và đưa xuống xưởng. File không in
+                  được thì shop hoàn tiền đầy đủ vào tài khoản bạn điền ở trên.
+                </p>
+              </div>
+            )}
+
+            {/* Đơn đồng phục lớn dừng ở đây và chuyển sang người thật: con số phía
+                trên chưa phải giá cuối, còn thương lượng phôi, bảng size và lịch
+                giao theo đợt. Thu tiền theo một báo giá tự động rồi gọi lại xin
+                sửa là cách tệ nhất để mở đầu một đơn lớn. */}
+            {donSoLuongLon ? (
+              <div className="mt-6 rounded-card border border-gold-soft bg-gold/8 p-4">
+                <p className="text-[15px] font-medium text-ink">
+                  Đơn {printQty} áo in — shop báo giá trực tiếp
+                </p>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
+                  Từ {BULK_PRINT_FROM} áo trở lên, shop chốt giá và lịch giao với bạn qua Zalo hoặc
+                  điện thoại — đơn lớn còn thương lượng được phôi, bảng size và chia đợt giao. Bạn
+                  nhắn kèm mã mẫu bên dưới, shop mở đúng thiết kế bạn vừa dựng.
+                </p>
+
+                <div className="mt-3.5 flex flex-wrap gap-2.5">
+                  <a
+                    href={CONTACT.zaloUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-full bg-ink px-5 py-3 text-[13px] font-semibold text-cream transition-colors hover:bg-gold-deep"
+                  >
+                    Nhắn Zalo
+                  </a>
+                  <a
+                    href={CONTACT.phoneHref}
+                    className="rounded-full border border-line-strong px-5 py-3 text-[13px] font-semibold text-ink transition-colors hover:border-ink"
+                  >
+                    Gọi {CONTACT.phoneDisplay}
+                  </a>
+                </div>
+
+                <p className="mt-3 font-mono text-[11px] text-gold-deep">
+                  Mã mẫu: {printDrafts.map((draft) => draft.code).join(", ")}
+                </p>
+              </div>
+            ) : (
+              <button
+                type="submit"
+                disabled={submitting}
+                className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-ink text-sm font-semibold text-cream transition-all hover:bg-ink-soft active:scale-[0.99] disabled:opacity-75 disabled:cursor-wait shadow-sm"
+              >
+                {submitting ? (
+                  <>
+                    <Spinner className="h-4 w-4 text-cream" />
+                    <span>{NHAN_NUT_DANG_GUI[method]}</span>
+                  </>
+                ) : (
+                  <>
+                    <span>{NHAN_NUT_DAT[method]}</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </button>
+            )}
+
+            {formError && (
+              <p aria-live="polite" className="mt-3 text-[13px] font-medium leading-relaxed text-gold-deep">
+                {formError}
+              </p>
+            )}
+
+            {!donSoLuongLon && (
+              <p className="mt-3 text-[13px] leading-relaxed text-muted">
+                {method === "cod"
+                  ? "Hoá đơn được gửi thẳng tới shop, không có mã QR. Bạn trả tiền mặt cho người giao hàng."
+                  : "Bước tiếp theo là mã QR VietQR để chuyển khoản qua ứng dụng ngân hàng. Đơn hàng chỉ được xác nhận sau khi chúng tôi nhận được tiền."}
+              </p>
+            )}
+
+            <Link
+              href="/cart"
+              className="mt-4 block text-center text-[13px] text-muted underline underline-offset-4 transition-colors hover:text-ink"
+            >
+              Quay lại giỏ hàng
+            </Link>
+          </div>
+        </aside>
+      </form>
+    </>
   );
 }

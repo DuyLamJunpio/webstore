@@ -1,16 +1,9 @@
 /**
  * Đẩy đơn hàng sang trang quản trị (Laravel).
  *
- * Trang quản trị mới là nơi giữ tồn kho thật. Đơn được đẩy sang NGAY khi khách
- * bấm thanh toán, trước khi tạo mã QR, vì hai lý do:
- *
- *   1. Trang quản trị kiểm tra lại tồn và trừ kho. Hết hàng thì khách biết ngay
- *      thay vì chuyển khoản xong mới báo không còn hàng.
- *   2. Nhân viên nhìn thấy đơn đang chờ, kể cả khi khách bỏ ngang không trả tiền.
- *
- * Đơn nằm ở trạng thái "chờ xác nhận" và "chưa thanh toán" cho tới khi nhận
- * được tiền. Khách bỏ ngang thì nhân viên huỷ đơn bên quản trị, hàng tự được
- * cộng trả về kho.
+ * Trang quản trị chỉ nhận đơn chuyển khoản sau khi PayOS đã xác nhận PAID. Trước
+ * đó, trang bán hàng chỉ lưu phiên thanh toán nội bộ để không đẩy đơn rác hoặc mẫu
+ * chưa trả tiền vào màn hình nhân viên. COD hàng bán sẵn vẫn tạo đơn khi khách đặt.
  */
 
 import type { CustomerInfo, PricedCart } from "./checkout";
@@ -23,6 +16,10 @@ export const isWarehouseConfigured = () => BASE.length > 0;
 export type WarehouseResult =
   | { ok: true; orderCode: string; total: number }
   | { ok: false; error: string; outOfStock: boolean };
+
+export type WarehouseFulfillmentResult =
+  | { ok: true; orderCode: string }
+  | { ok: false; error: string };
 
 const TIMEOUT_MS = 15_000;
 
@@ -128,11 +125,9 @@ export async function pushOrder(
   }
 
   try {
-    const response = await fetch(`${BASE}/api/checkout`, {
+    const response = await warehouseFetch("/api/checkout", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
     });
 
     const data = (await response.json().catch(() => null)) as
@@ -166,9 +161,34 @@ export async function pushOrder(
 }
 
 /**
- * Báo cho trang quản trị biết đã nhận được tiền.
- * Gọi sau khi PayOS xác nhận, không chặn luồng nào — thất bại thì chỉ ghi log,
- * nhân viên vẫn xác nhận tay được.
+ * Chuyển một phiên thanh toán đã PAID thành Invoice trong trang quản trị.
+ * Laravel khoá StorefrontOrder, nên webhook PayOS và lượt poll có gọi song song
+ * cũng chỉ tạo duy nhất một đơn.
+ */
+export async function fulfillPaidOrder(ref: string): Promise<WarehouseFulfillmentResult> {
+  try {
+    const response = await warehouseFetch(`/api/storefront/orders/${encodeURIComponent(ref)}/fulfill`, {
+      method: "POST",
+    });
+    const data = (await response.json().catch(() => null)) as { order_code?: string; error?: string } | null;
+
+    if (!response.ok || !data?.order_code) {
+      return {
+        ok: false,
+        error: data?.error ?? `Trang quản trị trả về HTTP ${response.status} khi hoàn tất đơn.`,
+      };
+    }
+
+    return { ok: true, orderCode: data.order_code };
+  } catch (error) {
+    console.error("[warehouse] không hoàn tất được đơn đã thanh toán", error);
+    return { ok: false, error: "Không kết nối được tới trang quản trị." };
+  }
+}
+
+/**
+ * Endpoint tương thích cho các luồng cũ đã có mã Invoice.
+ * Đơn PayOS mới dùng fulfillPaidOrder để tạo Invoice sau khi nhận thanh toán.
  */
 export async function markPaid(orderCode: string): Promise<boolean> {
   if (!isWarehouseConfigured()) return false;
