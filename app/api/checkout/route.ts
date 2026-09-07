@@ -70,6 +70,8 @@ type Body = {
   printCodes?: string[];
   /** tài khoản nhận hoàn tiền, chỉ hỏi khi đơn có mẫu in */
   refund?: { bankName?: string; accountNumber?: string; accountName?: string };
+  /** mã giảm giá voucher khách áp dụng */
+  voucherCode?: string;
 };
 
 const bad = (error: string, status = 400, extra: Record<string, unknown> = {}) =>
@@ -163,7 +165,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const priced = priceCart(await getCatalogue(), body.lines ?? [], sales, method, prints);
+  const priced = priceCart(
+    await getCatalogue(),
+    body.lines ?? [],
+    sales,
+    method,
+    prints,
+    body.voucherCode,
+  );
   if (!priced.ok) return bad(priced.error);
   const cart = priced.cart;
 

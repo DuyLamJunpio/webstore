@@ -29,6 +29,7 @@ import {
   type PaymentMethodKey,
 } from "@/lib/sales";
 import { useSales } from "@/lib/sales-context";
+import { checkVoucher, type Voucher } from "@/lib/vouchers";
 import { ArrowRight, Bag, Bolt, Spinner } from "../icons";
 
 /** the shop has no accounts, so the last address typed is the only "profile" there is */
@@ -182,6 +183,12 @@ function CheckoutFields({
   const [dangGui, setDangGui] = useState<PaymentMethodKey | null>(null);
   const submitting = dangGui !== null;
 
+  // Trạng thái voucher giảm giá
+  const [voucherCodeInput, setVoucherCodeInput] = useState("");
+  const [appliedVoucher, setAppliedVoucher] = useState<Voucher | null>(null);
+  const [voucherError, setVoucherError] = useState("");
+  const [voucherSuccess, setVoucherSuccess] = useState("");
+
   const update = (name: CustomerField, value: string) => {
     setCustomer((current) => ({ ...current, [name]: value }));
     // clear a field's complaint as soon as the shopper starts fixing it
@@ -219,6 +226,7 @@ function CheckoutFields({
           // đúng như giá hàng bán sẵn được dựng lại từ catalogue.
           printCodes: printDrafts.map((d) => d.code),
           refund,
+          voucherCode: appliedVoucher?.code,
         }),
       });
       // Máy chủ lỗi nặng thì phần thân là trang HTML, không phải JSON. Để json()
@@ -291,9 +299,50 @@ function CheckoutFields({
   // Ghép nhiều mẫu nhỏ vẫn ra một đơn đồng phục lớn, nên ngưỡng tính trên cả đơn.
   const donSoLuongLon = isBulkPrint(printQty);
   const soMon = count + printQty;
-  const shipping = shippingFeeFor(sales, method, soMon);
+  const orderSubtotal = subtotal + printTotal;
+  const rawShipping = shippingFeeFor(sales, method, soMon);
+
+  let discountAmount = 0;
+  let shipping = rawShipping;
+
+  if (appliedVoucher) {
+    const vRes = checkVoucher(appliedVoucher.code, orderSubtotal, rawShipping);
+    if (vRes.ok) {
+      discountAmount = vRes.discount;
+      shipping = vRes.newShipping;
+    }
+  }
+
   const conThieuDeMienPhi = itemsToFreeShipping(sales, method, soMon);
-  const total = subtotal + printTotal + shipping;
+  const total = Math.max(0, orderSubtotal + shipping - discountAmount);
+
+  const handleApplyVoucher = (customCode?: string) => {
+    const code = (customCode ?? voucherCodeInput).trim().toUpperCase();
+    setVoucherError("");
+    setVoucherSuccess("");
+
+    if (!code) {
+      setVoucherError("Vui lòng nhập mã giảm giá.");
+      return;
+    }
+
+    const vRes = checkVoucher(code, orderSubtotal, rawShipping);
+    if (!vRes.ok) {
+      setVoucherError(vRes.error);
+      return;
+    }
+
+    setAppliedVoucher(vRes.voucher);
+    setVoucherSuccess(vRes.message);
+    setVoucherCodeInput(vRes.voucher.code);
+  };
+
+  const handleRemoveVoucher = () => {
+    setAppliedVoucher(null);
+    setVoucherCodeInput("");
+    setVoucherError("");
+    setVoucherSuccess("");
+  };
 
   return (
     <>
@@ -521,18 +570,114 @@ function CheckoutFields({
               </div>
             )}
 
-            <dl className="mt-6 flex flex-col gap-3 border-t border-line pt-5 text-[15px]">
+            {/* ── Ô nhập mã ưu đãi / Voucher ── */}
+            <div className="mt-6 border-t border-line pt-5">
+              <label htmlFor="voucher-code" className="eyebrow block text-ink/70 mb-2.5">
+                Mã giảm giá / Voucher
+              </label>
+
+              {appliedVoucher ? (
+                <div className="flex items-center justify-between rounded-card border border-emerald-500/30 bg-emerald-50/80 p-3.5 text-xs sm:text-sm">
+                  <div className="flex items-center gap-2.5">
+                    <span className="grid h-6 w-6 place-items-center rounded-full bg-emerald-600 text-white font-bold text-xs">
+                      ✓
+                    </span>
+                    <div>
+                      <p className="font-semibold text-emerald-950">
+                        {appliedVoucher.code}
+                      </p>
+                      <p className="text-[11px] text-emerald-700">
+                        {appliedVoucher.description}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveVoucher}
+                    className="text-xs font-semibold text-rose-600 hover:text-rose-700 hover:underline px-2 py-1"
+                  >
+                    Gỡ bỏ
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex gap-2">
+                    <input
+                      id="voucher-code"
+                      type="text"
+                      value={voucherCodeInput}
+                      onChange={(e) => {
+                        setVoucherCodeInput(e.target.value.toUpperCase());
+                        setVoucherError("");
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleApplyVoucher();
+                        }
+                      }}
+                      placeholder="Nhập mã (VD: EXTRA25, SALE50…)"
+                      className="h-11 flex-1 rounded-card border border-line-strong bg-surface px-3.5 text-sm uppercase outline-none transition-colors placeholder:text-muted/60 placeholder:normal-case focus:border-ink"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleApplyVoucher()}
+                      className="h-11 shrink-0 rounded-card bg-ink px-4 text-xs sm:text-sm font-semibold text-cream transition-all hover:bg-ink-soft active:scale-95"
+                    >
+                      Áp dụng
+                    </button>
+                  </div>
+
+                  {/* Gợi ý các mã có sẵn */}
+                  <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
+                    <span>Gợi ý:</span>
+                    {["EXTRA25", "SALE50", "FREESHIP"].map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => {
+                          setVoucherCodeInput(tag);
+                          handleApplyVoucher(tag);
+                        }}
+                        className="rounded-md border border-line bg-cream-dark/40 px-2 py-0.5 font-mono text-[11px] font-semibold text-ink transition-colors hover:border-gold hover:text-gold-deep"
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {voucherError && (
+                <p className="mt-2 text-xs font-medium text-rose-600">
+                  {voucherError}
+                </p>
+              )}
+              {voucherSuccess && (
+                <p className="mt-2 text-xs font-medium text-emerald-600">
+                  {voucherSuccess}
+                </p>
+              )}
+            </div>
+
+            <dl className="mt-5 flex flex-col gap-3 border-t border-line pt-5 text-[15px]">
               <div className="flex justify-between">
                 <dt className="text-muted">Tạm tính</dt>
-                <dd className="font-medium">{formatPrice(subtotal + printTotal)}</dd>
+                <dd className="font-medium">{formatPrice(orderSubtotal)}</dd>
               </div>
+              {discountAmount > 0 && (
+                <div className="flex justify-between text-emerald-600">
+                  <dt className="font-medium">Giảm giá ({appliedVoucher?.code})</dt>
+                  <dd className="font-semibold">-{formatPrice(discountAmount)}</dd>
+                </div>
+              )}
               <div className="flex justify-between">
                 <dt className="text-muted">Phí giao hàng</dt>
                 <dd className="font-medium">{shipping === 0 ? "Miễn phí" : formatPrice(shipping)}</dd>
               </div>
               {/* Nói rõ vì sao ra con số đó: ngưỡng miễn phí là thứ chủ shop khai
                   bên quản trị, khách không có cách nào đoán được. */}
-              {conThieuDeMienPhi > 0 && (
+              {conThieuDeMienPhi > 0 && shipping > 0 && (
                 <p className="-mt-1 text-[13px] text-muted">
                   Mua thêm {conThieuDeMienPhi} sản phẩm để được miễn phí giao hàng.
                 </p>

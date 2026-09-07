@@ -118,7 +118,7 @@ function buildHtml(order: Order): string {
 
   const totals = `
     ${row("Tạm tính", formatPrice(cart.subtotal))}
-    ${row("Phí giao hàng", cart.shipping === 0 ? "Miễn phí" : formatPrice(cart.shipping))}
+    ${cart.discount ? row(`Giảm giá (${cart.voucherCode ?? "Voucher"})`, `-${formatPrice(cart.discount)}`) : ""}${cart.discount ? "\n    " : ""}${row("Phí giao hàng", cart.shipping === 0 ? "Miễn phí" : formatPrice(cart.shipping))}
     <tr>
       <td style="padding:12px 0 0;border-top:1px solid ${BRAND.line};color:${BRAND.ink};font-size:17px;font-weight:700;">Tổng cộng</td>
       <td style="padding:12px 0 0;border-top:1px solid ${BRAND.line};color:${BRAND.ink};font-size:17px;font-weight:700;text-align:right;white-space:nowrap;">${esc(formatPrice(cart.total))}</td>

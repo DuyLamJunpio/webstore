@@ -9,10 +9,21 @@ import { printDraftQty, usePrintDrafts } from "@/lib/print-draft";
 import Logo from "./Logo";
 import { ArrowUpRight, Bag, Close, Heart, Menu, Phone, Search, Sparkles } from "./icons";
 
-const links = [
-  { label: "Cửa hàng", href: "/shop" },
+type NavLink = {
+  label: string;
+  href: string;
+  highlight?: boolean;
+};
+
+const links: NavLink[] = [
+  { label: "Sản phẩm", href: "/shop" },
+  {
+    label: "UP TO 50% OFF + EXTRA 25% OFF",
+    href: "/shop?sale=1",
+    highlight: true,
+  },
   { label: "Hàng mới", href: "/shop?new=1" },
-  { label: "In áo", href: "/in-ao" },
+  { label: "In thiết kế theo yêu cầu", href: "/in-ao" },
   { label: "Bài viết", href: "/#journal" },
   { label: "Liên hệ", href: "/#newsletter" },
 ];
@@ -117,14 +128,33 @@ export default function Header() {
               <Logo variant="inline" />
             </Link>
 
-            <nav className="hidden items-center gap-8 lg:flex" aria-label="Điều hướng chính">
+            <nav className="hidden items-center gap-5 xl:gap-7 lg:flex" aria-label="Điều hướng chính">
               {links.map((link) => {
                 const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
+                if (link.highlight) {
+                  return (
+                    <Link
+                      key={link.label}
+                      href={link.href}
+                      className={`relative inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold tracking-wider uppercase transition-all duration-300 whitespace-nowrap shadow-xs hover:scale-105 active:scale-95 ${
+                        showSolidHeader
+                          ? "bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-white shadow-sm hover:shadow-md"
+                          : "bg-white/95 text-ink shadow-md hover:bg-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]"
+                      }`}
+                    >
+                      <span className="relative flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-300 opacity-75"></span>
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400"></span>
+                      </span>
+                      <span>{link.label}</span>
+                    </Link>
+                  );
+                }
                 return (
                   <Link
                     key={link.label}
                     href={link.href}
-                    className={`eyebrow relative py-1.5 transition-colors ${
+                    className={`eyebrow relative py-1.5 transition-colors whitespace-nowrap ${
                       showSolidHeader
                         ? isActive
                           ? "text-ink font-bold"
@@ -253,10 +283,22 @@ export default function Header() {
                     key={link.label}
                     href={link.href}
                     onClick={() => setOpen(false)}
-                    className="flex items-center justify-between rounded-xl px-4 py-3.5 text-base font-medium text-ink transition-colors hover:bg-surface"
+                    className={`flex items-center justify-between rounded-xl px-4 py-3.5 text-base font-medium transition-colors ${
+                      link.highlight
+                        ? "bg-rose-50 border border-rose-200 text-rose-700 font-bold hover:bg-rose-100"
+                        : "text-ink hover:bg-surface"
+                    }`}
                   >
-                    <span>{link.label}</span>
-                    <ArrowUpRight className="h-4 w-4 text-muted" />
+                    <span className="flex items-center gap-2">
+                      {link.highlight && (
+                        <span className="relative flex h-2 w-2">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75"></span>
+                          <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500"></span>
+                        </span>
+                      )}
+                      <span>{link.label}</span>
+                    </span>
+                    <ArrowUpRight className={`h-4 w-4 ${link.highlight ? "text-rose-600" : "text-muted"}`} />
                   </Link>
                 ))}
               </div>
