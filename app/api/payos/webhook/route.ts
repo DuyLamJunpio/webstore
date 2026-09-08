@@ -18,7 +18,7 @@ import type { NextRequest } from "next/server";
 import { sendOrderConfirmation } from "@/lib/order-email";
 import { getOrderByCode, updateOrder } from "@/lib/orders";
 import { verifyWebhook, type WebhookBody } from "@/lib/payos";
-import { markPaid } from "@/lib/warehouse";
+import { fulfillPaidOrder } from "@/lib/warehouse";
 
 /** PayOS pings the URL with a dummy payload when you register it */
 export async function GET() {
@@ -41,7 +41,10 @@ export async function POST(request: NextRequest) {
     return Response.json({ ok: true, ignored: "unknown order" });
   }
 
-  if (order.status === "PAID") return Response.json({ ok: true });
+  if (order.status === "PAID") {
+    if (!order.warehouseOrderCode) after(() => fulfillPaidOrder(order.ref));
+    return Response.json({ ok: true });
+  }
 
   // "00" is the transaction-level success code; the envelope's is separate
   const succeeded = body.success === true || data.code === "00";
@@ -68,15 +71,13 @@ export async function POST(request: NextRequest) {
   });
   console.log(`[payos] order ${order.ref} paid — ${data.reference}`);
 
-  // Gửi thư sau khi đã trả lời PayOS: máy chủ email chậm hoặc chết cũng không
-  // được phép làm request này quá hạn, vì PayOS coi mọi phản hồi khác 2XX là
-  // thất bại và sẽ gọi lại.
-  if (paid) after(() => sendOrderConfirmation(paid));
-
-  // Báo cho trang quản trị biết đã nhận được tiền. Cũng chạy sau khi đã trả lời
-  // PayOS, và thất bại cũng không sao: nhân viên vẫn đối chiếu và xác nhận tay.
-  const warehouseCode = paid?.warehouseOrderCode;
-  if (warehouseCode) after(() => markPaid(warehouseCode));
+  // Sau khi đã trả lời PayOS, gửi thư và hoàn tất Invoice song song. Dịch vụ
+  // email hoặc quản trị chậm không được phép làm webhook quá hạn rồi bị PayOS gọi lại.
+  if (paid) {
+    after(async () => {
+      await Promise.all([sendOrderConfirmation(paid), fulfillPaidOrder(paid.ref)]);
+    });
+  }
 
   return Response.json({ ok: true });
 }

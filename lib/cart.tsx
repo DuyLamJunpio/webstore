@@ -151,7 +151,7 @@ function commit(items: CartItem[], patch: Partial<Snapshot> = {}) {
 }
 
 export const cart = {
-  add(item: CartItem) {
+  add(item: CartItem, options?: { openDrawer?: boolean }) {
     const existing = snapshot.items.find((line) => line.id === item.id);
     const items = existing
       ? snapshot.items.map((line) =>
@@ -160,7 +160,8 @@ export const cart = {
             : line,
         )
       : [...snapshot.items, item];
-    commit(items, { isOpen: true });
+    const shouldOpen = options?.openDrawer ?? true;
+    commit(items, shouldOpen ? { isOpen: true } : {});
   },
 
   setQty(id: string, qty: number) {
@@ -198,7 +199,10 @@ export function useCart() {
 
   const openCart = useCallback(() => cart.open(), []);
   const closeCart = useCallback(() => cart.close(), []);
-  const add = useCallback((item: CartItem) => cart.add(item), []);
+  const add = useCallback(
+    (item: CartItem, options?: { openDrawer?: boolean }) => cart.add(item, options),
+    [],
+  );
   const setQty = useCallback((id: string, qty: number) => cart.setQty(id, qty), []);
   const remove = useCallback((id: string) => cart.remove(id), []);
   const clear = useCallback(() => cart.clear(), []);

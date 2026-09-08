@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useCart } from "./cart";
 import { findVariant, type Product } from "./data";
@@ -7,12 +8,13 @@ import { findVariant, type Product } from "./data";
 export const LOW_STOCK = 4;
 
 /**
- * Toàn bộ những gì cần để chọn màu + size + số lượng rồi cho vào giỏ.
+ * Toàn bộ những gì cần để chọn màu + size + số lượng rồi cho vào giỏ hoặc mua ngay.
  * Dùng chung cho trang chi tiết và bảng thêm nhanh, nên hai nơi không bao giờ
  * hiểu khác nhau về việc món nào còn bán được.
  */
 export function useVariantSelection(product: Product) {
   const { add } = useCart();
+  const router = useRouter();
 
   // bắt đầu ở màu đầu tiên vẫn còn hàng ở đâu đó
   const initialColor =
@@ -24,6 +26,7 @@ export function useVariantSelection(product: Product) {
   const [size, setSize] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  const [isBuying, setIsBuying] = useState(false);
 
   const stockBySize = useMemo(
     () =>
@@ -61,7 +64,7 @@ export function useVariantSelection(product: Product) {
   };
 
   /** trả về true khi món hàng thực sự đã vào giỏ */
-  const addToCart = () => {
+  const addToCart = (options?: { openDrawer?: boolean }) => {
     if (!size || !variant) {
       setError("Vui lòng chọn size.");
       return false;
@@ -71,19 +74,32 @@ export function useVariantSelection(product: Product) {
       return false;
     }
 
-    add({
-      id: variant.id,
-      slug: product.slug,
-      name: product.name,
-      image: product.image,
-      color,
-      size,
-      price,
-      qty,
-      stock: variant.stock,
-    });
+    add(
+      {
+        id: variant.id,
+        slug: product.slug,
+        name: product.name,
+        image: product.image,
+        color,
+        size,
+        price,
+        qty,
+        stock: variant.stock,
+      },
+      options,
+    );
     setError(null);
     return true;
+  };
+
+  /** Mua ngay: thêm vào giỏ không mở drawer và chuyển thẳng đến /checkout */
+  const buyNow = () => {
+    const success = addToCart({ openDrawer: false });
+    if (success) {
+      setIsBuying(true);
+      router.push("/checkout");
+    }
+    return success;
   };
 
   return {
@@ -92,6 +108,7 @@ export function useVariantSelection(product: Product) {
     qty,
     error,
     variant,
+    isBuying,
     /** giá của biến thể đang chọn, rơi về giá chung khi chưa chọn size */
     price,
     stockBySize,
@@ -103,5 +120,6 @@ export function useVariantSelection(product: Product) {
     pickColor,
     pickSize,
     addToCart,
+    buyNow,
   };
 }

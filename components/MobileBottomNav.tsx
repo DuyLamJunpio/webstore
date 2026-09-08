@@ -46,7 +46,7 @@ export default function MobileBottomNav() {
         <div className={`grid h-6 w-6 place-items-center rounded-full transition-transform ${isShop ? "scale-110" : ""}`}>
           <Store className="h-5 w-5" />
         </div>
-        <span>Cửa hàng</span>
+        <span>Sản phẩm</span>
       </Link>
 
       <Link

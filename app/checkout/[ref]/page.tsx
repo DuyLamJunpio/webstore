@@ -77,6 +77,12 @@ function OrderSummary({ order }: { order: Order }) {
             <dt className="text-muted">Tạm tính</dt>
             <dd className="font-medium">{formatPrice(cart.subtotal)}</dd>
           </div>
+          {Boolean(cart.discount) && (
+            <div className="flex justify-between text-emerald-600">
+              <dt className="font-medium">Giảm giá ({cart.voucherCode ?? "Voucher"})</dt>
+              <dd className="font-semibold">-{formatPrice(cart.discount!)}</dd>
+            </div>
+          )}
           <div className="flex justify-between">
             <dt className="text-muted">Phí giao hàng</dt>
             <dd className="font-medium">

@@ -207,6 +207,31 @@ export function Sparkles({ className = base }: IconProps) {
   );
 }
 
+export function Bolt({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden className={className}>
+      <path d="M11.5 2.5 4.5 11h5l-1 6.5 7-8.5h-5l1-6.5Z" />
+    </svg>
+  );
+}
+
+export function Spinner({ className = base }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      className={`animate-spin ${className}`}
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" />
+      <path d="M12 3a9 9 0 0 1 9 9" stroke="currentColor" />
+    </svg>
+  );
+}
+
 export function Instagram({ className = base }: IconProps) {
   return (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden className={className}>
