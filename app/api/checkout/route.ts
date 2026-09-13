@@ -18,6 +18,7 @@ import {
   EMPTY_CUSTOMER,
   formatAddress,
   PAYMENT_WINDOW_MINUTES,
+  applyVoucherQuote,
   priceCart,
   validateCustomer,
   type CheckoutLine,
@@ -29,6 +30,7 @@ import { reserveOrder, saveOrder, type Order, type OrderPayment } from "@/lib/or
 import { createPaymentLink, DESCRIPTION_MAX, isPayosConfigured, PayosError } from "@/lib/payos";
 import { buildVietQr, readFallbackBank } from "@/lib/vietqr";
 import { pushOrder } from "@/lib/warehouse";
+import { validateWarehouseVoucher } from "@/lib/warehouse-vouchers";
 
 // ── a small brake on a public endpoint that calls a paid API ─────────
 
@@ -171,10 +173,15 @@ export async function POST(request: NextRequest) {
     sales,
     method,
     prints,
-    body.voucherCode,
   );
   if (!priced.ok) return bad(priced.error);
-  const cart = priced.cart;
+  let cart = priced.cart;
+
+  if (body.voucherCode?.trim()) {
+    const voucher = await validateWarehouseVoucher(body.voucherCode, cart.subtotal, cart.shipping);
+    if (!voucher.ok) return bad(voucher.error, 422);
+    cart = applyVoucherQuote(cart, voucher.quote);
+  }
 
   /*
    * Chỉ giữ thông tin hoàn tiền khi đơn thật sự có mẫu in. Đơn hàng bán sẵn

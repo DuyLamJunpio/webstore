@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import {
   EMPTY_CUSTOMER,
   validateCustomer,
@@ -29,11 +29,13 @@ import {
   type PaymentMethodKey,
 } from "@/lib/sales";
 import { useSales } from "@/lib/sales-context";
-import { checkVoucher, type Voucher } from "@/lib/vouchers";
+import type { Voucher, VoucherQuote } from "@/lib/vouchers";
 import { ArrowRight, Bag, Bolt, Spinner } from "../icons";
 
 /** the shop has no accounts, so the last address typed is the only "profile" there is */
 const DRAFT_KEY = "tbc.checkout.v1";
+
+type AppliedVoucher = VoucherQuote & { subtotal: number; shippingBefore: number };
 
 function readDraft(): CustomerInfo {
   try {
@@ -185,9 +187,24 @@ function CheckoutFields({
 
   // Trạng thái voucher giảm giá
   const [voucherCodeInput, setVoucherCodeInput] = useState("");
-  const [appliedVoucher, setAppliedVoucher] = useState<Voucher | null>(null);
+  const [appliedVoucher, setAppliedVoucher] = useState<AppliedVoucher | null>(null);
   const [voucherError, setVoucherError] = useState("");
   const [voucherSuccess, setVoucherSuccess] = useState("");
+  const [voucherApplying, setVoucherApplying] = useState(false);
+  const [availableVouchers, setAvailableVouchers] = useState<Voucher[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/vouchers")
+      .then((response) => response.json() as Promise<{ vouchers?: Voucher[] }>)
+      .then((data) => {
+        if (!cancelled && Array.isArray(data.vouchers)) setAvailableVouchers(data.vouchers);
+      })
+      .catch(() => {
+        // The input still works; only the optional suggestions are unavailable.
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   const update = (name: CustomerField, value: string) => {
     setCustomer((current) => ({ ...current, [name]: value }));
@@ -226,7 +243,7 @@ function CheckoutFields({
           // đúng như giá hàng bán sẵn được dựng lại từ catalogue.
           printCodes: printDrafts.map((d) => d.code),
           refund,
-          voucherCode: appliedVoucher?.code,
+          voucherCode: voucherStillMatchesCart ? appliedVoucher?.voucher.code : undefined,
         }),
       });
       // Máy chủ lỗi nặng thì phần thân là trang HTML, không phải JSON. Để json()
@@ -302,21 +319,16 @@ function CheckoutFields({
   const orderSubtotal = subtotal + printTotal;
   const rawShipping = shippingFeeFor(sales, method, soMon);
 
-  let discountAmount = 0;
-  let shipping = rawShipping;
-
-  if (appliedVoucher) {
-    const vRes = checkVoucher(appliedVoucher.code, orderSubtotal, rawShipping);
-    if (vRes.ok) {
-      discountAmount = vRes.discount;
-      shipping = vRes.newShipping;
-    }
-  }
+  const voucherStillMatchesCart = appliedVoucher
+    && appliedVoucher.subtotal === orderSubtotal
+    && appliedVoucher.shippingBefore === rawShipping;
+  const discountAmount = voucherStillMatchesCart ? appliedVoucher.discount : 0;
+  const shipping = voucherStillMatchesCart ? appliedVoucher.newShipping : rawShipping;
 
   const conThieuDeMienPhi = itemsToFreeShipping(sales, method, soMon);
   const total = Math.max(0, orderSubtotal + shipping - discountAmount);
 
-  const handleApplyVoucher = (customCode?: string) => {
+  const handleApplyVoucher = async (customCode?: string) => {
     const code = (customCode ?? voucherCodeInput).trim().toUpperCase();
     setVoucherError("");
     setVoucherSuccess("");
@@ -326,15 +338,41 @@ function CheckoutFields({
       return;
     }
 
-    const vRes = checkVoucher(code, orderSubtotal, rawShipping);
-    if (!vRes.ok) {
-      setVoucherError(vRes.error);
-      return;
-    }
+    setVoucherApplying(true);
+    try {
+      const response = await fetch("/api/vouchers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, subtotal: orderSubtotal, shipping: rawShipping }),
+      });
+      const result = (await response.json().catch(() => ({}))) as {
+        voucher?: Voucher;
+        discount?: number;
+        newShipping?: number;
+        message?: string;
+        error?: string;
+      };
 
-    setAppliedVoucher(vRes.voucher);
-    setVoucherSuccess(vRes.message);
-    setVoucherCodeInput(vRes.voucher.code);
+      if (!response.ok || !result.voucher || typeof result.discount !== "number" || typeof result.newShipping !== "number" || typeof result.message !== "string") {
+        setVoucherError(result.error ?? "Không thể kiểm tra mã giảm giá lúc này.");
+        return;
+      }
+
+      setAppliedVoucher({
+        voucher: result.voucher,
+        discount: result.discount,
+        newShipping: result.newShipping,
+        message: result.message,
+        subtotal: orderSubtotal,
+        shippingBefore: rawShipping,
+      });
+      setVoucherSuccess(result.message);
+      setVoucherCodeInput(result.voucher.code);
+    } catch {
+      setVoucherError("Không kết nối được hệ thống voucher. Vui lòng thử lại.");
+    } finally {
+      setVoucherApplying(false);
+    }
   };
 
   const handleRemoveVoucher = () => {
@@ -576,7 +614,7 @@ function CheckoutFields({
                 Mã giảm giá / Voucher
               </label>
 
-              {appliedVoucher ? (
+              {voucherStillMatchesCart ? (
                 <div className="flex items-center justify-between rounded-card border border-emerald-500/30 bg-emerald-50/80 p-3.5 text-xs sm:text-sm">
                   <div className="flex items-center gap-2.5">
                     <span className="grid h-6 w-6 place-items-center rounded-full bg-emerald-600 text-white font-bold text-xs">
@@ -584,10 +622,10 @@ function CheckoutFields({
                     </span>
                     <div>
                       <p className="font-semibold text-emerald-950">
-                        {appliedVoucher.code}
+                        {appliedVoucher.voucher.code}
                       </p>
                       <p className="text-[11px] text-emerald-700">
-                        {appliedVoucher.description}
+                        {appliedVoucher.voucher.description}
                       </p>
                     </div>
                   </div>
@@ -616,41 +654,49 @@ function CheckoutFields({
                           handleApplyVoucher();
                         }
                       }}
-                      placeholder="Nhập mã (VD: EXTRA25, SALE50…)"
+                      placeholder="Nhập mã ưu đãi"
                       className="h-11 flex-1 rounded-card border border-line-strong bg-surface px-3.5 text-sm uppercase outline-none transition-colors placeholder:text-muted/60 placeholder:normal-case focus:border-ink"
                     />
                     <button
                       type="button"
-                      onClick={() => handleApplyVoucher()}
+                      onClick={() => void handleApplyVoucher()}
+                      disabled={voucherApplying}
                       className="h-11 shrink-0 rounded-card bg-ink px-4 text-xs sm:text-sm font-semibold text-cream transition-all hover:bg-ink-soft active:scale-95"
                     >
-                      Áp dụng
+                      {voucherApplying ? "Đang kiểm tra…" : "Áp dụng"}
                     </button>
                   </div>
 
-                  {/* Gợi ý các mã có sẵn */}
-                  <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
-                    <span>Gợi ý:</span>
-                    {["EXTRA25", "SALE50", "FREESHIP"].map((tag) => (
+                  {availableVouchers.length > 0 && (
+                    <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
+                      <span>Gợi ý:</span>
+                    {availableVouchers.map((voucher) => (
                       <button
-                        key={tag}
+                        key={voucher.code}
                         type="button"
                         onClick={() => {
-                          setVoucherCodeInput(tag);
-                          handleApplyVoucher(tag);
+                          setVoucherCodeInput(voucher.code);
+                          void handleApplyVoucher(voucher.code);
                         }}
+                        disabled={voucherApplying}
                         className="rounded-md border border-line bg-cream-dark/40 px-2 py-0.5 font-mono text-[11px] font-semibold text-ink transition-colors hover:border-gold hover:text-gold-deep"
                       >
-                        {tag}
+                        {voucher.code}
                       </button>
                     ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
               )}
 
               {voucherError && (
                 <p className="mt-2 text-xs font-medium text-rose-600">
                   {voucherError}
+                </p>
+              )}
+              {appliedVoucher && !voucherStillMatchesCart && (
+                <p className="mt-2 text-xs font-medium text-amber-700">
+                  Giỏ hàng hoặc hình thức thanh toán đã thay đổi. Vui lòng áp dụng lại mã giảm giá.
                 </p>
               )}
               {voucherSuccess && (
@@ -667,7 +713,7 @@ function CheckoutFields({
               </div>
               {discountAmount > 0 && (
                 <div className="flex justify-between text-emerald-600">
-                  <dt className="font-medium">Giảm giá ({appliedVoucher?.code})</dt>
+                  <dt className="font-medium">Giảm giá ({appliedVoucher?.voucher.code})</dt>
                   <dd className="font-semibold">-{formatPrice(discountAmount)}</dd>
                 </div>
               )}

@@ -100,6 +100,9 @@ export async function pushOrder(
     // Trang quản trị nhận "banking" hoặc "cod"; nó tự tính phí giao hàng và hạn
     // thanh toán theo mã này, nên gửi sai là đơn ghi sai tiền.
     payment_method: method === "cod" ? "cod" : "banking",
+    // Warehouse kiểm tra lại mã này trong transaction trước khi chốt đơn và
+    // tăng lượt dùng chỉ khi Invoice thực sự được tạo.
+    voucher_code: cart.voucherCode ?? null,
     // Các mẫu áo in trong đơn. Chỉ gửi MÃ — giá của chúng đã đóng băng bên quản
     // trị từ lúc khách chốt thiết kế, và bên đó đọc lại chứ không nhận số từ đây.
     print_design_codes: cart.prints.map((p) => p.code),
