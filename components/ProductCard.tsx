@@ -48,10 +48,6 @@ export default function ProductCard({
               <span className="eyebrow rounded-full bg-ink/90 backdrop-blur-xs px-2.5 py-1 text-[9px] font-bold text-cream shadow-xs">
                 Hết hàng
               </span>
-            ) : discountPercent > 0 ? (
-              <span className="eyebrow rounded-full bg-[#c2410c] text-white px-2.5 py-1 text-[9px] font-bold shadow-xs">
-                -{discountPercent}%
-              </span>
             ) : product.isNew ? (
               <span className="eyebrow rounded-full bg-gold px-2.5 py-1 text-[9px] font-bold text-cream shadow-xs">
                 Mới
@@ -95,18 +91,22 @@ export default function ProductCard({
           </h3>
         </div>
 
-        <div className="mt-2 flex flex-wrap items-baseline gap-1.5">
-          <span className="text-[14px] sm:text-[15px] font-semibold text-ink">
+        <div className="mt-2 flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
+          <span className={`text-[14px] sm:text-[15px] font-semibold ${discountPercent > 0 ? "text-[#c2410c]" : "text-ink"}`}>
             {formatPrice(product.price)}
           </span>
-          {product.comparePrice && (
-            <span className="text-[12px] text-muted line-through">
-              {formatPrice(product.comparePrice)}
-            </span>
+          {discountPercent > 0 && product.comparePrice && (
+            <>
+              <span className="text-[12px] text-muted line-through">
+                {formatPrice(product.comparePrice)}
+              </span>
+              <span className="rounded-full bg-[#c2410c]/10 px-1.5 py-0.5 text-[10px] font-bold leading-none text-[#c2410c]">
+                -{discountPercent}%
+              </span>
+            </>
           )}
         </div>
       </div>
     </article>
   );
 }
-

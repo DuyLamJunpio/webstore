@@ -41,22 +41,21 @@ export default function ProductPurchase({ product }: { product: Product }) {
   const discountPercent = product.comparePrice && product.comparePrice > product.price
     ? Math.round((1 - product.price / product.comparePrice) * 100)
     : 0;
+  const showDiscount = price === product.price && discountPercent > 0;
 
   return (
     <div id="product-purchase-box">
       {/* ── Giá sản phẩm ── */}
-      <div className="flex items-baseline gap-3">
-        <p className="text-2xl sm:text-3xl font-bold text-ink">{formatPrice(price)}</p>
-        {product.comparePrice && price === product.price && (
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
+        <p className={`text-2xl sm:text-3xl font-bold ${showDiscount ? "text-[#c2410c]" : "text-ink"}`}>{formatPrice(price)}</p>
+        {showDiscount && product.comparePrice && (
           <>
             <p className="text-base sm:text-lg text-muted line-through">
               {formatPrice(product.comparePrice)}
             </p>
-            {discountPercent > 0 && (
-              <span className="eyebrow rounded-full bg-[#c2410c] px-2.5 py-1 text-[10px] font-bold text-white shadow-xs">
-                Giảm {discountPercent}%
-              </span>
-            )}
+            <span className="eyebrow rounded-full bg-[#c2410c] px-2.5 py-1 text-[10px] font-bold text-white shadow-xs">
+              Giảm {discountPercent}%
+            </span>
           </>
         )}
       </div>
