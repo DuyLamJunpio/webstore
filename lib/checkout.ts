@@ -14,7 +14,7 @@
 
 import { IS_TEST_PRICING, styleOfVariant, type Catalogue } from "./data";
 import { shippingFeeFor, type PaymentMethodKey, type SalesSettings } from "./sales";
-import { checkVoucher } from "./vouchers";
+import type { VoucherQuote } from "./vouchers";
 
 // Phí giao hàng và ngưỡng miễn phí do trang quản trị khai (`lib/sales.tsx`),
 // không còn là hằng số ở đây.
@@ -162,7 +162,6 @@ export function priceCart(
    * hiện, vì con số cuối cùng luôn được máy chủ dựng lại trước khi thu tiền.
    */
   prints: PricedPrint[] = [],
-  voucherCode?: string,
 ): PriceResult {
   if (!Array.isArray(input)) return { ok: false, error: "Giỏ hàng không hợp lệ. Vui lòng tải lại trang." };
 
@@ -231,22 +230,9 @@ export function priceCart(
   // Ngưỡng miễn phí bên quản trị khai theo số món, nên đếm món chứ không cộng tiền.
   const shipping = shippingFeeFor(sales, method, count);
 
-  let discount = 0;
-  let effectiveShipping = shipping;
-  let appliedCode: string | undefined;
-
-  if (voucherCode) {
-    const vResult = checkVoucher(voucherCode, subtotal, shipping);
-    if (vResult.ok) {
-      discount = vResult.discount;
-      effectiveShipping = vResult.newShipping;
-      appliedCode = vResult.voucher.code;
-    }
-  }
-
   // PayOS only accepts whole đồng; a catalogue price with a decimal in it would
   // otherwise reach the bank rounded and no longer match what the page showed
-  const total = Math.max(0, Math.round(subtotal + effectiveShipping - discount));
+  const total = Math.max(0, Math.round(subtotal + shipping));
 
   return {
     ok: true,
@@ -254,11 +240,23 @@ export function priceCart(
       lines,
       count,
       subtotal,
-      shipping: effectiveShipping,
-      discount: discount > 0 ? discount : undefined,
-      voucherCode: appliedCode,
+      shipping,
       prints,
       total,
     },
+  };
+}
+
+/** Apply a Warehouse-authored quote to an already server-priced cart. */
+export function applyVoucherQuote(cart: PricedCart, quote: VoucherQuote): PricedCart {
+  const discount = Math.min(Math.max(0, Math.round(quote.discount)), cart.subtotal);
+  const shipping = Math.max(0, Math.round(quote.newShipping));
+
+  return {
+    ...cart,
+    shipping,
+    discount: discount || undefined,
+    voucherCode: quote.voucher.code,
+    total: Math.max(0, Math.round(cart.subtotal + shipping - discount)),
   };
 }
