@@ -41,6 +41,11 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
     buyNow,
   } = useVariantSelection(product);
 
+  const discountPercent = product.comparePrice && product.comparePrice > product.price
+    ? Math.round((1 - product.price / product.comparePrice) * 100)
+    : 0;
+  const showDiscount = price === product.price && discountPercent > 0;
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
@@ -93,12 +98,17 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
                 {product.name}
               </Link>
             </h2>
-            <p className="mt-1 flex items-baseline gap-2">
-              <span className="text-base sm:text-lg font-bold text-ink">{formatPrice(price)}</span>
-              {product.comparePrice && price === product.price && (
-                <span className="text-xs sm:text-sm text-muted line-through">
-                  {formatPrice(product.comparePrice)}
-                </span>
+            <p className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <span className={`text-base sm:text-lg font-bold ${showDiscount ? "text-[#c2410c]" : "text-ink"}`}>{formatPrice(price)}</span>
+              {showDiscount && product.comparePrice && (
+                <>
+                  <span className="text-xs sm:text-sm text-muted line-through">
+                    {formatPrice(product.comparePrice)}
+                  </span>
+                  <span className="rounded-full bg-[#c2410c]/10 px-1.5 py-0.5 text-[10px] font-bold leading-none text-[#c2410c]">
+                    -{discountPercent}%
+                  </span>
+                </>
               )}
             </p>
           </div>
