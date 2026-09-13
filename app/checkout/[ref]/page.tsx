@@ -44,7 +44,7 @@ function OrderSummary({ order }: { order: Order }) {
                     <Link href={`/products/${line.slug}`}>{line.name}</Link>
                   </p>
                   <p className="mt-0.5 text-[12px] text-muted">
-                    {line.color} · {line.size}
+                    {[line.styleName, line.color, line.size].filter(Boolean).join(" · ")}
                   </p>
                 </div>
                 <p className="shrink-0 text-[14px] font-medium">{formatPrice(line.total)}</p>

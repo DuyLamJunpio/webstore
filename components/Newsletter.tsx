@@ -169,7 +169,7 @@ export default function Newsletter() {
                 </div>
                 <div className="flex flex-col items-center gap-1 border-x border-white/10 px-1">
                   <Return className="h-4 w-4 text-gold" />
-                  <span className="text-[11px] font-semibold text-cream">Đổi size 30 ngày</span>
+                  <span className="text-[11px] font-semibold text-cream">Đổi size 7 ngày</span>
                   <span className="text-[10px] text-cream/50">Hỗ trợ tận nơi</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">

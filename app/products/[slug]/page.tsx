@@ -6,6 +6,7 @@ import ProductCard from "@/components/ProductCard";
 import ProductGallery from "@/components/product/ProductGallery";
 import ProductPurchase from "@/components/product/ProductPurchase";
 import StickyBuyBar from "@/components/product/StickyBuyBar";
+import VariantSelectionProvider from "@/components/product/VariantSelectionProvider";
 import { promiseIcons } from "@/components/icons";
 import { getCatalogue } from "@/lib/catalogue";
 import { galleryOf, getProduct, inStock, promises, relatedProducts } from "@/lib/data";
@@ -49,8 +50,9 @@ export default async function ProductPage(props: PageProps<"/products/[slug]">) 
 
   return (
     <div className="shell pt-28 sm:pt-32 lg:pt-36 pb-16 sm:pb-24">
+      <VariantSelectionProvider key={product.slug} product={product}>
       {/* ── Sticky Buy Bar on Mobile ── */}
-      {available && <StickyBuyBar product={product} />}
+      {available && <StickyBuyBar />}
 
       {/* ── Breadcrumbs ── */}
       <nav aria-label="Đường dẫn" className="flex flex-wrap items-center gap-2 text-xs sm:text-[13px] text-muted">
@@ -158,6 +160,7 @@ export default async function ProductPage(props: PageProps<"/products/[slug]">) 
           </section>
         </div>
       </div>
+      </VariantSelectionProvider>
 
       {/* ── Related Products ── */}
       {related.length > 0 && (

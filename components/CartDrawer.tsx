@@ -146,7 +146,7 @@ export default function CartDrawer() {
                         </p>
                       </div>
                       <p className="mt-1 text-xs text-muted">
-                        {line.color} · Size {line.size}
+                        {[line.styleName, line.color, `Size ${line.size}`].filter(Boolean).join(" · ")}
                       </p>
                     </div>
 

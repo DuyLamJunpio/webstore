@@ -17,6 +17,7 @@
  */
 
 import { mkdir, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
 import nodePath from "node:path";
 import { downloadImage, lit, renderSeed } from "./seed-format.mjs";
@@ -25,6 +26,7 @@ import {
   mediaUrl,
   toSeed,
   type ApiCategory,
+  type ApiProduct,
   type ApiResponse,
 } from "../lib/warehouse-map.js";
 
@@ -51,6 +53,13 @@ const OUT_FILE = nodePath.join(process.cwd(), "lib", "catalogue.generated.ts");
 
 const IMAGE_DIR_NAME = "warehouse";
 
+/**
+ * Một ảnh có thể đồng thời là ảnh bìa, ảnh của nhiều mẫu và ảnh danh mục. Lưu
+ * promise thay vì chỉ lưu kết quả để cả những lượt gọi đồng thời cũng dùng
+ * chung đúng một lần tải.
+ */
+const localImageBySource = new Map<string, Promise<string | null>>();
+
 // ── nạp dữ liệu ──────────────────────────────────────────────────────
 
 async function fetchCatalogue(): Promise<ApiResponse> {
@@ -73,18 +82,48 @@ async function fetchCatalogue(): Promise<ApiResponse> {
 }
 
 /**
- * Tải ảnh của một sản phẩm về local. Trả về đường dẫn dùng được trên web —
- * rỗng khi sản phẩm chưa có ảnh nào tải được.
+ * Đưa một ảnh về snapshot và trả về đường dẫn local. Tên file dựa trên URL
+ * nguồn nên cùng một ảnh chỉ chiếm một file, kể cả khi nhiều mẫu cùng dùng nó.
  */
-async function localiseImages(slug: string, paths: string[]): Promise<string[]> {
+function localiseImage(path: string): Promise<string | null> {
+  const absolute = new URL(mediaUrl(path, BASE));
+  const source = absolute.href;
+  const cached = localImageBySource.get(source);
+  if (cached) return cached;
+
+  const task = (async () => {
+    const ext = nodePath.extname(absolute.pathname) || ".jpg";
+    const sourceHash = createHash("sha256").update(source).digest("hex").slice(0, 24);
+    const name = `media-${sourceHash}${ext.toLowerCase()}`;
+    const ok = await downloadImage(source, nodePath.join(IMAGE_DIR, name));
+    return ok ? `/images/${IMAGE_DIR_NAME}/${name}` : null;
+  })();
+
+  localImageBySource.set(source, task);
+  return task;
+}
+
+/** Tải gallery về local; ảnh lỗi bị bỏ khỏi gallery như trước đây. */
+async function localiseImages(paths: string[]): Promise<string[]> {
   const saved: string[] = [];
 
-  for (const [index, path] of paths.slice(0, MAX_GALLERY).entries()) {
-    const absolute = new URL(mediaUrl(path, BASE));
-    const ext = nodePath.extname(absolute.pathname) || ".jpg";
-    const name = `${slug}-${index + 1}${ext}`;
-    const ok = await downloadImage(absolute.href, nodePath.join(IMAGE_DIR, name));
-    if (ok) saved.push(`/images/${IMAGE_DIR_NAME}/${name}`);
+  for (const path of paths.slice(0, MAX_GALLERY)) {
+    const localPath = await localiseImage(path);
+    if (localPath) saved.push(localPath);
+  }
+
+  return saved;
+}
+
+/**
+ * Giữ nguyên số phần tử và thứ tự mẫu. `null` ở đúng vị trí ảnh tải lỗi rất
+ * quan trọng: nén mảng sẽ khiến ảnh mẫu sau bị gắn nhầm sang mẫu trước.
+ */
+async function localiseStyleImages(product: ApiProduct): Promise<Array<string | null>> {
+  const saved: Array<string | null> = [];
+
+  for (const style of product.styles ?? []) {
+    saved.push(style.image ? await localiseImage(style.image) : null);
   }
 
   return saved;
@@ -183,11 +222,17 @@ async function main() {
   const seeds: string[] = [];
 
   for (const product of data.products) {
-    const gallery = await localiseImages(product.slug, product.images);
+    const gallery = await localiseImages(product.images);
+    const styleImages = await localiseStyleImages(product);
     if (gallery.length === 0) noImage.push(product.name);
-    seeds.push(renderSeed(toSeed(product, gallery) as unknown as Record<string, unknown>, warnings));
+    seeds.push(
+      renderSeed(
+        toSeed(product, gallery, [], styleImages) as unknown as Record<string, unknown>,
+        warnings,
+      ),
+    );
     console.log(
-      `   ✓ ${product.name} — ${product.variants.length} biến thể, tồn ${product.total_stock}`,
+      `   ✓ ${product.name} — ${(product.styles ?? []).length} mẫu, ${product.variants.length} biến thể, tồn ${product.total_stock}`,
     );
   }
 
@@ -195,12 +240,8 @@ async function main() {
   const categoryImages = new Map<number, string>();
   for (const category of data.categories) {
     if (!category.image) continue;
-    const absolute = new URL(mediaUrl(category.image, BASE));
-    const ext = nodePath.extname(absolute.pathname) || ".jpg";
-    const name = `danh-muc-${category.slug}${ext}`;
-    if (await downloadImage(absolute.href, nodePath.join(IMAGE_DIR, name))) {
-      categoryImages.set(category.id, `/images/${IMAGE_DIR_NAME}/${name}`);
-    }
+    const localPath = await localiseImage(category.image);
+    if (localPath) categoryImages.set(category.id, localPath);
   }
 
   await writeFile(OUT_FILE, render(seeds, data.categories, categoryImages, data.synced_at), "utf8");

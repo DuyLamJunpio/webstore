@@ -5,9 +5,23 @@ export type Audience = "Nam" | "Nữ" | "Trẻ em" | "Unisex";
 
 export type ProductColor = { name: string; hex: string };
 
-/** một tổ hợp mua được — màu + size — với tồn kho riêng */
+/**
+ * Một mẫu hình/in của sản phẩm.
+ *
+ * Ảnh nằm ở cấp mẫu, không nằm trên từng biến thể: mười size của
+ * cùng một mẫu vẫn chỉ tham chiếu một tấm ảnh.
+ */
+export type ProductStyle = {
+  id: string;
+  name: string;
+  image: string;
+};
+
+/** một tổ hợp mua được — mẫu + màu + size — với tồn kho riêng */
 export type Variant = {
   id: string;
+  /** Thiếu ở catalogue cũ thì thuộc mẫu mặc định của sản phẩm. */
+  styleId?: string;
   color: string;
   size: string;
   stock: number;
@@ -45,7 +59,12 @@ export type Product = {
   details: string[];
   colors: ProductColor[];
   sizes: string[];
-  /** mọi tổ hợp màu × size, dựng một lần khi nạp module */
+  /**
+   * Các mẫu có thể chọn bằng ảnh. Thiếu ở catalogue cũ thì web tự sinh
+   * một mẫu mặc định và ẩn bộ chọn, nên dữ liệu dự phòng cũ vẫn dùng được.
+   */
+  styles?: ProductStyle[];
+  /** mọi tổ hợp mẫu × màu × size, dựng một lần khi nạp module */
   variants: Variant[];
   /**
    * Bên quản trị có theo dõi tồn kho của mặt hàng này không. Tắt với hàng đặt
@@ -90,6 +109,28 @@ export const galleryOf = (product: Product): Media[] => {
 export const coverOf = (product: Product): [Media, Media] => {
   const [first, second] = galleryOf(product);
   return [first, second ?? first];
+};
+
+/** Mã mẫu ổn định cho catalogue sinh trước khi có chiều "mẫu". */
+const legacyStyleId = (product: Pick<Product, "slug">) => `legacy:${product.slug}`;
+
+/**
+ * Danh sách mẫu luôn không rỗng để logic chọn biến thể không phải rẽ nhánh.
+ * Mẫu tự sinh chỉ là chi tiết tương thích; giao diện sẽ không hiện bộ
+ * chọn khi sản phẩm không có `styles` thật.
+ */
+export const stylesOf = (product: Product): ProductStyle[] =>
+  product.styles?.length
+    ? product.styles.map((style) => ({ ...style, image: style.image || product.image }))
+    : [{ id: legacyStyleId(product), name: "Mẫu mặc định", image: product.image }];
+
+/**
+ * Trả về mẫu của một biến thể, kể cả với catalogue cũ không có
+ * `styleId` hoặc trong lúc API mới/cũ đang được triển khai lệch nhau.
+ */
+export const styleOfVariant = (product: Product, variant: Variant): ProductStyle => {
+  const styles = stylesOf(product);
+  return styles.find((style) => style.id === variant.styleId) ?? styles[0];
 };
 
 const SIZES = {
@@ -327,8 +368,18 @@ export const EMPTY_CATALOGUE: Catalogue = buildCatalogue({
 export const getProduct = (catalogue: Catalogue, slug: string) =>
   catalogue.products.find((p) => p.slug === slug);
 
-export const findVariant = (product: Product, color: string, size: string) =>
-  product.variants.find((v) => v.color === color && v.size === size);
+export const findVariant = (
+  product: Product,
+  styleId: string,
+  color: string,
+  size: string,
+) =>
+  product.variants.find(
+    (variant) =>
+      styleOfVariant(product, variant).id === styleId &&
+      variant.color === color &&
+      variant.size === size,
+  );
 
 // Hàng không theo dõi tồn kho luôn còn bán: số tồn của nó không nói lên điều gì.
 export const inStock = (product: Product) =>
@@ -499,8 +550,8 @@ export const promises = [
   },
   {
     icon: "return" as const,
-    title: "Đổi Trả Miễn Phí 30 Ngày",
-    body: "Chưa hài lòng? Đổi trả trong vòng 30 ngày và được hoàn tiền đầy đủ. Không hỏi lý do, không rườm rà.",
+    title: "Đổi Trả Miễn Phí 7 Ngày",
+    body: "Chưa hài lòng? Đổi trả trong vòng 7 ngày và được hoàn tiền đầy đủ. Không hỏi lý do, không rườm rà.",
   },
   {
     icon: "shield" as const,

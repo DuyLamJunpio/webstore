@@ -7,6 +7,7 @@ import { formatPrice, type Product } from "@/lib/data";
 import { LOW_STOCK, useVariantSelection } from "@/lib/useVariantSelection";
 import QuantityStepper from "./QuantityStepper";
 import { Bag, Bolt, Close, Plus, Spinner } from "./icons";
+import ProductStylePicker from "./product/ProductStylePicker";
 
 /**
  * Chọn biến thể nhanh ngay từ thẻ sản phẩm.
@@ -15,6 +16,8 @@ import { Bag, Bolt, Close, Plus, Spinner } from "./icons";
  */
 function QuickAddDialog({ product, onClose }: { product: Product; onClose: () => void }) {
   const {
+    styles,
+    style,
     color,
     size,
     qty,
@@ -22,11 +25,16 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
     variant,
     isBuying,
     price,
+    availableColors,
+    availableSizes,
     stockBySize,
+    styleSoldOut,
     colorSoldOut,
+    isStyleSoldOut,
     isColorSoldOut,
     max,
     setQty,
+    pickStyle,
     pickColor,
     pickSize,
     addToCart,
@@ -75,7 +83,7 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
             onClick={onClose}
             className="relative aspect-square w-18 shrink-0 overflow-hidden rounded-card bg-surface ring-1 ring-line"
           >
-            <Image src={product.image} alt={product.name} fill sizes="80px" className="object-cover" />
+            <Image src={style.image || product.image} alt={product.name} fill sizes="80px" className="object-cover" />
           </Link>
 
           <div className="flex-1 min-w-0">
@@ -106,13 +114,20 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-6">
+          <ProductStylePicker
+            styles={styles}
+            selected={style}
+            onSelect={pickStyle}
+            isSoldOut={isStyleSoldOut}
+          />
+
           {/* ── Chọn màu ── */}
           <div>
             <div className="flex items-baseline justify-between">
               <p className="eyebrow text-ink/70">Màu sắc: <span className="font-medium text-ink">{color}</span></p>
             </div>
             <div className="mt-3 flex flex-wrap gap-3">
-              {product.colors.map((option) => {
+              {availableColors.map((option) => {
                 const soldOut = isColorSoldOut(option.name);
                 const isSelected = color === option.name;
                 return (
@@ -149,7 +164,7 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
           <div>
             <p className="eyebrow text-ink/70">Kích cỡ</p>
             <div className="mt-3 flex flex-wrap gap-2.5">
-              {product.sizes.map((option) => {
+              {availableSizes.map((option) => {
                 const stock = stockBySize[option] ?? 0;
                 const isSelected = size === option;
                 return (
@@ -172,7 +187,9 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
             </div>
 
             <div className="mt-3 min-h-5 text-xs sm:text-[13px]">
-              {colorSoldOut ? (
+              {styleSoldOut ? (
+                <span className="text-muted">Mẫu này đã hết hàng — mời bạn chọn mẫu khác.</span>
+              ) : colorSoldOut ? (
                 <span className="text-muted">Màu này đã hết hàng — mời bạn chọn màu khác.</span>
               ) : variant && variant.stock <= LOW_STOCK ? (
                 <span className="text-gold-deep font-medium">Chỉ còn {variant.stock} sản phẩm ở size này.</span>
@@ -195,11 +212,11 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
             <button
               type="button"
               onClick={submit}
-              disabled={colorSoldOut}
+              disabled={styleSoldOut || colorSoldOut}
               className="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-full border-2 border-ink bg-surface px-3 text-xs sm:text-sm font-semibold text-ink transition-all hover:bg-ink hover:text-cream active:scale-[0.99] disabled:cursor-not-allowed disabled:border-line disabled:text-muted shadow-xs"
             >
               <Bag className="h-4 w-4" />
-              <span>{colorSoldOut ? "Hết hàng" : "Thêm vào giỏ"}</span>
+              <span>{styleSoldOut || colorSoldOut ? "Hết hàng" : "Thêm vào giỏ"}</span>
             </button>
 
             <button
@@ -207,7 +224,7 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
               onClick={() => {
                 if (buyNow()) onClose();
               }}
-              disabled={colorSoldOut || isBuying}
+              disabled={styleSoldOut || colorSoldOut || isBuying}
               className="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-full bg-ink px-3 text-xs sm:text-sm font-semibold text-cream shadow-sm transition-all hover:bg-ink-soft active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-ink/40"
             >
               {isBuying ? (
@@ -218,7 +235,7 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
               ) : (
                 <>
                   <Bolt className="h-4 w-4 text-gold" />
-                  <span>{colorSoldOut ? "Hết hàng" : "Mua ngay"}</span>
+                  <span>{styleSoldOut || colorSoldOut ? "Hết hàng" : "Mua ngay"}</span>
                 </>
               )}
             </button>

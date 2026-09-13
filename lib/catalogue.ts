@@ -82,6 +82,9 @@ async function fetchFromWarehouse(): Promise<Catalogue | null> {
           product,
           product.images.slice(0, MAX_GALLERY).map((path) => mediaUrl(path, BASE)),
           (product.videos ?? []).slice(0, MAX_GALLERY).map((path) => mediaUrl(path, BASE)),
+          (product.styles ?? []).map((style) =>
+            style.image ? mediaUrl(style.image, BASE) : null,
+          ),
         ),
       ),
       rootCategories: rootCategoriesOf(data.categories ?? [], (c) =>

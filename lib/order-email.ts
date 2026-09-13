@@ -25,7 +25,7 @@ function buildText(order: Order): string {
   const items = [
     ...cart.lines.map(
       (line) =>
-        `- ${line.name} (${line.color} / ${line.size}) x${line.qty} — ${formatPrice(line.total)}`,
+        `- ${line.name} (${[line.styleName, line.color, line.size].filter(Boolean).join(" / ")}) x${line.qty} — ${formatPrice(line.total)}`,
     ),
     ...prints.map(
       (print) =>
@@ -89,7 +89,7 @@ function buildHtml(order: Order): string {
       <td style="padding:14px 0;border-bottom:1px solid ${BRAND.line};">
         <div style="color:${BRAND.ink};font-size:15px;font-weight:600;">${esc(line.name)}</div>
         <div style="color:${BRAND.muted};font-size:13px;padding-top:3px;">
-          ${esc(line.color)} · ${esc(line.size)} · SL ${line.qty}
+          ${esc([line.styleName, line.color, line.size].filter(Boolean).join(" · "))} · SL ${line.qty}
         </div>
       </td>
       <td style="padding:14px 0;border-bottom:1px solid ${BRAND.line};text-align:right;color:${BRAND.ink};font-size:15px;font-weight:600;white-space:nowrap;">

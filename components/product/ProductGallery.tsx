@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import MediaFrame, { PlayBadge } from "@/components/MediaFrame";
 import { Search } from "@/components/icons";
 import type { Media } from "@/lib/data";
 import ImageLightbox from "./ImageLightbox";
+import { useSharedVariantSelection } from "./VariantSelectionProvider";
 
 export default function ProductGallery({
   media,
@@ -15,29 +16,54 @@ export default function ProductGallery({
   alt: string;
   badge?: string;
 }) {
-  const [active, setActive] = useState(0);
+  const { styles, style, hasExplicitStyles } = useSharedVariantSelection();
+  const [selection, setSelection] = useState({ styleId: style.id, index: 0 });
   const [zoomOpen, setZoomOpen] = useState(false);
   const touchStartX = useRef<number | null>(null);
 
-  const current = media[active];
+  /**
+   * Chỉ đưa ảnh của mẫu đang chọn lên đầu. Danh sách mẫu có bộ chọn ảnh riêng,
+   * nên gallery không phình theo số mẫu và vẫn giữ được giới hạn thumbnail cũ.
+   */
+  const displayedMedia = useMemo<Media[]>(() => {
+    if (!hasExplicitStyles || !style.image) return media;
+
+    const styleImages = new Set(styles.map((option) => option.image).filter(Boolean));
+    return [
+      { type: "image", src: style.image },
+      // Ảnh của các mẫu khác đã có ở bộ chọn mẫu. Không lặp lại
+      // chúng trong gallery, nếu không khách dễ nhầm ảnh nào thuộc mẫu đang mua.
+      ...media.filter(
+        (item) => item.type !== "image" || !styleImages.has(item.src),
+      ),
+    ];
+  }, [hasExplicitStyles, media, style.image, styles]);
+
+  // Khi style đổi, index của style trước không còn ý nghĩa. Dẫn xuất về 0 ngay
+  // trong render để ảnh đổi cùng lượt, không cần một Effect + lượt render thứ hai.
+  const selectedIndex = selection.styleId === style.id ? selection.index : 0;
+  const activeIndex = Math.min(selectedIndex, Math.max(displayedMedia.length - 1, 0));
+  const current = displayedMedia[activeIndex];
   const isVideo = current?.type === "video";
+
+  const selectIndex = (index: number) => setSelection({ styleId: style.id, index });
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null) return;
+    if (touchStartX.current === null || displayedMedia.length < 2) return;
     const touchEndX = e.changedTouches[0].clientX;
     const diff = touchStartX.current - touchEndX;
 
     if (Math.abs(diff) > 40) {
       if (diff > 0) {
         // swipe left -> next image
-        setActive((i) => (i + 1) % media.length);
+        selectIndex((activeIndex + 1) % displayedMedia.length);
       } else {
         // swipe right -> prev image
-        setActive((i) => (i - 1 + media.length) % media.length);
+        selectIndex((activeIndex - 1 + displayedMedia.length) % displayedMedia.length);
       }
     }
     touchStartX.current = null;
@@ -46,22 +72,22 @@ export default function ProductGallery({
   return (
     <div className="flex flex-col-reverse gap-3 sm:gap-4 md:flex-row">
       {/* ── Thumbnails ── */}
-      {media.length > 1 && (
+      {displayedMedia.length > 1 && (
         <div
           className="flex gap-2.5 overflow-x-auto pb-1 md:flex-col md:overflow-visible md:pb-0 scrollbar-none"
           role="tablist"
           aria-label="Ảnh sản phẩm"
         >
-          {media.map((item, index) => (
+          {displayedMedia.map((item, index) => (
             <button
-              key={item.src}
+              key={`${item.type}:${item.src}`}
               type="button"
               role="tab"
-              aria-selected={index === active}
+              aria-selected={index === activeIndex}
               aria-label={`${item.type === "video" ? "Xem video" : "Xem ảnh"} ${index + 1}`}
-              onClick={() => setActive(index)}
+              onClick={() => selectIndex(index)}
               className={`relative aspect-square w-14 shrink-0 overflow-hidden rounded-card bg-surface transition-all sm:w-16 md:w-20 ${
-                index === active
+                index === activeIndex
                   ? "ring-2 ring-ink scale-102 shadow-xs"
                   : "ring-1 ring-line hover:ring-ink/40 opacity-75 hover:opacity-100"
               }`}
@@ -102,7 +128,7 @@ export default function ProductGallery({
               <MediaFrame
                 key={current.src}
                 media={current}
-                alt={alt}
+                alt={hasExplicitStyles ? `${alt} — ${style.name}` : alt}
                 priority
                 sizes="(max-width: 767px) 100vw, 560px"
                 className="rise"
@@ -125,13 +151,13 @@ export default function ProductGallery({
         )}
 
         {/* ── Mobile Dot Indicators ── */}
-        {media.length > 1 && (
+        {displayedMedia.length > 1 && (
           <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 md:hidden pointer-events-none">
-            {media.map((_, index) => (
+            {displayedMedia.map((item, index) => (
               <span
-                key={index}
+                key={`${item.type}:${item.src}`}
                 className={`h-1.5 rounded-full transition-all duration-300 ${
-                  index === active ? "w-6 bg-ink shadow-xs" : "w-1.5 bg-ink/30"
+                  index === activeIndex ? "w-6 bg-ink shadow-xs" : "w-1.5 bg-ink/30"
                 }`}
               />
             ))}
@@ -141,14 +167,13 @@ export default function ProductGallery({
 
       {zoomOpen && (
         <ImageLightbox
-          media={media}
+          media={displayedMedia}
           alt={alt}
-          index={active}
-          onIndexChange={setActive}
+          index={activeIndex}
+          onIndexChange={selectIndex}
           onClose={() => setZoomOpen(false)}
         />
       )}
     </div>
   );
 }
-
