@@ -3,14 +3,18 @@
 import Link from "next/link";
 import { useState } from "react";
 import { formatPrice, type Product } from "@/lib/data";
-import { LOW_STOCK, useVariantSelection } from "@/lib/useVariantSelection";
+import { LOW_STOCK } from "@/lib/useVariantSelection";
 import QuantityStepper from "../QuantityStepper";
 import { Bag, Bolt, Spinner } from "../icons";
+import ProductStylePicker from "./ProductStylePicker";
 import SizeGuideModal from "./SizeGuideModal";
+import { useSharedVariantSelection } from "./VariantSelectionProvider";
 
 export default function ProductPurchase({ product }: { product: Product }) {
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const {
+    styles,
+    style,
     color,
     size,
     qty,
@@ -18,16 +22,21 @@ export default function ProductPurchase({ product }: { product: Product }) {
     variant,
     isBuying,
     price,
+    availableColors,
+    availableSizes,
     stockBySize,
+    styleSoldOut,
     colorSoldOut,
+    isStyleSoldOut,
     isColorSoldOut,
     max,
     setQty,
+    pickStyle,
     pickColor,
     pickSize,
     addToCart,
     buyNow,
-  } = useVariantSelection(product);
+  } = useSharedVariantSelection();
 
   const discountPercent = product.comparePrice && product.comparePrice > product.price
     ? Math.round((1 - product.price / product.comparePrice) * 100)
@@ -52,6 +61,14 @@ export default function ProductPurchase({ product }: { product: Product }) {
         )}
       </div>
 
+      <ProductStylePicker
+        styles={styles}
+        selected={style}
+        onSelect={pickStyle}
+        isSoldOut={isStyleSoldOut}
+        className="mt-6"
+      />
+
       {/* ── Lựa chọn màu sắc ── */}
       <div className="mt-6">
         <div className="flex items-baseline justify-between">
@@ -60,7 +77,7 @@ export default function ProductPurchase({ product }: { product: Product }) {
           </p>
         </div>
         <div className="mt-3 flex flex-wrap gap-3">
-          {product.colors.map((option) => {
+          {availableColors.map((option) => {
             const soldOut = isColorSoldOut(option.name);
             const isSelected = color === option.name;
             return (
@@ -106,7 +123,7 @@ export default function ProductPurchase({ product }: { product: Product }) {
           </button>
         </div>
         <div className="mt-3 flex flex-wrap gap-2.5">
-          {product.sizes.map((option) => {
+          {availableSizes.map((option) => {
             const stock = stockBySize[option] ?? 0;
             const selected = size === option;
             return (
@@ -130,7 +147,9 @@ export default function ProductPurchase({ product }: { product: Product }) {
 
         {/* ── Trạng thái tồn kho ── */}
         <div className="mt-3 min-h-5 text-xs sm:text-[13px]">
-          {colorSoldOut ? (
+          {styleSoldOut ? (
+            <span className="text-muted">Mẫu này đã hết hàng — mời bạn chọn mẫu khác.</span>
+          ) : colorSoldOut ? (
             <span className="text-muted">Màu này đã hết hàng — mời bạn chọn màu khác.</span>
           ) : variant && variant.stock === 0 ? (
             <span className="text-muted">Size này đã hết hàng.</span>
@@ -155,17 +174,17 @@ export default function ProductPurchase({ product }: { product: Product }) {
           <button
             type="button"
             onClick={() => addToCart()}
-            disabled={colorSoldOut}
+            disabled={styleSoldOut || colorSoldOut}
             className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border-2 border-ink bg-surface px-6 text-sm font-semibold text-ink shadow-xs transition-all hover:bg-ink hover:text-cream active:scale-[0.98] disabled:cursor-not-allowed disabled:border-line disabled:text-muted disabled:bg-surface/50"
           >
             <Bag className="h-[18px] w-[18px]" />
-            <span>{colorSoldOut ? "Hết hàng" : "Thêm vào giỏ"}</span>
+            <span>{styleSoldOut || colorSoldOut ? "Hết hàng" : "Thêm vào giỏ"}</span>
           </button>
 
           <button
             type="button"
             onClick={buyNow}
-            disabled={colorSoldOut || isBuying}
+            disabled={styleSoldOut || colorSoldOut || isBuying}
             className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-ink px-6 text-sm font-semibold text-cream shadow-md transition-all hover:bg-ink-soft hover:shadow-lg active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-ink/40"
           >
             {isBuying ? (
@@ -176,7 +195,7 @@ export default function ProductPurchase({ product }: { product: Product }) {
             ) : (
               <>
                 <Bolt className="h-[18px] w-[18px] text-gold" />
-                <span>{colorSoldOut ? "Hết hàng" : "Mua ngay"}</span>
+                <span>{styleSoldOut || colorSoldOut ? "Hết hàng" : "Mua ngay"}</span>
               </>
             )}
           </button>

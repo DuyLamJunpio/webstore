@@ -225,7 +225,7 @@ export async function POST(request: NextRequest) {
         cancelUrl: `${origin}/checkout/${ref}?huy=1`,
         items: [
           ...cart.lines.map((line) => ({
-            name: `${line.name} (${line.color}/${line.size})`.slice(0, 100),
+            name: `${line.name} (${[line.styleName, line.color, line.size].filter(Boolean).join("/")})`.slice(0, 100),
             quantity: line.qty,
             price: line.unitPrice,
           })),

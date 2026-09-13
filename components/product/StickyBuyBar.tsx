@@ -2,24 +2,23 @@
 
 import { useEffect, useState } from "react";
 import { useCart } from "@/lib/cart";
-import { formatPrice, type Product } from "@/lib/data";
 import { printDraftQty, usePrintDrafts } from "@/lib/print-draft";
-import { useVariantSelection } from "@/lib/useVariantSelection";
 import { Bag, Bolt, Spinner } from "../icons";
+import { useSharedVariantSelection } from "./VariantSelectionProvider";
 
-export default function StickyBuyBar({ product }: { product: Product }) {
+export default function StickyBuyBar() {
   const [visible, setVisible] = useState(false);
   const { count, hydrated, openCart } = useCart();
   const printDrafts = usePrintDrafts();
   const {
     color,
     size,
-    price,
+    styleSoldOut,
     colorSoldOut,
     isBuying,
     addToCart,
     buyNow,
-  } = useVariantSelection(product);
+  } = useSharedVariantSelection();
 
   useEffect(() => {
     const onScroll = () => {
@@ -75,7 +74,7 @@ export default function StickyBuyBar({ product }: { product: Product }) {
         <button
           type="button"
           onClick={handleAddToCart}
-          disabled={colorSoldOut}
+          disabled={styleSoldOut || colorSoldOut}
           className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-full border border-ink bg-surface px-3 text-xs font-bold text-ink shadow-xs transition-transform active:scale-95 disabled:opacity-40"
         >
           <Bag className="h-3.5 w-3.5" />
@@ -86,7 +85,7 @@ export default function StickyBuyBar({ product }: { product: Product }) {
         <button
           type="button"
           onClick={handleBuyNow}
-          disabled={colorSoldOut || isBuying}
+          disabled={styleSoldOut || colorSoldOut || isBuying}
           className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-ink px-3 text-xs font-bold text-cream shadow-md transition-transform active:scale-95 disabled:opacity-40"
         >
           {isBuying ? (

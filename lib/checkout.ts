@@ -12,7 +12,7 @@
  * conversion step left to disagree with itself.
  */
 
-import { IS_TEST_PRICING, type Catalogue } from "./data";
+import { IS_TEST_PRICING, styleOfVariant, type Catalogue } from "./data";
 import { shippingFeeFor, type PaymentMethodKey, type SalesSettings } from "./sales";
 import { checkVoucher } from "./vouchers";
 
@@ -102,6 +102,8 @@ export type PricedLine = {
   slug: string;
   name: string;
   image: string;
+  /** Tên mẫu, optional để đọc được đơn đã lưu trước khi có mẫu sản phẩm. */
+  styleName?: string;
   color: string;
   size: string;
   /** đồng, straight from the catalogue — never from the request body */
@@ -184,7 +186,11 @@ export function priceCart(
     }
 
     if (variant.stock === 0) {
-      return { ok: false, error: `${product.name} (${variant.color} · ${variant.size}) đã hết hàng.` };
+      const style = styleOfVariant(product, variant);
+      const options = [product.styles?.length ? style.name : undefined, variant.color, variant.size]
+        .filter(Boolean)
+        .join(" · ");
+      return { ok: false, error: `${product.name} (${options}) đã hết hàng.` };
     }
 
     // duplicated lines are merged rather than rejected — same variant, one row
@@ -199,12 +205,14 @@ export function priceCart(
     // Giá riêng của biến thể (nếu quản trị có đặt) mới là giá đúng. Ở chế độ giá
     // thử thì bỏ qua, vì lúc đó cả giỏ cố tình chạy theo một mức giá tượng trưng.
     const unitPrice = !IS_TEST_PRICING && variant.price ? variant.price : product.price;
+    const style = styleOfVariant(product, variant);
 
     lines.push({
       id: variant.id,
       slug: product.slug,
       name: product.name,
-      image: product.image,
+      image: style?.image || product.image,
+      styleName: product.styles?.length ? style.name : undefined,
       color: variant.color,
       size: variant.size,
       unitPrice,

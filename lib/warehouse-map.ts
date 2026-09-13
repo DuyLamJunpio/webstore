@@ -14,6 +14,8 @@ import { audienceFor, hexFor, slugify } from "./seed-helpers";
 
 export type ApiVariant = {
   id: number;
+  /** Mẫu mà biến thể thuộc về; thiếu ở API cũ. */
+  style_id?: number | string | null;
   size: string | null;
   color: string | null;
   sku: string;
@@ -21,6 +23,13 @@ export type ApiVariant = {
   /** Có bán được dòng này không — quản trị đã tính sẵn cả cờ theo dõi tồn kho. */
   available?: boolean;
   price: number;
+};
+
+export type ApiProductStyle = {
+  id: number | string;
+  name: string;
+  /** Một ảnh dùng chung cho mọi màu/size thuộc mẫu này. */
+  image: string | null;
 };
 
 export type ApiProduct = {
@@ -44,6 +53,8 @@ export type ApiProduct = {
   total_stock: number;
   images: string[];
   videos: string[];
+  /** Thiếu hoàn toàn ở API cũ; storefront sẽ sinh mẫu mặc định. */
+  styles?: ApiProductStyle[];
   variants: ApiVariant[];
 };
 
@@ -107,22 +118,51 @@ export const mediaUrl = (path: string, base: string) => new URL(path, base).href
  * Ảnh truyền vào từ bên ngoài: khi đọc thẳng thì là địa chỉ trên máy chủ quản
  * trị, khi chụp bản dự phòng thì là file đã tải về `public/images/warehouse/`.
  */
-export function toSeed(product: ApiProduct, gallery: string[], videos: string[] = []): Seed {
-  // Màu và size lấy từ chính các biến thể đã khai bên quản trị.
-  const colorNames = [...new Set(product.variants.map((v) => v.color).filter(Boolean))] as string[];
-  const sizes = [...new Set(product.variants.map((v) => v.size).filter(Boolean))] as string[];
-
-  const details = [
-    product.material ? `Chất liệu: ${product.material}` : null,
-    product.brand ? `Thương hiệu: ${product.brand}` : null,
-    sizes.length ? `Có size: ${sizes.join(", ")}` : null,
-    colorNames.length ? `Màu: ${colorNames.join(", ")}` : null,
-  ].filter(Boolean) as string[];
-
+export function toSeed(
+  product: ApiProduct,
+  gallery: string[],
+  videos: string[] = [],
+  /** Ảnh mẫu đã được đổi sang URL web hoặc file snapshot, cùng thứ tự `styles`. */
+  styleImages: Array<string | null> = [],
+): Seed {
   // `image`/`hoverImage` phải luôn là ảnh thật: nhiều chỗ (giỏ hàng, đơn hàng,
   // thẻ Open Graph) đưa thẳng vào next/image, đưa đường dẫn .mp4 vào là hỏng.
   // Chỗ biết dùng video là gallery — xem galleryOf() trong lib/data.ts.
   const images = gallery.length > 0 ? gallery : [PLACEHOLDER];
+
+  const styles = (product.styles ?? []).map((style, index) => ({
+    id: String(style.id),
+    name: style.name,
+    // API cũ/snapshot chưa tải ảnh mẫu riêng thì vẫn có ảnh sản phẩm an toàn.
+    image: styleImages[index] ?? images[0],
+  }));
+  const fallbackStyleId = styles[0]?.id;
+
+  // Chuẩn hoá null trước khi rút danh sách lựa chọn. Cách cũ lọc null
+  // trước rồi mới đổi thành "Mặc định", khiến product không có màu để chọn.
+  const variants = product.variants.map((variant) => ({
+    id: String(variant.id),
+    styleId:
+      variant.style_id !== null && variant.style_id !== undefined
+        ? String(variant.style_id)
+        : fallbackStyleId,
+    color: variant.color ?? "Mặc định",
+    size: variant.size ?? "Freesize",
+    stock: product.manage_stock === false ? UNLIMITED_STOCK : variant.stock,
+    price: variant.price,
+  }));
+
+  // Màu và size lấy từ chính các biến thể đã chuẩn hoá.
+  const colorNames = [...new Set(variants.map((variant) => variant.color))];
+  const sizes = [...new Set(variants.map((variant) => variant.size))];
+
+  const details = [
+    product.material ? `Chất liệu: ${product.material}` : null,
+    product.brand ? `Thương hiệu: ${product.brand}` : null,
+    styles.length ? `Mẫu: ${styles.map((style) => style.name).join(", ")}` : null,
+    sizes.length ? `Có size: ${sizes.join(", ")}` : null,
+    colorNames.length ? `Màu: ${colorNames.join(", ")}` : null,
+  ].filter(Boolean) as string[];
 
   return {
     slug: product.slug || slugify(product.name),
@@ -153,15 +193,10 @@ export function toSeed(product: ApiProduct, gallery: string[], videos: string[] 
     details,
     colors: colorNames.map((name) => ({ name, hex: hexFor(name) })),
     sizes,
+    styles: styles.length > 0 ? styles : undefined,
     manageStock: product.manage_stock !== false,
     // id của biến thể chính là id bên quản trị, đặt hàng sẽ gửi lại nguyên vẹn.
-    variants: product.variants.map((v) => ({
-      id: String(v.id),
-      color: v.color ?? "Mặc định",
-      size: v.size ?? "Freesize",
-      stock: product.manage_stock === false ? UNLIMITED_STOCK : v.stock,
-      price: v.price,
-    })),
+    variants,
   };
 }
 

@@ -17,11 +17,13 @@
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 
 export type CartItem = {
-  /** variant id — one line per colour + size combination */
+  /** variant id — one line per mẫu + màu + size combination */
   id: string;
   slug: string;
   name: string;
   image: string;
+  /** Tên mẫu sản phẩm; thiếu ở giỏ hàng được lưu từ phiên bản cũ. */
+  styleName?: string;
   color: string;
   size: string;
   price: number;

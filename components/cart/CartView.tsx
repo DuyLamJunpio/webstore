@@ -95,7 +95,7 @@ export default function CartView() {
                     <p className="text-sm sm:text-base font-bold text-ink">{formatPrice(line.price * line.qty)}</p>
                   </div>
                   <p className="mt-1 text-xs sm:text-[13px] text-muted">
-                    {line.color} · Size {line.size} · {formatPrice(line.price)}/sp
+                    {[line.styleName, line.color, `Size ${line.size}`].filter(Boolean).join(" · ")} · {formatPrice(line.price)}/sp
                   </p>
                 </div>
 
