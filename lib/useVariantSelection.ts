@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useCart } from "./cart";
 import {
+  IS_TEST_PRICING,
   findVariant,
   styleOfVariant,
   stylesOf,
@@ -113,7 +114,7 @@ export function useVariantSelection(product: Product) {
    * cho đặt "giá riêng" cho từng size/màu, lấy giá chung là bán sai tiền.
    * Chưa chọn size thì chưa biết biến thể nào, tạm hiện giá chung.
    */
-  const price = variant?.price ?? product.price;
+  const price = !IS_TEST_PRICING && variant?.price ? variant.price : product.price;
   const styleSoldOut = !product.variants.some(
     (candidate) => belongsToStyle(product, candidate, style.id) && candidate.stock > 0,
   );
