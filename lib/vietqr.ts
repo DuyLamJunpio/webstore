@@ -65,3 +65,22 @@ export function buildVietQr({ bin, accountNumber, amount, addInfo }: VietQrInput
   const withCrcTag = `${payload}6304`;
   return withCrcTag + crc16(withCrcTag);
 }
+
+/**
+ * A deliberately explicit fallback for the recipient printed on the QR.
+ * It only runs when SePay's account API cannot be reached or authorize the
+ * request; confirmation of a transfer still comes exclusively from SePay's
+ * signed webhook.
+ */
+export function readFallbackBank() {
+  const bin = process.env.SHOP_BANK_BIN?.trim();
+  const accountNumber = process.env.SHOP_BANK_ACCOUNT?.trim();
+  const accountName = process.env.SHOP_BANK_ACCOUNT_NAME?.trim();
+  if (!bin || !accountNumber || !accountName || !/^\d{6}$/.test(bin)) return null;
+  return {
+    bin,
+    accountNumber,
+    accountName,
+    bankName: process.env.SHOP_BANK_NAME?.trim() ?? "",
+  };
+}

@@ -27,7 +27,7 @@ import {
 import { fetchPrintDesign, printLineLabel } from "@/lib/print-order";
 import { reserveOrder, saveOrder, type Order, type OrderPayment } from "@/lib/orders";
 import { getSepayBankAccount, readSepayWebhookConfig, sepayPaymentCode } from "@/lib/sepay";
-import { buildVietQr } from "@/lib/vietqr";
+import { buildVietQr, readFallbackBank } from "@/lib/vietqr";
 import { pushOrder } from "@/lib/warehouse";
 import { validateWarehouseVoucher } from "@/lib/warehouse-vouchers";
 
@@ -220,7 +220,16 @@ export async function POST(request: NextRequest) {
       bank = await getSepayBankAccount();
     } catch (error) {
       console.error("[checkout] không lấy được tài khoản SePay", error);
-      return bad(error instanceof Error ? error.message : "Không lấy được tài khoản SePay.", 503);
+      bank = readFallbackBank();
+      if (!bank) {
+        return bad(
+          error instanceof Error
+            ? `${error.message} Cũng chưa có tài khoản ngân hàng dự phòng.`
+            : "Không lấy được tài khoản SePay và chưa có tài khoản ngân hàng dự phòng.",
+          503,
+        );
+      }
+      console.warn("[checkout] đang dùng tài khoản ngân hàng dự phòng do SePay API không khả dụng");
     }
 
     // SePay nhận diện chính mã này (tiền tố + 10 ký tự ref), nên không chèn

@@ -40,6 +40,7 @@ Tạo một webhook ở [SePay](https://my.sepay.vn) với xác thực **API Key
 | `SEPAY_API_ACCESS_TOKEN` | API Token tạo trong SePay → API Access, chỉ dùng ở máy chủ để lấy tài khoản nhận tiền |
 | `SEPAY_BANK_ACCOUNT_ID` | ID tài khoản SePay; bắt buộc nếu có nhiều tài khoản hoạt động |
 | `SEPAY_PAYMENT_PREFIX` | Tiền tố mã thanh toán, mặc định `TBC` |
+| `SHOP_BANK_BIN`, `SHOP_BANK_ACCOUNT`, `SHOP_BANK_ACCOUNT_NAME` | Phương án dự phòng để vẫn tạo QR khi API tài khoản SePay bị lỗi; webhook SePay vẫn xác nhận tiền |
 
 QR VietQR được tạo tại chỗ với nội dung `TBC<10-ký-tự>`. Trong **Cấu hình chung** của
 SePay, tạo mã thanh toán có tiền tố `TBC`, hậu tố 10 ký tự chữ/số. Nếu dùng tiền tố khác,
