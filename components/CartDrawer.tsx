@@ -60,7 +60,7 @@ export default function CartDrawer() {
         <header className="flex items-center justify-between border-b border-[#e5e5e5] px-5 py-4">
           <div className="flex items-center gap-2">
             <p className="text-sm font-black uppercase tracking-wider text-ink">GIỎ HÀNG</p>
-            <span className="bg-[#e60012] px-2 py-0.5 text-xs font-black text-white">
+            <span className="bg-[#8f633e] px-2 py-0.5 text-xs font-black text-white">
               {totalCount}
             </span>
           </div>
@@ -86,7 +86,7 @@ export default function CartDrawer() {
             <Link
               href="/shop"
               onClick={closeCart}
-              className="mt-2 inline-flex h-11 items-center bg-black px-8 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-[#e60012]"
+              className="mt-2 inline-flex h-11 items-center bg-black px-8 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-[#8f633e]"
             >
               BẮT ĐẦU MUA SẮM
             </Link>
@@ -102,7 +102,7 @@ export default function CartDrawer() {
                       Mua thêm <strong className="text-ink font-black">{conThieu} sản phẩm</strong> để nhận Freeship.
                     </p>
                   ) : (
-                    <p className="flex items-center gap-1.5 font-bold text-[#e60012]">
+                    <p className="flex items-center gap-1.5 font-bold text-[#8f633e]">
                       <Sparkles className="h-3.5 w-3.5" />
                       <span>ĐÃ ĐẠT TIÊU CHUẨN FREESHIP!</span>
                     </p>
@@ -111,7 +111,7 @@ export default function CartDrawer() {
                 </div>
                 <div className="mt-2 h-1 overflow-hidden bg-[#e5e5e5]">
                   <div
-                    className="h-full bg-[#e60012] transition-all duration-500"
+                    className="h-full bg-[#8f633e] transition-all duration-500"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
@@ -136,7 +136,7 @@ export default function CartDrawer() {
                         <Link
                           href={`/products/${line.slug}`}
                           onClick={closeCart}
-                          className="line-clamp-2 text-xs sm:text-sm font-bold leading-snug text-ink hover:text-[#e60012] transition-colors"
+                          className="line-clamp-2 text-xs sm:text-sm font-bold leading-snug text-ink hover:text-[#8f633e] transition-colors"
                           title={line.name}
                         >
                           {line.name}
@@ -161,7 +161,7 @@ export default function CartDrawer() {
                       <button
                         type="button"
                         onClick={() => remove(line.id)}
-                        className="text-xs text-[#777777] hover:text-[#e60012] underline underline-offset-4 transition-colors"
+                        className="text-xs text-[#777777] hover:text-[#8f633e] underline underline-offset-4 transition-colors"
                       >
                         Xoá
                       </button>
@@ -198,7 +198,7 @@ export default function CartDrawer() {
                           {formatPrice(printDraft.total)}
                         </p>
                       </div>
-                      <p className="mt-1 font-mono text-[11px] text-[#e60012]">
+                      <p className="mt-1 font-mono text-[11px] text-[#8f633e]">
                         {printDraft.code} · {printDraft.qty} áo · giao sau {printDraft.leadDays} ngày
                       </p>
                     </div>
@@ -210,7 +210,7 @@ export default function CartDrawer() {
                       <button
                         type="button"
                         onClick={() => removePrintDraft(printDraft.code)}
-                        className="text-xs text-[#777777] underline underline-offset-4 transition-colors hover:text-[#e60012]"
+                        className="text-xs text-[#777777] underline underline-offset-4 transition-colors hover:text-[#8f633e]"
                       >
                         Xoá
                       </button>
@@ -234,7 +234,7 @@ export default function CartDrawer() {
                 <Link
                   href="/cart"
                   onClick={closeCart}
-                  className="flex h-12 items-center justify-center bg-[#e60012] text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-[#cc0010]"
+                  className="flex h-12 items-center justify-center bg-[#8f633e] text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-[#734d2c]"
                 >
                   THANH TOÁN ĐƠN HÀNG
                 </Link>

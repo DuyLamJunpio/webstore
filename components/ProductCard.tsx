@@ -50,7 +50,7 @@ export default function ProductCard({
                 HẾT HÀNG
               </span>
             ) : discountPercent > 0 ? (
-              <span className="bg-[#e60012] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-2xs">
+              <span className="bg-[#8f633e] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-2xs">
                 LIMITED OFFER
               </span>
             ) : product.isNew ? (
@@ -96,7 +96,7 @@ export default function ProductCard({
             {product.audience} · {product.category}
           </div>
 
-          <h3 className="mt-1 line-clamp-2 text-[13px] sm:text-[14px] font-semibold leading-snug text-ink transition-colors group-hover:text-[#e60012]" title={product.name}>
+          <h3 className="mt-1 line-clamp-2 text-[13px] sm:text-[14px] font-semibold leading-snug text-ink transition-colors group-hover:text-[#8f633e]" title={product.name}>
             <Link href={href}>{product.name}</Link>
           </h3>
         </div>
@@ -106,7 +106,7 @@ export default function ProductCard({
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <span
               className={`text-[14px] sm:text-[15px] font-bold ${
-                discountPercent > 0 ? "text-[#e60012]" : "text-ink"
+                discountPercent > 0 ? "text-[#8f633e]" : "text-ink"
               }`}
             >
               {formatPrice(product.price)}
@@ -116,7 +116,7 @@ export default function ProductCard({
                 <span className="text-[11px] text-muted line-through">
                   {formatPrice(product.comparePrice)}
                 </span>
-                <span className="bg-[#e60012]/10 px-1 py-0.2 text-[9px] font-bold text-[#e60012]">
+                <span className="bg-[#8f633e]/10 px-1 py-0.2 text-[9px] font-bold text-[#8f633e]">
                   -{discountPercent}%
                 </span>
               </>
@@ -125,7 +125,7 @@ export default function ProductCard({
 
           {/* Rating đánh giá */}
           <div className="mt-1 flex items-center gap-1 text-[11px] text-muted">
-            <span className="text-[#e60012]">★</span>
+            <span className="text-[#8f633e]">★</span>
             <span className="font-semibold text-ink">{product.rating.toFixed(1)}</span>
             <span>({product.reviews})</span>
           </div>

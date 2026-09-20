@@ -113,7 +113,7 @@ export default async function ShopPage(props: PageProps<"/shop">) {
               </p>
               <Link
                 href="/shop"
-                className="mt-6 inline-flex h-11 items-center bg-black px-7 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#e60012]"
+                className="mt-6 inline-flex h-11 items-center bg-black px-7 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#8f633e]"
               >
                 Đặt lại toàn bộ bộ lọc
               </Link>

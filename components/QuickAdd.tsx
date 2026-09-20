@@ -94,18 +94,18 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
           <div className="flex-1 min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-wider text-[#767676]">{product.category}</p>
             <h2 className="mt-0.5 text-base font-bold leading-snug truncate text-ink">
-              <Link href={`/products/${product.slug}`} onClick={onClose} className="hover:text-[#e60012]">
+              <Link href={`/products/${product.slug}`} onClick={onClose} className="hover:text-[#8f633e]">
                 {product.name}
               </Link>
             </h2>
             <p className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-              <span className={`text-base font-bold ${showDiscount ? "text-[#e60012]" : "text-ink"}`}>{formatPrice(price)}</span>
+              <span className={`text-base font-bold ${showDiscount ? "text-[#8f633e]" : "text-ink"}`}>{formatPrice(price)}</span>
               {showDiscount && product.comparePrice && (
                 <>
                   <span className="text-xs text-muted line-through">
                     {formatPrice(product.comparePrice)}
                   </span>
-                  <span className="bg-[#e60012]/10 px-1 py-0.5 text-[9px] font-bold text-[#e60012]">
+                  <span className="bg-[#8f633e]/10 px-1 py-0.5 text-[9px] font-bold text-[#8f633e]">
                     -{discountPercent}%
                   </span>
                 </>
@@ -202,7 +202,7 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
               ) : colorSoldOut ? (
                 <span className="text-muted">Màu này đã hết hàng — mời bạn chọn màu khác.</span>
               ) : variant && variant.stock <= LOW_STOCK ? (
-                <span className="text-[#e60012] font-semibold">Chỉ còn {variant.stock} sản phẩm ở size này.</span>
+                <span className="text-[#8f633e] font-semibold">Chỉ còn {variant.stock} sản phẩm ở size này.</span>
               ) : variant ? (
                 <span className="text-muted">Còn hàng — giao trong 1–2 ngày làm việc.</span>
               ) : (
@@ -235,7 +235,7 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
                 if (buyNow()) onClose();
               }}
               disabled={styleSoldOut || colorSoldOut || isBuying}
-              className="inline-flex h-11 w-full items-center justify-center gap-1.5 bg-[#e60012] px-3 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-[#cc0010] disabled:cursor-not-allowed disabled:bg-black/30"
+              className="inline-flex h-11 w-full items-center justify-center gap-1.5 bg-[#8f633e] px-3 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-[#734d2c] disabled:cursor-not-allowed disabled:bg-black/30"
             >
               {isBuying ? (
                 <>
@@ -252,7 +252,7 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
           </div>
 
           {error && (
-            <p aria-live="polite" className="mt-2 text-xs font-bold text-[#e60012] text-center">
+            <p aria-live="polite" className="mt-2 text-xs font-bold text-[#8f633e] text-center">
               {error}
             </p>
           )}

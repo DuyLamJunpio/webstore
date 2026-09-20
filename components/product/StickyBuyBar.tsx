@@ -64,7 +64,7 @@ export default function StickyBuyBar() {
         >
           <Bag className="h-4 w-4" />
           {cartCount > 0 && (
-            <span className="absolute -right-1.5 -top-1.5 grid h-4 min-w-4 place-items-center bg-[#e60012] px-1 text-[9px] font-black text-white">
+            <span className="absolute -right-1.5 -top-1.5 grid h-4 min-w-4 place-items-center bg-[#8f633e] px-1 text-[9px] font-black text-white">
               {cartCount}
             </span>
           )}
@@ -86,7 +86,7 @@ export default function StickyBuyBar() {
           type="button"
           onClick={handleBuyNow}
           disabled={styleSoldOut || colorSoldOut || isBuying}
-          className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 bg-[#e60012] px-3 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-[#cc0010] active:scale-95 disabled:opacity-40"
+          className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 bg-[#8f633e] px-3 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-[#734d2c] active:scale-95 disabled:opacity-40"
         >
           {isBuying ? (
             <>

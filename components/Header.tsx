@@ -32,7 +32,7 @@ const searchTags = ["Áo thun Cotton", "Sơ mi công sở", "Quần jeans", "Áo
 
 function Counter({ value }: { value: number }) {
   return (
-    <span className="absolute -right-1 -top-1 grid h-[16px] min-w-[16px] place-items-center bg-[#e60012] px-1 text-[9px] font-bold leading-none text-white shadow-xs">
+    <span className="absolute -right-1 -top-1 grid h-[16px] min-w-[16px] place-items-center bg-[#8f633e] px-1 text-[9px] font-bold leading-none text-white shadow-xs">
       {value}
     </span>
   );
@@ -112,13 +112,13 @@ export default function Header() {
         >
           <div className="shell flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className={`font-semibold ${isTransparent ? "text-white" : "text-[#e60012]"}`}>
+              <span className={`font-semibold ${isTransparent ? "text-white" : "text-[#8f633e]"}`}>
                 MIỄN PHÍ VẬN CHUYỂN
               </span>
               <span className={isTransparent ? "text-white/40" : "text-line-strong"}>•</span>
               <span>Đơn hàng từ 499.000đ</span>
               <span className={isTransparent ? "text-white/40" : "text-line-strong"}>•</span>
-              <span>Đăng ký thành viên nhận Coupon 100.000đ</span>
+              <span>Đăng ký thành viên nhận giảm giá 10%</span>
             </div>
             <div className="flex items-center gap-4 text-[11px]">
               <Link
@@ -159,7 +159,7 @@ export default function Header() {
                     <Link
                       key={link.label}
                       href={link.href}
-                      className="relative inline-flex items-center gap-1.5 bg-[#e60012] px-2.5 py-1 text-[11px] font-bold tracking-wider uppercase text-white shadow-2xs transition-transform hover:opacity-95 active:scale-98 whitespace-nowrap"
+                      className="relative inline-flex items-center gap-1.5 bg-[#8f633e] px-2.5 py-1 text-[11px] font-bold tracking-wider uppercase text-white shadow-2xs transition-transform hover:opacity-95 active:scale-98 whitespace-nowrap"
                     >
                       <span className="h-1.5 w-1.5 bg-white" />
                       <span>{link.label}</span>
@@ -176,15 +176,15 @@ export default function Header() {
                           ? "text-white"
                           : "text-white/85 hover:text-white"
                         : isActive
-                        ? "text-[#e60012]"
-                        : "text-ink hover:text-[#e60012]"
+                        ? "text-[#8f633e]"
+                        : "text-ink hover:text-[#8f633e]"
                     }`}
                   >
                     {link.label}
                     {isActive && (
                       <span
                         className={`absolute inset-x-0 bottom-0 h-[2px] ${
-                          isTransparent ? "bg-white" : "bg-[#e60012]"
+                          isTransparent ? "bg-white" : "bg-[#8f633e]"
                         }`}
                       />
                     )}
@@ -251,7 +251,7 @@ export default function Header() {
                 />
                 <button
                   type="submit"
-                  className="h-9 shrink-0 bg-ink px-6 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#e60012]"
+                  className="h-9 shrink-0 bg-ink px-6 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#8f633e]"
                 >
                   Tìm kiếm
                 </button>
@@ -304,7 +304,7 @@ export default function Header() {
                     href={link.href}
                     onClick={() => setOpen(false)}
                     className={`flex items-center justify-between py-4 text-sm font-bold tracking-wider uppercase transition-colors ${
-                      link.highlight ? "text-[#e60012]" : "text-ink hover:text-[#e60012]"
+                      link.highlight ? "text-[#8f633e]" : "text-ink hover:text-[#8f633e]"
                     }`}
                   >
                     <span>{link.label}</span>
@@ -314,14 +314,14 @@ export default function Header() {
               </div>
 
               <div className="mt-8 border border-line bg-[#f7f7f7] p-4">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-[#e60012]">Đặc quyền thành viên</p>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-[#8f633e]">Đặc quyền thành viên</p>
                 <p className="mt-1 text-xs text-ink/80">
-                  Tải ứng dụng hoặc đăng ký email để nhận mã giảm giá 100.000đ cho đơn hàng đầu tiên.
+                  Tải ứng dụng hoặc đăng ký email để nhận mã giảm giá 10% cho đơn hàng đầu tiên.
                 </p>
                 <Link
                   href="/#newsletter"
                   onClick={() => setOpen(false)}
-                  className="mt-3 inline-block bg-ink px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#e60012]"
+                  className="mt-3 inline-block bg-ink px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#8f633e]"
                 >
                   Nhận ưu đãi ngay
                 </Link>
@@ -333,7 +333,7 @@ export default function Header() {
                   href={CONTACT.phoneHref}
                   className="mt-3 flex items-center gap-2.5 text-sm font-bold text-ink"
                 >
-                  <Phone className="h-4 w-4 text-[#e60012]" />
+                  <Phone className="h-4 w-4 text-[#8f633e]" />
                   {CONTACT.phoneDisplay}
                 </a>
                 <div className="mt-3 flex gap-2">

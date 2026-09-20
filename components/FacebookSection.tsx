@@ -50,7 +50,7 @@ export default function FacebookSection() {
                   key={item.title}
                   className="flex items-start gap-3.5 border border-line bg-[#f7f7f7] p-3.5 transition-colors hover:border-black hover:bg-white"
                 >
-                  <span className="grid h-7 w-7 shrink-0 place-items-center bg-[#e60012] text-white">
+                  <span className="grid h-7 w-7 shrink-0 place-items-center bg-[#8f633e] text-white">
                     <Sparkles className="h-3.5 w-3.5 text-white" />
                   </span>
                   <div className="text-xs sm:text-[13px] leading-relaxed">
@@ -93,7 +93,7 @@ export default function FacebookSection() {
               {/* Cover Photo */}
               <div className="relative h-28 w-full bg-black p-4 text-white flex items-end justify-between">
                 <div className="relative z-10">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-[#e60012]">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#8f633e]">
                     THE BASIC CONCEPT
                   </span>
                   <p className="text-[11px] text-white/70">LifeWear: Simple. Everyday. For Everyone.</p>
@@ -158,7 +158,7 @@ export default function FacebookSection() {
                       href={CONTACT.facebookUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="shrink-0 bg-black px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#e60012]"
+                      className="shrink-0 bg-black px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#8f633e]"
                     >
                       Mở trang
                     </a>

@@ -33,7 +33,7 @@ export async function generateMetadata(props: PageProps<"/products/[slug]">): Pr
 }
 
 const Stars = ({ rating }: { rating: number }) => (
-  <span aria-hidden className="text-[#e60012] tracking-tighter">
+  <span aria-hidden className="text-[#8f633e] tracking-tighter">
     {"★★★★★".slice(0, Math.round(rating))}
     <span className="text-[#cccccc]">{"★★★★★".slice(Math.round(rating))}</span>
   </span>
@@ -86,7 +86,7 @@ export default async function ProductPage(props: PageProps<"/products/[slug]">) 
 
         {/* Product Details & Purchase */}
         <div className="max-w-xl">
-          <span className="inline-block bg-[#e60012] px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white shadow-2xs">
+          <span className="inline-block bg-[#8f633e] px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white shadow-2xs">
             {product.audience} · {product.category}
           </span>
           <h1 className="mt-3 font-sans text-[clamp(1.75rem,3.2vw,2.5rem)] font-black uppercase leading-[1.08] tracking-tight text-ink">
@@ -132,12 +132,12 @@ export default async function ProductPage(props: PageProps<"/products/[slug]">) 
             <ul className="mt-3 flex flex-col gap-2">
               {product.details.map((detail) => (
                 <li key={detail} className="flex gap-2.5 text-xs sm:text-sm leading-relaxed text-[#444444]">
-                  <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 bg-[#e60012]" />
+                  <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 bg-[#8f633e]" />
                   <span>{detail}</span>
                 </li>
               ))}
               <li className="flex gap-2.5 text-xs sm:text-sm leading-relaxed text-[#444444]">
-                <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 bg-[#e60012]" />
+                <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 bg-[#8f633e]" />
                 <span>Kích cỡ có sẵn: <strong>{product.sizes.join(", ")}</strong></span>
               </li>
             </ul>
@@ -149,7 +149,7 @@ export default async function ProductPage(props: PageProps<"/products/[slug]">) 
               const Icon = promiseIcons[promise.icon];
               return (
                 <div key={promise.title} className="flex gap-3 border border-[#e5e5e5] bg-[#f7f7f7] p-3.5">
-                  <Icon className="h-4 w-4 shrink-0 text-[#e60012]" />
+                  <Icon className="h-4 w-4 shrink-0 text-[#8f633e]" />
                   <div className="text-xs leading-relaxed text-[#666666]">
                     <span className="block font-bold uppercase tracking-wide text-ink">{promise.title}</span>
                     <span>{promise.body.split(".")[0]}.</span>
@@ -166,7 +166,7 @@ export default async function ProductPage(props: PageProps<"/products/[slug]">) 
       {related.length > 0 && (
         <section className="mt-16 sm:mt-20 border-t border-[#e5e5e5] pt-12 sm:pt-14">
           <div className="mb-8">
-            <span className="text-[11px] font-black uppercase tracking-widest text-[#e60012]">GỢI Ý LIFEWEAR</span>
+            <span className="text-[11px] font-black uppercase tracking-widest text-[#8f633e]">GỢI Ý LIFEWEAR</span>
             <h2 className="mt-1.5 font-sans text-[clamp(1.5rem,2.4vw,2.25rem)] font-black uppercase leading-[1.05] tracking-tight text-ink">
               CÓ THỂ BẠN CŨNG THÍCH
             </h2>

@@ -20,14 +20,14 @@ export default function Footer() {
 
             {/* Support hotline */}
             <div className="mt-7 border-t border-[#e5e5e5] pt-6">
-              <p className="text-[11px] font-black uppercase tracking-widest text-[#e60012]">
+              <p className="text-[11px] font-black uppercase tracking-widest text-[#8f633e]">
                 HỖ TRỢ KHÁCH HÀNG
               </p>
               <a
                 href={CONTACT.phoneHref}
-                className="mt-2 inline-flex items-center gap-2 text-xl sm:text-2xl font-black tracking-tight text-black transition-colors hover:text-[#e60012]"
+                className="mt-2 inline-flex items-center gap-2 text-xl sm:text-2xl font-black tracking-tight text-black transition-colors hover:text-[#8f633e]"
               >
-                <Phone className="h-4 w-4 text-[#e60012]" />
+                <Phone className="h-4 w-4 text-[#8f633e]" />
                 <span>{CONTACT.phoneDisplay}</span>
               </a>
               <p className="mt-1 text-xs text-[#777777]">
@@ -54,7 +54,7 @@ export default function Footer() {
                 </a>
                 <Link
                   href="/#newsletter"
-                  className="inline-flex h-8 items-center gap-1.5 border border-[#e60012] bg-[#e60012] px-3.5 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#cc0010]"
+                  className="inline-flex h-8 items-center gap-1.5 border border-[#8f633e] bg-[#8f633e] px-3.5 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#734d2c]"
                 >
                   <span>Coupon 100K</span>
                   <ArrowUpRight className="h-3 w-3" />
@@ -73,7 +73,7 @@ export default function Footer() {
                 <ul className="mt-4 flex flex-col gap-2.5">
                   {column.links.map((link) => {
                     const style =
-                      "text-xs sm:text-sm text-[#555555] transition-colors hover:text-[#e60012] hover:underline";
+                      "text-xs sm:text-sm text-[#555555] transition-colors hover:text-[#8f633e] hover:underline";
                     if (link.href.startsWith("/")) {
                       return (
                         <li key={link.label}>

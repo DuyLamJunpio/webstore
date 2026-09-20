@@ -58,7 +58,7 @@ export default function CartView() {
         </p>
         <Link
           href="/shop"
-          className="mt-6 inline-flex h-11 items-center gap-2 bg-[#e60012] px-7 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-[#cc0010]"
+          className="mt-6 inline-flex h-11 items-center gap-2 bg-[#8f633e] px-7 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-[#734d2c]"
         >
           <span>KHÁM PHÁ SẢN PHẨM</span>
           <ArrowRight className="h-4 w-4" />
@@ -203,7 +203,7 @@ export default function CartView() {
               <dt className="text-[#777777]">Phí giao hàng</dt>
               <dd className="font-bold text-ink">
                 {shipping === 0 ? (
-                  <span className="text-[#e60012] font-black uppercase text-xs">Miễn phí</span>
+                  <span className="text-[#8f633e] font-black uppercase text-xs">Miễn phí</span>
                 ) : (
                   formatPrice(shipping)
                 )}
@@ -211,13 +211,13 @@ export default function CartView() {
             </div>
             <div className="mt-2 flex justify-between border-t border-[#e5e5e5] pt-4 text-base sm:text-lg">
               <dt className="font-black uppercase text-ink">Tổng cộng</dt>
-              <dd className="font-black text-[#e60012]">{formatPrice(totalSubtotal + shipping)}</dd>
+              <dd className="font-black text-[#8f633e]">{formatPrice(totalSubtotal + shipping)}</dd>
             </div>
           </dl>
 
           <Link
             href="/checkout"
-            className="mt-6 flex h-12 w-full items-center justify-center gap-2 bg-[#e60012] text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-[#cc0010]"
+            className="mt-6 flex h-12 w-full items-center justify-center gap-2 bg-[#8f633e] text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-[#734d2c]"
           >
             <span>TIẾN HÀNH ĐẶT HÀNG</span>
             <ArrowRight className="h-4 w-4" />

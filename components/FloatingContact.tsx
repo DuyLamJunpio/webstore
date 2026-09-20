@@ -1,14 +1,44 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CONTACT } from "@/lib/contact";
 import { Close, Facebook, Phone } from "./icons";
 
 export default function FloatingContact() {
   const [open, setOpen] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const isHoveredRef = useRef(false);
   const pathname = usePathname();
   const isProductPage = pathname.startsWith("/products/");
+
+  // Cứ mỗi 3s tự động xổ ra dòng chữ "Liên hệ in áo ngay"
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    let isMounted = true;
+
+    const cycle = () => {
+      if (!isMounted) return;
+      setShowTooltip(true);
+
+      // Hiển thị trong 3.5 giây rồi thu lại 1.5 giây trước khi xổ ra lượt tiếp theo
+      timer = setTimeout(() => {
+        if (!isMounted) return;
+        if (!isHoveredRef.current) {
+          setShowTooltip(false);
+        }
+        timer = setTimeout(cycle, 1500);
+      }, 3500);
+    };
+
+    // Bắt đầu xổ ra sau 1 giây đầu tiên khi tải trang
+    timer = setTimeout(cycle, 1000);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, []);
 
   return (
     <div
@@ -58,24 +88,65 @@ export default function FloatingContact() {
         </div>
       )}
 
-      {/* ── Nút chính kích hoạt Speed Dial ────────────────────────── */}
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-label={open ? "Đóng menu liên hệ" : "Mở menu liên hệ hỗ trợ"}
-        aria-expanded={open}
-        className="group relative grid h-12 w-12 sm:h-13 sm:w-13 place-items-center rounded-full bg-ink text-cream shadow-xl ring-2 ring-gold/40 transition-all duration-300 hover:scale-105 active:scale-95"
-      >
+      {/* ── Nút chính kích hoạt Speed Dial & Tooltip xổ ra ───────────── */}
+      <div className="relative flex items-center">
+        {/* ── Dòng chữ "Liên hệ in áo ngay" cứ 3s xổ ra sang bên trái ── */}
         {!open && (
-          <span className="absolute -inset-1 animate-ping rounded-full bg-gold/25 opacity-75 duration-1000 pointer-events-none" />
+          <div
+            onClick={() => setOpen(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") setOpen(true);
+            }}
+            onMouseEnter={() => {
+              isHoveredRef.current = true;
+              setShowTooltip(true);
+            }}
+            onMouseLeave={() => {
+              isHoveredRef.current = false;
+            }}
+            aria-label="Liên hệ in áo ngay"
+            className={`absolute right-full mr-3.5 top-1/2 -translate-y-1/2 cursor-pointer select-none transition-all duration-500 ease-out ${
+              showTooltip
+                ? "opacity-100 translate-x-0 scale-100 pointer-events-auto"
+                : "opacity-0 translate-x-3 scale-95 pointer-events-none"
+            }`}
+          >
+            <div className="relative flex items-center gap-2 rounded-full bg-[#8f633e] px-4 py-2 text-xs font-bold text-white shadow-xl hover:bg-[#734d2c] transition-colors whitespace-nowrap">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+              </span>
+              <span>Liên hệ in áo ngay</span>
+              <span className="text-[11px] opacity-90">↗</span>
+
+              {/* Mũi tên tam giác chỉ về nút điện thoại */}
+              <span
+                aria-hidden
+                className="absolute -right-1.5 top-1/2 -translate-y-1/2 h-0 w-0 border-y-[5px] border-y-transparent border-l-[6px] border-l-[#8f633e]"
+              />
+            </div>
+          </div>
         )}
-        {open ? (
-          <Close className="h-5 w-5 transition-transform duration-300 rotate-90" />
-        ) : (
-          <Phone className="h-5 w-5 text-gold-soft transition-transform duration-300 group-hover:rotate-12" />
-        )}
-      </button>
+
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-label={open ? "Đóng menu liên hệ" : "Mở menu liên hệ hỗ trợ"}
+          aria-expanded={open}
+          className="group relative grid h-12 w-12 sm:h-13 sm:w-13 place-items-center rounded-full bg-ink text-cream shadow-xl ring-2 ring-gold/40 transition-all duration-300 hover:scale-105 active:scale-95"
+        >
+          {!open && (
+            <span className="absolute -inset-1 animate-ping rounded-full bg-gold/25 opacity-75 duration-1000 pointer-events-none" />
+          )}
+          {open ? (
+            <Close className="h-5 w-5 transition-transform duration-300 rotate-90" />
+          ) : (
+            <Phone className="h-5 w-5 text-gold-soft transition-transform duration-300 group-hover:rotate-12" />
+          )}
+        </button>
+      </div>
     </div>
   );
 }
-

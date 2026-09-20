@@ -14,7 +14,8 @@ export default async function Categories() {
   return (
     <section id="categories" className="shell section">
       <SectionHeading
-        title={heading(content, "categories.title", "DANH MỤC NỔI BẬT")}
+        eyebrow="DANH MỤC SẢN PHẨM"
+        title={heading(content, "categories.title", "TÌM THEO DANH MỤC")}
         subtitle="Khám phá các dòng sản phẩm cơ bản chất lượng cao, bền bỉ cho mọi hoạt động hàng ngày."
       />
 
@@ -37,12 +38,12 @@ export default async function Categories() {
 
             <div className="p-3 sm:p-4 bg-white border-t border-line flex items-center justify-between">
               <div>
-                <h3 className="font-sans text-xs sm:text-sm font-bold uppercase tracking-wider text-ink group-hover:text-[#e60012] transition-colors">
+                <h3 className="font-sans text-xs sm:text-sm font-bold uppercase tracking-wider text-ink group-hover:text-[#8f633e] transition-colors">
                   {category.title}
                 </h3>
                 <p className="text-[11px] text-muted mt-0.5">{category.label}</p>
               </div>
-              <span className="text-xs font-bold uppercase text-ink underline underline-offset-2 group-hover:text-[#e60012]">
+              <span className="text-xs font-bold uppercase text-ink underline underline-offset-2 group-hover:text-[#8f633e]">
                 XEM
               </span>
             </div>

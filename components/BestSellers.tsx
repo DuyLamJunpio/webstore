@@ -37,8 +37,8 @@ export default function BestSellers({
       <div className="shell">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-line pb-4">
           <div>
-            <span className="inline-block bg-[#e60012] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-white shadow-2xs">
-              LIMITED OFFER & XU HƯỚNG
+            <span className="inline-block bg-[#8f633e] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-white shadow-2xs">
+              BÁN CHẠY NHẤT
             </span>
             <h2 className="mt-2 font-sans text-[clamp(1.75rem,3.5vw,2.75rem)] font-extrabold leading-[1.1] tracking-[-0.01em] uppercase text-ink">
               {title}
@@ -79,7 +79,7 @@ export default function BestSellers({
                 onClick={() => setFilter(item)}
                 className={`h-9 shrink-0 px-4 text-xs font-bold uppercase tracking-wider transition-colors ${
                   isActive
-                    ? "bg-[#e60012] text-white shadow-xs"
+                    ? "bg-[#8f633e] text-white shadow-xs"
                     : "border border-line-strong bg-white text-ink hover:border-black"
                 }`}
               >

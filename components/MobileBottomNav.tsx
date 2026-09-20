@@ -28,7 +28,7 @@ export default function MobileBottomNav() {
       <Link
         href="/"
         className={`flex flex-1 flex-col items-center justify-center gap-1 py-1 text-[11px] font-medium transition-colors ${
-          isHome ? "text-[#e60012] font-bold" : "text-muted hover:text-ink"
+          isHome ? "text-[#8f633e] font-bold" : "text-muted hover:text-ink"
         }`}
       >
         <div className={`grid h-6 w-6 place-items-center transition-transform ${isHome ? "scale-105" : ""}`}>
@@ -40,7 +40,7 @@ export default function MobileBottomNav() {
       <Link
         href="/shop"
         className={`flex flex-1 flex-col items-center justify-center gap-1 py-1 text-[11px] font-medium transition-colors ${
-          isShop ? "text-[#e60012] font-bold" : "text-muted hover:text-ink"
+          isShop ? "text-[#8f633e] font-bold" : "text-muted hover:text-ink"
         }`}
       >
         <div className={`grid h-6 w-6 place-items-center transition-transform ${isShop ? "scale-105" : ""}`}>
@@ -51,10 +51,10 @@ export default function MobileBottomNav() {
 
       <Link
         href="/shop?new=1"
-        className="flex flex-1 flex-col items-center justify-center gap-1 py-1 text-[11px] font-medium text-muted transition-colors hover:text-[#e60012]"
+        className="flex flex-1 flex-col items-center justify-center gap-1 py-1 text-[11px] font-medium text-muted transition-colors hover:text-[#8f633e]"
       >
         <div className="grid h-6 w-6 place-items-center">
-          <Sparkles className="h-5 w-5 text-[#e60012]" />
+          <Sparkles className="h-5 w-5 text-[#8f633e]" />
         </div>
         <span>Hàng mới</span>
       </Link>
@@ -68,7 +68,7 @@ export default function MobileBottomNav() {
         <div className="relative grid h-6 w-6 place-items-center">
           <Bag className="h-5 w-5" />
           {cartCount > 0 && (
-            <span className="absolute -right-2 -top-1 grid h-4 min-w-4 place-items-center bg-[#e60012] px-1 text-[9px] font-bold text-white shadow-xs">
+            <span className="absolute -right-2 -top-1 grid h-4 min-w-4 place-items-center bg-[#8f633e] px-1 text-[9px] font-bold text-white shadow-xs">
               {cartCount}
             </span>
           )}

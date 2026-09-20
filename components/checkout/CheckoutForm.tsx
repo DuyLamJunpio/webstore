@@ -812,7 +812,7 @@ function CheckoutFields({
                     href={CONTACT.zaloUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="border border-black bg-black px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#e60012] hover:border-[#e60012]"
+                    className="border border-black bg-black px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#8f633e] hover:border-[#8f633e]"
                   >
                     Nhắn Zalo
                   </a>
@@ -824,7 +824,7 @@ function CheckoutFields({
                   </a>
                 </div>
 
-                <p className="mt-3 font-mono text-[11px] text-[#e60012]">
+                <p className="mt-3 font-mono text-[11px] text-[#8f633e]">
                   Mã mẫu: {printDrafts.map((draft) => draft.code).join(", ")}
                 </p>
               </div>
@@ -832,7 +832,7 @@ function CheckoutFields({
               <button
                 type="submit"
                 disabled={submitting}
-                className="mt-5 flex h-12 w-full items-center justify-center gap-2 bg-[#e60012] text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#cc0010] active:scale-[0.99] disabled:opacity-75 disabled:cursor-wait shadow-xs"
+                className="mt-5 flex h-12 w-full items-center justify-center gap-2 bg-[#8f633e] text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#734d2c] active:scale-[0.99] disabled:opacity-75 disabled:cursor-wait shadow-xs"
               >
                 {submitting ? (
                   <>

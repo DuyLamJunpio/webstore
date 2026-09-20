@@ -4,19 +4,19 @@
   --font-sans: var(--font-be-vietnam), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-be-vietnam), ui-sans-serif, system-ui, sans-serif;
 
-  /* Concept UNIQLO — Tối giản, LifeWear: Đỏ UNIQLO / Đen than / Trắng sạch / Xám nhạt */
-  --color-uniqlo-red: #e60012;
-  --color-red-deep: #cc0010;
+  /* The Basic Concept — Tối giản: Màu nâu logo / Đen than / Trắng sạch / Kem nhạt */
+  --color-uniqlo-red: #8f633e;
+  --color-red-deep: #734d2c;
   --color-ink: #1b1b1b;
   --color-ink-soft: #333333;
-  --color-gold: #e60012;
-  --color-gold-soft: #ff4d4f;
-  --color-gold-deep: #cc0010;
+  --color-gold: #8f633e;
+  --color-gold-soft: #b38865;
+  --color-gold-deep: #734d2c;
   --color-muted: #767676;
   --color-cream: #ffffff;
-  --color-cream-dark: #f4f4f4;
+  --color-cream-dark: #f4efe9;
   --color-surface: #ffffff;
-  --color-bg-subtle: #f7f7f7;
+  --color-bg-subtle: #faf8f5;
   --color-line: #e5e5e5;
   --color-line-strong: #cccccc;
 
