@@ -3,7 +3,6 @@ import SectionHeading from "@/components/SectionHeading";
 import { ArrowUpRight, Check, Phone, Sparkles } from "@/components/icons";
 import BlankPicker from "@/components/print/BlankPicker";
 import { CONTACT } from "@/lib/contact";
-import { formatPrice } from "@/lib/data";
 import { bookableBlanks, getPrintCatalogue } from "@/lib/print-catalogue";
 
 export const metadata: Metadata = {
@@ -27,43 +26,12 @@ export default async function PrintLandingPage() {
   }
 
   const blanks = bookableBlanks(catalogue);
-  const cheapest = blanks.reduce((min, b) => Math.min(min, b.base_price), Infinity);
-  const fastest = blanks.reduce((min, b) => Math.min(min, b.lead_days), Infinity);
 
   return (
     <main className="pb-20">
-      {/* ── Mở đầu ── */}
-      <section className="shell pt-28 sm:pt-32 lg:pt-36 pb-8">
-        <div className="measure text-center">
-          <p className="eyebrow text-gold-deep">Dịch vụ của shop</p>
-          <h1 className="mt-3 font-serif text-4xl sm:text-5xl leading-[1.1] text-ink text-balance">
-            In áo theo thiết kế của bạn
-          </h1>
-          <p className="mt-4 text-sm sm:text-base text-muted">
-            Chọn phôi, chọn màu và size, rồi kéo hình của bạn lên áo. Giá hiện ngay theo từng thay đổi —
-            không phải nhắn tin chờ báo giá.
-          </p>
-        </div>
-
-        {/* ── Thống kê phôi & dịch vụ ── */}
-        {blanks.length > 0 && (
-          <dl className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto">
-            {[
-              { k: "Phôi đang có", v: String(blanks.length) },
-              { k: "Giá phôi từ", v: formatPrice(cheapest) },
-              { k: "Kỹ thuật in", v: String(catalogue.techniques.length) },
-              { k: "Giao nhanh nhất", v: `${fastest} ngày` },
-            ].map((stat) => (
-              <div key={stat.k} className="rounded-card border border-line bg-surface px-4 py-3.5 text-center shadow-2xs">
-                <dt className="eyebrow text-muted text-[10px] sm:text-[11px]">{stat.k}</dt>
-                <dd className="mt-1 font-semibold text-ink tabular-nums text-sm sm:text-base">{stat.v}</dd>
-              </div>
-            ))}
-          </dl>
-        )}
-
-        {/* ── Banner: Đặt in đồng phục & Số lượng lớn (Đưa lên đầu trang) ── */}
-        <div className="mt-8 overflow-hidden rounded-3xl border border-gold/40 bg-gradient-to-br from-cream via-surface to-cream-dark/50 p-6 sm:p-8 md:p-10 shadow-sm ring-1 ring-line/60">
+      {/* ── Banner: Đặt in đồng phục & Số lượng lớn (Đưa lên đầu trang) ── */}
+      <section className="shell pt-28 sm:pt-32 lg:pt-36 pb-4">
+        <div className="overflow-hidden rounded-3xl border border-gold/40 bg-gradient-to-br from-cream via-surface to-cream-dark/50 p-6 sm:p-8 md:p-10 shadow-sm ring-1 ring-line/60">
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:gap-10 items-center">
             <div>
               <span className="eyebrow inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3 py-1 text-xs font-bold text-gold-deep">

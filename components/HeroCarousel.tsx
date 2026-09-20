@@ -111,7 +111,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           {/* ── Hero Text Content ── */}
           <div className="shell absolute inset-0 z-20 flex flex-col justify-end pb-16 sm:pb-20 lg:pb-24">
             <div className="max-w-2xl text-white">
-              <span className="inline-block bg-[#e60012] px-3 py-1 text-[11px] font-black uppercase tracking-widest text-white shadow-xs">
+              <span className="inline-block bg-[#8f633e] px-3 py-1 text-[11px] font-black uppercase tracking-widest text-white shadow-xs">
                 LIFEWEAR COLLECTION
               </span>
 
@@ -131,7 +131,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                 <div className="mt-6 sm:mt-8 flex items-center gap-3">
                   <Link
                     href={ctaLink}
-                    className="inline-flex h-12 items-center gap-2 bg-white px-8 text-xs sm:text-sm font-bold uppercase tracking-wider text-ink shadow-md transition-all hover:bg-[#e60012] hover:text-white active:scale-98"
+                    className="inline-flex h-12 items-center gap-2 bg-white px-8 text-xs sm:text-sm font-bold uppercase tracking-wider text-ink shadow-md transition-all hover:bg-[#8f633e] hover:text-white active:scale-98"
                   >
                     <span>{ctaLabel}</span>
                     <ArrowUpRight className="h-4 w-4" />
@@ -158,7 +158,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                     aria-label={`Xem ảnh ${i + 1}`}
                     aria-current={i === active}
                     className={`h-1 transition-all duration-300 ${
-                      i === active ? "w-10 bg-[#e60012]" : "w-4 bg-white/40 hover:bg-white/75"
+                      i === active ? "w-10 bg-[#8f633e]" : "w-4 bg-white/40 hover:bg-white/75"
                     }`}
                   />
                 ))}

@@ -4,12 +4,13 @@ import Categories from "@/components/Categories";
 import FacebookSection from "@/components/FacebookSection";
 import Hero from "@/components/Hero";
 import LifeWearStory from "@/components/LifeWearStory";
-import NewArrivals from "@/components/NewArrivals";
+import LimitedOffer from "@/components/LimitedOffer";
 import Newsletter from "@/components/Newsletter";
+import PrintOnDemandSection from "@/components/PrintOnDemandSection";
 import Promises from "@/components/Promises";
-import SeasonalDrop from "@/components/SeasonalDrop";
 import ShopeeStore from "@/components/ShopeeStore";
 import Testimonials from "@/components/Testimonials";
+import UniformSection from "@/components/UniformSection";
 import { getCatalogue } from "@/lib/catalogue";
 import { getContent, heading } from "@/lib/content";
 
@@ -21,15 +22,32 @@ export default async function Home() {
     <>
       <Hero />
       <AnnouncementBar />
-      <NewArrivals />
+
+      {/* 1. Tìm theo danh mục */}
       <Categories />
-      <SeasonalDrop />
+
+      {/* 2. Khuyến mãi có hạn */}
+      <LimitedOffer />
+
+      {/* 3. Sản phẩm bán chạy */}
       <BestSellers
         products={bestSellers}
         filters={bestSellerFilters}
-        title={heading(content, "best_sellers.title", "Bán Chạy Nhất")}
-        subtitle={heading(content, "best_sellers.subtitle", "Những mẫu trang phục được khách hàng yêu thích và lựa chọn nhiều nhất.")}
+        title={heading(content, "best_sellers.title", "Sản Phẩm Bán Chạy")}
+        subtitle={heading(
+          content,
+          "best_sellers.subtitle",
+          "Những mẫu trang phục được khách hàng yêu thích và lựa chọn nhiều nhất.",
+        )}
       />
+
+      {/* 4. In Thiết Kế theo yêu cầu */}
+      <PrintOnDemandSection />
+
+      {/* 5. Đồng Phục */}
+      <UniformSection />
+
+      {/* Từ phần TRIẾT LÝ LIFEWEAR trở xuống giữ nguyên */}
       <LifeWearStory />
       <ShopeeStore products={newArrivals.slice(0, 2)} />
       <FacebookSection />
@@ -39,4 +57,3 @@ export default async function Home() {
     </>
   );
 }
-

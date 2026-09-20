@@ -48,13 +48,13 @@ export default function ProductPurchase({ product }: { product: Product }) {
     <div id="product-purchase-box">
       {/* ── Giá sản phẩm ── */}
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
-        <p className={`text-2xl sm:text-3xl font-black ${showDiscount ? "text-[#e60012]" : "text-ink"}`}>{formatPrice(price)}</p>
+        <p className={`text-2xl sm:text-3xl font-black ${showDiscount ? "text-[#8f633e]" : "text-ink"}`}>{formatPrice(price)}</p>
         {showDiscount && product.comparePrice && (
           <>
             <p className="text-base sm:text-lg text-[#777777] line-through">
               {formatPrice(product.comparePrice)}
             </p>
-            <span className="bg-[#e60012] px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white shadow-2xs">
+            <span className="bg-[#8f633e] px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white shadow-2xs">
               GIẢM {discountPercent}%
             </span>
           </>
@@ -116,7 +116,7 @@ export default function ProductPurchase({ product }: { product: Product }) {
           <p className="text-xs font-bold uppercase tracking-wider text-[#666666]">KÍCH CỠ</p>
           <button
             type="button"
-            className="text-xs text-black font-bold uppercase tracking-wider underline underline-offset-4 transition-colors hover:text-[#e60012]"
+            className="text-xs text-black font-bold uppercase tracking-wider underline underline-offset-4 transition-colors hover:text-[#8f633e]"
             onClick={() => setShowSizeGuide(true)}
           >
             Bảng hướng dẫn chọn size
@@ -154,7 +154,7 @@ export default function ProductPurchase({ product }: { product: Product }) {
           ) : variant && variant.stock === 0 ? (
             <span className="text-[#777777]">Size này đã hết hàng.</span>
           ) : variant && variant.stock <= LOW_STOCK ? (
-            <span className="text-[#e60012] font-bold">Chỉ còn {variant.stock} sản phẩm ở size này.</span>
+            <span className="text-[#8f633e] font-bold">Chỉ còn {variant.stock} sản phẩm ở size này.</span>
           ) : variant ? (
             <span className="text-[#777777]">Còn hàng — giao trong 1–2 ngày làm việc.</span>
           ) : (
@@ -185,7 +185,7 @@ export default function ProductPurchase({ product }: { product: Product }) {
             type="button"
             onClick={buyNow}
             disabled={styleSoldOut || colorSoldOut || isBuying}
-            className="inline-flex h-12 w-full items-center justify-center gap-2 bg-[#e60012] px-6 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-[#cc0010] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#e60012]/40"
+            className="inline-flex h-12 w-full items-center justify-center gap-2 bg-[#8f633e] px-6 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-[#734d2c] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#8f633e]/40"
           >
             {isBuying ? (
               <>
@@ -203,14 +203,14 @@ export default function ProductPurchase({ product }: { product: Product }) {
       </div>
 
       {error && (
-        <p aria-live="polite" className="mt-3 text-xs font-bold text-[#e60012]">
+        <p aria-live="polite" className="mt-3 text-xs font-bold text-[#8f633e]">
           {error}
         </p>
       )}
 
       <p className="mt-4 text-xs leading-relaxed text-[#777777]">
         Không cần đăng ký tài khoản — giỏ hàng được lưu tự động trên thiết bị này.{" "}
-        <Link href="/cart" className="font-bold text-black underline underline-offset-4 hover:text-[#e60012]">
+        <Link href="/cart" className="font-bold text-black underline underline-offset-4 hover:text-[#8f633e]">
           Xem giỏ hàng
         </Link>
       </p>

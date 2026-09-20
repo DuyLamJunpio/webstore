@@ -33,7 +33,7 @@ export default function ActiveFilters({
       <button
         type="button"
         onClick={clearAll}
-        className="h-7 px-2 text-xs font-bold uppercase tracking-wider text-[#e60012] underline underline-offset-4 transition-colors hover:text-black"
+        className="h-7 px-2 text-xs font-bold uppercase tracking-wider text-[#8f633e] underline underline-offset-4 transition-colors hover:text-black"
       >
         Xoá tất cả
       </button>

@@ -44,7 +44,7 @@ function Checkbox({
   return (
     <label
       className={`flex cursor-pointer items-center gap-3 py-1.5 text-xs sm:text-sm transition-colors ${
-        disabled ? "cursor-not-allowed opacity-35" : "hover:text-[#e60012]"
+        disabled ? "cursor-not-allowed opacity-35" : "hover:text-[#8f633e]"
       }`}
     >
       <input
@@ -97,7 +97,7 @@ function Facets({ queryString, counts, facets }: Omit<Props, "activeCount">) {
   };
 
   const flag = (key: string, label: string) => (
-    <label className="flex cursor-pointer items-center gap-3 py-1.5 text-xs sm:text-sm hover:text-[#e60012]">
+    <label className="flex cursor-pointer items-center gap-3 py-1.5 text-xs sm:text-sm hover:text-[#8f633e]">
       <input
         type="checkbox"
         checked={params.get(key) === "1"}
@@ -269,7 +269,7 @@ export default function ShopFilters({ queryString, counts, facets, activeCount }
           <Filter className="h-3.5 w-3.5" />
           <span>BỘ LỌC</span>
           {activeCount > 0 && (
-            <span className="grid h-4 min-w-4 place-items-center bg-[#e60012] px-1 text-[10px] font-black text-white">
+            <span className="grid h-4 min-w-4 place-items-center bg-[#8f633e] px-1 text-[10px] font-black text-white">
               {activeCount}
             </span>
           )}
@@ -289,7 +289,7 @@ export default function ShopFilters({ queryString, counts, facets, activeCount }
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-black uppercase tracking-wider">BỘ LỌC TÌM KIẾM</p>
                   {activeCount > 0 && (
-                    <span className="bg-[#e60012] px-1.5 py-0.5 text-[10px] font-black text-white">
+                    <span className="bg-[#8f633e] px-1.5 py-0.5 text-[10px] font-black text-white">
                       {activeCount}
                     </span>
                   )}
@@ -319,7 +319,7 @@ export default function ShopFilters({ queryString, counts, facets, activeCount }
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="h-11 flex-1 bg-[#e60012] text-xs font-bold uppercase tracking-wider text-white transition-opacity hover:opacity-90 active:scale-95"
+                  className="h-11 flex-1 bg-[#8f633e] text-xs font-bold uppercase tracking-wider text-white transition-opacity hover:opacity-90 active:scale-95"
                 >
                   Xem kết quả
                 </button>
@@ -338,7 +338,7 @@ export default function ShopFilters({ queryString, counts, facets, activeCount }
               <button
                 type="button"
                 onClick={clearAll}
-                className="text-xs text-[#e60012] font-bold uppercase tracking-wider underline underline-offset-4 transition-colors hover:text-black"
+                className="text-xs text-[#8f633e] font-bold uppercase tracking-wider underline underline-offset-4 transition-colors hover:text-black"
               >
                 Xoá tất cả ({activeCount})
               </button>

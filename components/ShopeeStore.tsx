@@ -49,7 +49,7 @@ export default async function ShopeeStore({ products: initialProducts }: { produ
             <ul className="mt-6 flex flex-col gap-3">
               {perks.map(({ Icon, text }) => (
                 <li key={text} className="flex items-center gap-3 text-xs sm:text-sm text-ink/90">
-                  <span className="grid h-8 w-8 shrink-0 place-items-center bg-white border border-line text-[#e60012]">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center bg-white border border-line text-[#8f633e]">
                     <Icon className="h-4 w-4" />
                   </span>
                   <span>{text}</span>

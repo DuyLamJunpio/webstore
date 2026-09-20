@@ -145,7 +145,7 @@ export default function ProductGallery({
         )}
 
         {badge && (
-          <span className="pointer-events-none absolute left-3 top-3 bg-[#e60012] px-2.5 py-1 text-[10px] font-black uppercase tracking-widest leading-none text-white shadow-xs">
+          <span className="pointer-events-none absolute left-3 top-3 bg-[#8f633e] px-2.5 py-1 text-[10px] font-black uppercase tracking-widest leading-none text-white shadow-xs">
             {badge}
           </span>
         )}

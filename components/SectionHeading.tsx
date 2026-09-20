@@ -18,7 +18,7 @@ export default function SectionHeading({
     return (
       <div className="flex flex-col items-center text-center">
         {eyebrow && (
-          <span className="mb-2 inline-block bg-[#e60012] px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white">
+          <span className="mb-2 inline-block bg-[#8f633e] px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white">
             {eyebrow}
           </span>
         )}
@@ -43,7 +43,7 @@ export default function SectionHeading({
     <div className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-4">
       <div>
         {eyebrow && (
-          <span className="mb-2 inline-block bg-[#e60012] px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white">
+          <span className="mb-2 inline-block bg-[#8f633e] px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white">
             {eyebrow}
           </span>
         )}

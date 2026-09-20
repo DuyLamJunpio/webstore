@@ -39,7 +39,7 @@ export default async function SeasonalDrop() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 p-6 sm:p-9 text-white">
-                <span className="inline-block bg-[#e60012] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-white shadow-2xs">
+                <span className="inline-block bg-[#8f633e] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-white shadow-2xs">
                   BỘ SƯU TẬP ĐẶC BIỆT
                 </span>
                 <h2 className="mt-3 font-sans text-[clamp(1.75rem,3.2vw,3rem)] font-extrabold uppercase leading-[1.05] tracking-[-0.015em] text-white">
@@ -51,7 +51,7 @@ export default async function SeasonalDrop() {
                 {collection.ctaLabel && collection.ctaLink ? (
                   <Link
                     href={collection.ctaLink}
-                    className="mt-6 inline-flex h-11 items-center gap-2 bg-white px-7 text-xs font-bold uppercase tracking-wider text-ink transition-colors hover:bg-[#e60012] hover:text-white"
+                    className="mt-6 inline-flex h-11 items-center gap-2 bg-white px-7 text-xs font-bold uppercase tracking-wider text-ink transition-colors hover:bg-[#8f633e] hover:text-white"
                   >
                     <span>{collection.ctaLabel}</span>
                     <ArrowUpRight className="h-4 w-4" />

@@ -35,7 +35,7 @@ export default function SizeGuideModal({ onClose }: { onClose: () => void }) {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#e5e5e5] px-5 py-4 sm:px-6">
           <div className="flex items-center gap-2">
-            <span className="bg-[#e60012] px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white">
+            <span className="bg-[#8f633e] px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white">
               LIFEWEAR SIZE
             </span>
             <h2 className="text-sm sm:text-base font-black uppercase tracking-tight text-ink">
@@ -81,7 +81,7 @@ export default function SizeGuideModal({ onClose }: { onClose: () => void }) {
           <button
             type="button"
             onClick={onClose}
-            className="h-11 w-full sm:w-auto sm:px-8 border border-black bg-black text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#e60012] active:scale-95 shadow-xs"
+            className="h-11 w-full sm:w-auto sm:px-8 border border-black bg-black text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#8f633e] active:scale-95 shadow-xs"
           >
             ĐÃ HIỂU, QUAY LẠI CHỌN SIZE
           </button>

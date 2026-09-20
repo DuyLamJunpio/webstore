@@ -6,7 +6,7 @@ export default function Promises() {
     <section id="promises" className="shell section">
       <div className="border border-line bg-[#f7f7f7] p-6 sm:p-10 lg:p-12">
         <div className="text-center max-w-2xl mx-auto">
-          <span className="inline-block bg-[#e60012] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-white shadow-2xs">
+          <span className="inline-block bg-[#8f633e] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-white shadow-2xs">
             TIỆN ÍCH & DỊCH VỤ
           </span>
           <h2 className="mt-3 font-sans text-[clamp(1.75rem,3.2vw,2.75rem)] font-extrabold uppercase leading-[1.1] tracking-[-0.01em] text-ink">
@@ -25,7 +25,7 @@ export default function Promises() {
                 key={item.title}
                 className="flex flex-col border border-line bg-white p-6 transition-all hover:border-black/50"
               >
-                <span className="grid h-10 w-10 place-items-center bg-[#f4f4f4] text-[#e60012]">
+                <span className="grid h-10 w-10 place-items-center bg-[#f4f4f4] text-[#8f633e]">
                   <Icon />
                 </span>
                 <h3 className="mt-4 text-sm font-bold uppercase tracking-wider text-ink">{item.title}</h3>
