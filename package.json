@@ -11,7 +11,6 @@
     "shopee:auth": "tsx scripts/shopee-auth.mts",
     "sync:shopee": "tsx scripts/sync-shopee.mts",
     "import:shopee": "tsx scripts/import-shopee.mts",
-    "payos:webhook": "tsx scripts/payos-webhook.mts",
     "email:test": "tsx scripts/email-test.mts"
   },
   "dependencies": {

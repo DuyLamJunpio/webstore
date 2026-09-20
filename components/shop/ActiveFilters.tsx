@@ -23,17 +23,17 @@ export default function ActiveFilters({
           type="button"
           onClick={() => removeChip(filter.key, filter.value)}
           aria-label={`Bỏ bộ lọc ${filter.label}`}
-          className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line-strong bg-surface pl-3.5 pr-2.5 text-[13px] transition-colors hover:border-ink"
+          className="inline-flex h-7 items-center gap-1.5 border border-[#d5d5d5] bg-white pl-2.5 pr-2 text-xs font-semibold text-ink transition-colors hover:border-black"
         >
-          {filter.label}
-          <Close className="h-3.5 w-3.5 text-muted" />
+          <span>{filter.label}</span>
+          <Close className="h-3 w-3 text-[#777777]" />
         </button>
       ))}
 
       <button
         type="button"
         onClick={clearAll}
-        className="h-8 px-2 text-[13px] text-muted underline underline-offset-4 transition-colors hover:text-ink"
+        className="h-7 px-2 text-xs font-bold uppercase tracking-wider text-[#e60012] underline underline-offset-4 transition-colors hover:text-black"
       >
         Xoá tất cả
       </button>

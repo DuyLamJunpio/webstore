@@ -48,19 +48,19 @@ export default function CartView() {
 
   if (items.length === 0 && !hasPrint) {
     return (
-      <div className="mt-8 rounded-block border border-line bg-surface px-6 py-16 text-center shadow-xs">
-        <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-cream ring-1 ring-line text-muted">
+      <div className="mt-8 border border-line bg-white px-6 py-16 text-center shadow-xs">
+        <div className="mx-auto grid h-16 w-16 place-items-center border border-[#e5e5e5] bg-[#f7f7f7] text-[#777777]">
           <Bag className="h-7 w-7" />
         </div>
-        <p className="mt-4 font-serif text-2xl sm:text-3xl font-semibold text-ink">Giỏ hàng đang trống</p>
-        <p className="measure mt-3 text-sm sm:text-[15px] leading-relaxed text-muted">
-          Chưa có sản phẩm nào trong giỏ. Các món bạn thêm sẽ được tự động lưu lại trên trình duyệt của bạn.
+        <p className="mt-4 font-sans text-xl sm:text-2xl font-black uppercase text-ink">Giỏ hàng đang trống</p>
+        <p className="measure mt-3 text-xs sm:text-sm leading-relaxed text-[#777777]">
+          Chưa có sản phẩm nào trong giỏ. Các món bạn thêm sẽ được tự động lưu lại trên thiết bị của bạn.
         </p>
         <Link
           href="/shop"
-          className="mt-6 inline-flex h-11 items-center gap-2 rounded-full bg-ink px-7 text-sm font-semibold text-cream shadow-xs transition-transform hover:scale-105 active:scale-95"
+          className="mt-6 inline-flex h-11 items-center gap-2 bg-[#e60012] px-7 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-[#cc0010]"
         >
-          <span>Khám phá sản phẩm</span>
+          <span>KHÁM PHÁ SẢN PHẨM</span>
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
@@ -191,40 +191,40 @@ export default function CartView() {
 
       {/* ── Order Summary ── */}
       <aside className="lg:sticky lg:top-[92px] lg:self-start">
-        <div className="rounded-block border border-line bg-surface p-6 shadow-sm">
-          <h2 className="eyebrow font-bold text-ink">Tóm tắt đơn hàng</h2>
+        <div className="border border-line bg-white p-6 shadow-sm">
+          <h2 className="text-xs font-black uppercase tracking-wider text-ink border-b border-[#e5e5e5] pb-3">TÓM TẮT ĐƠN HÀNG</h2>
 
           <dl className="mt-5 flex flex-col gap-3 text-sm">
             <div className="flex justify-between">
-              <dt className="text-muted">Tạm tính ({totalCount} món)</dt>
-              <dd className="font-semibold text-ink">{formatPrice(totalSubtotal)}</dd>
+              <dt className="text-[#777777]">Tạm tính ({totalCount} món)</dt>
+              <dd className="font-bold text-ink">{formatPrice(totalSubtotal)}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-muted">Phí giao hàng</dt>
-              <dd className="font-semibold text-ink">
+              <dt className="text-[#777777]">Phí giao hàng</dt>
+              <dd className="font-bold text-ink">
                 {shipping === 0 ? (
-                  <span className="text-gold-deep font-bold">Miễn phí</span>
+                  <span className="text-[#e60012] font-black uppercase text-xs">Miễn phí</span>
                 ) : (
                   formatPrice(shipping)
                 )}
               </dd>
             </div>
-            <div className="mt-2 flex justify-between border-t border-line pt-4 text-base sm:text-lg">
-              <dt className="font-bold text-ink">Tổng cộng</dt>
-              <dd className="font-bold text-ink">{formatPrice(totalSubtotal + shipping)}</dd>
+            <div className="mt-2 flex justify-between border-t border-[#e5e5e5] pt-4 text-base sm:text-lg">
+              <dt className="font-black uppercase text-ink">Tổng cộng</dt>
+              <dd className="font-black text-[#e60012]">{formatPrice(totalSubtotal + shipping)}</dd>
             </div>
           </dl>
 
           <Link
             href="/checkout"
-            className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-ink text-sm font-semibold text-cream shadow-sm transition-transform hover:scale-102 active:scale-98"
+            className="mt-6 flex h-12 w-full items-center justify-center gap-2 bg-[#e60012] text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-[#cc0010]"
           >
-            <span>Tiến hành đặt hàng</span>
+            <span>TIẾN HÀNH ĐẶT HÀNG</span>
             <ArrowRight className="h-4 w-4" />
           </Link>
 
-          <div className="mt-5 rounded-xl bg-cream/70 p-3.5 text-xs leading-relaxed text-muted border border-line/60">
-            🔒 Thanh toán bảo mật bằng chuyển khoản VietQR hoặc thẻ qua PayOS. Không cần tạo tài khoản.
+          <div className="mt-5 border border-[#e5e5e5] bg-[#f7f7f7] p-3.5 text-xs leading-relaxed text-[#777777]">
+            🔒 Thanh toán bảo mật bằng VietQR, SePay tự động đối soát. Không cần tạo tài khoản.
           </div>
         </div>
       </aside>

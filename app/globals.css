@@ -2,27 +2,30 @@
 
 @theme {
   --font-sans: var(--font-be-vietnam), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-playfair), ui-serif, Georgia, serif;
+  --font-serif: var(--font-be-vietnam), ui-sans-serif, system-ui, sans-serif;
 
-  /* The Basic Concept — sang trọng, ấm áp: đen nâu / nâu kim / be / trắng sứ */
-  --color-ink: #181412;
-  --color-ink-soft: #27211e;
-  --color-gold: #b38b59;
-  --color-gold-soft: #ccaF8a;
-  --color-gold-deep: #8c6436;
-  --color-muted: #786757;
-  --color-cream: #faf7f2;
-  --color-cream-dark: #f0e9df;
+  /* Concept UNIQLO — Tối giản, LifeWear: Đỏ UNIQLO / Đen than / Trắng sạch / Xám nhạt */
+  --color-uniqlo-red: #e60012;
+  --color-red-deep: #cc0010;
+  --color-ink: #1b1b1b;
+  --color-ink-soft: #333333;
+  --color-gold: #e60012;
+  --color-gold-soft: #ff4d4f;
+  --color-gold-deep: #cc0010;
+  --color-muted: #767676;
+  --color-cream: #ffffff;
+  --color-cream-dark: #f4f4f4;
   --color-surface: #ffffff;
-  --color-line: rgba(24, 20, 18, 0.08);
-  --color-line-strong: rgba(24, 20, 18, 0.15);
+  --color-bg-subtle: #f7f7f7;
+  --color-line: #e5e5e5;
+  --color-line-strong: #cccccc;
 
-  --radius-card: 14px;
-  --radius-block: 22px;
+  --radius-card: 0px;
+  --radius-block: 0px;
 }
 
 :root {
-  --background: var(--color-cream);
+  --background: #ffffff;
   --foreground: var(--color-ink);
   --header-height: 72px;
   --mobile-bottom-nav-height: 64px;
@@ -77,15 +80,11 @@ body {
 }
 
 .gold-text {
-  background: linear-gradient(
-    135deg,
-    var(--color-gold-soft) 0%,
-    var(--color-gold) 45%,
-    var(--color-gold-deep) 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--color-uniqlo-red);
+}
+
+.uniqlo-red-text {
+  color: var(--color-uniqlo-red);
 }
 
 @utility section {

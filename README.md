@@ -20,7 +20,7 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Thanh toán (PayOS)
+## Thanh toán (SePay)
 
 Khách mua không cần tài khoản. Luồng thanh toán là chuyển khoản ngân hàng qua VietQR:
 
@@ -32,44 +32,38 @@ Khách mua không cần tài khoản. Luồng thanh toán là chuyển khoản n
 cp .env.example .env.local
 ```
 
-Điền ba khoá lấy từ [my.payos.vn](https://my.payos.vn) → **Kênh thanh toán → Thông tin xác thực API**:
+Tạo một webhook ở [SePay](https://my.sepay.vn) với xác thực **API Key**, rồi điền:
 
-| Biến                  | Ý nghĩa                                     |
-| --------------------- | ------------------------------------------- |
-| `PAYOS_CLIENT_ID`     | Client ID                                    |
-| `PAYOS_API_KEY`       | API Key                                      |
-| `PAYOS_CHECKSUM_KEY`  | Checksum Key — dùng để ký và xác thực chữ ký |
-| `NEXT_PUBLIC_SITE_URL`| Địa chỉ trang web, dùng cho returnUrl/cancelUrl |
+| Biến | Ý nghĩa |
+| --- | --- |
+| `SEPAY_WEBHOOK_API_KEY` | Cùng API key đã đặt ở webhook SePay |
+| `SEPAY_API_ACCESS_TOKEN` | API Token tạo trong SePay → API Access, chỉ dùng ở máy chủ để lấy tài khoản nhận tiền |
+| `SEPAY_BANK_ACCOUNT_ID` | ID tài khoản SePay; bắt buộc nếu có nhiều tài khoản hoạt động |
+| `SEPAY_PAYMENT_PREFIX` | Tiền tố mã thanh toán, mặc định `TBC` |
 
-Nếu thiếu ba khoá PayOS, trang thanh toán chạy ở **chế độ xem thử**: mã QR được tạo tại chỗ từ
-tài khoản ngân hàng trong `SHOP_BANK_*` và không có đối soát tự động.
+QR VietQR được tạo tại chỗ với nội dung `TBC<10-ký-tự>`. Trong **Cấu hình chung** của
+SePay, tạo mã thanh toán có tiền tố `TBC`, hậu tố 10 ký tự chữ/số. Nếu dùng tiền tố khác,
+đặt cùng giá trị ở `SEPAY_PAYMENT_PREFIX`.
 
 ### Webhook
 
-```bash
-npm run payos:webhook -- https://<tên-miền>
-```
+Trong SePay → **Webhooks**, tạo webhook với:
 
-Script tự thử URL trước rồi mới gọi `/confirm-webhook` của PayOS, nên phân biệt được
-"server chưa chạy", "tunnel đã chết" và "PayOS từ chối" — trên bảng điều khiển thì cả ba
-đều chỉ hiện một dòng "không hợp lệ" giống hệt nhau. Khai báo tay cũng được:
-**Kênh thanh toán → Webhook Url** → `https://<tên-miền>/api/payos/webhook`.
+- Sự kiện: **Có tiền vào**.
+- URL: `https://<tên-miền>/api/sepay/webhook`.
+- Tài khoản: đúng tài khoản mà `SEPAY_BANK_ACCOUNT_ID` trỏ tới (hoặc tài khoản duy nhất đang hoạt động).
+- Lọc mã thanh toán: tiền tố `TBC` (hoặc giá trị đã cấu hình).
+- Xác thực: **API Key**, Request Content-Type: **JSON**.
 
-PayOS phải gọi được URL này từ internet, nên khi chạy localhost cần một tunnel:
+SePay phải gọi được URL này từ internet, nên khi chạy localhost cần một tunnel:
 
 ```bash
 cloudflared tunnel --url http://localhost:3000     # in ra một địa chỉ trycloudflare.com
-npm run payos:webhook -- https://<địa-chỉ-vừa-in-ra>
 ```
 
-**Bỏ qua webhook vẫn chạy được, nhưng không nên khi đã bán thật.** Trang thanh toán tự hỏi
-PayOS mỗi 4 giây (`GET /api/orders/[ref]`), nên trên máy cá nhân đơn vẫn tự chuyển sang PAID.
-Nhưng vòng lặp đó chỉ sống khi khách còn mở trang: quét QR xong đóng tab rồi mới chuyển tiền
-là đơn kẹt ở `PENDING` dù tiền đã về. Webhook do PayOS chủ động gọi nên không phụ thuộc vào đó.
-
-Route `POST /api/payos/webhook` xác thực chữ ký HMAC-SHA256 bằng `PAYOS_CHECKSUM_KEY` trước
-khi ghi bất cứ thứ gì, và đối chiếu số tiền với đơn đã lưu — chuyển thiếu thì ghi `UNDERPAID`
-chứ không bao giờ tính là đã thanh toán.
+Route `POST /api/sepay/webhook` kiểm tra `Authorization: Apikey ...` trước khi ghi bất cứ thứ
+gì. Kho lưu ID giao dịch trong cùng transaction với đơn, nên SePay retry không thể tính trùng;
+những lần chuyển bổ sung được cộng dồn, chỉ đủ tiền mới chuyển đơn sang `PAID`.
 
 ### Giá thử thanh toán
 
@@ -128,7 +122,7 @@ Gmail cho khoảng **500 thư/ngày**; vượt mức đó, hoặc khi đã có t
 Resend/Brevo bằng cách viết lại mỗi hàm `deliver()` trong `lib/email.ts` — mẫu thư và luồng
 gửi ở `lib/order-email.ts` không phải sửa.
 
-**Gửi đúng một lần.** Cả webhook PayOS lẫn vòng poll của trang thanh toán đều có thể là bên
+**Gửi đúng một lần.** Cả webhook SePay lẫn vòng poll của trang thanh toán đều có thể là bên
 đầu tiên thấy đơn đã trả tiền. Quyền gửi được giành bằng `claimConfirmationEmail` — kiểm tra
 và đánh dấu nằm gọn trong một transaction, nên hai bên chạy sát nhau vẫn chỉ ra một lá thư.
 Gửi hỏng thì cờ được mở lại để lần xác nhận sau thử tiếp.

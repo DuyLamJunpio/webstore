@@ -1,24 +1,20 @@
 /**
- * Reconciling a stored order with PayOS.
+ * Reconciling a stored order with SePay.
  *
- * Both the payment page (a server component) and the polling endpoint need the
- * same answer, and both must be able to give one when PayOS is unreachable —
- * a payment gateway hiccup should not turn into a 500 on the page a shopper is
- * staring at while their money is in flight. On failure the stored status is
- * returned unchanged and the next poll tries again.
+ * SePay calls the webhook when money arrives. The payment page only reads the
+ * stored state; it never polls a payment provider or exposes a secret token.
  */
 
 import { sendOrderConfirmation } from "./order-email";
 import { updateOrder, type Order } from "./orders";
-import { getPaymentLink, isPayosConfigured, type PaymentStatus } from "./payos";
+import type { PaymentStatus } from "./payment-status";
 import { fulfillPaidOrder } from "./warehouse";
 
 /**
  * Statuses worth another round trip.
  *
- * UNDERPAID is in here on purpose: PayOS keeps the link open and tracks
- * `amountRemaining`, so a shopper who transferred too little can send the rest
- * and the order still reaches PAID. Treating it as final would strand them.
+ * UNDERPAID is in here on purpose: SePay transactions are accumulated, so a
+ * shopper who transferred too little can send the rest and still reach PAID.
  */
 const OPEN: PaymentStatus[] = ["PENDING", "PROCESSING", "UNDERPAID"];
 
@@ -50,7 +46,7 @@ async function fulfillWarehouseOrder(order: Order): Promise<Order> {
 export async function syncOrderStatus(order: Order): Promise<Order> {
   /**
    * Đơn trả khi nhận hàng không có gì để đối soát: không có liên kết thanh toán
-   * nào bên PayOS, và tiền chỉ về khi người giao hàng thu hộ. Hỏi cổng thanh
+   * nào bên SePay, và tiền chỉ về khi người giao hàng thu hộ. Hỏi cổng thanh
    * toán về nó chỉ tổ nhận lỗi rồi ghi đè trạng thái bằng một câu trả lời sai.
    */
   if (order.paymentMethod === "cod") {
@@ -60,7 +56,7 @@ export async function syncOrderStatus(order: Order): Promise<Order> {
 
   if (!isOpen(order.status)) {
     /**
-     * Đơn đã chốt thì không hỏi PayOS nữa — nhưng vẫn phải thử gửi lại thư khi
+     * Đơn đã chốt thì không hỏi SePay nữa — nhưng vẫn phải thử gửi lại thư khi
      * lần trước trượt.
      *
      * Không có nhánh này thì một lá thư gửi hỏng là mất vĩnh viễn: webhook chỉ
@@ -74,55 +70,14 @@ export async function syncOrderStatus(order: Order): Promise<Order> {
     return order;
   }
 
-  // no merchant keys: the QR is the shop's own account, so nobody is watching it
-  if (order.payment.provider !== "payos" || !isPayosConfigured()) {
-    if (Date.now() <= order.expiresAt) return order;
-
-    try {
-      return (await updateOrder(order.ref, { status: "EXPIRED" })) ?? order;
-    } catch (error) {
-      // Ghi được hay không thì mã QR cũng đã hết hạn; nói thật với khách đang
-      // xem trang, còn việc ghi lại để lần poll sau. Sự cố bên kho không được
-      // biến thành trang lỗi ở đây.
-      console.error(`[order-status] không ghi được hạn của ${order.ref}`, error);
-      return { ...order, status: "EXPIRED" };
-    }
-  }
+  if (Date.now() <= order.expiresAt) return order;
 
   try {
-    const link = await getPaymentLink(order.orderCode);
-
-    const patch: Partial<Order> = { status: link.status, amountPaid: link.amountPaid };
-    if (link.status === "PAID" && order.status !== "PAID") {
-      patch.paidAt = Date.now();
-      patch.transactionRef = link.transactions?.[0]?.reference;
-    }
-
-    const unchanged = link.status === order.status && link.amountPaid === order.amountPaid;
-    if (unchanged) return order;
-
-    const next = (await updateOrder(order.ref, patch)) ?? { ...order, ...patch };
-
-    /**
-     * Đường dự phòng cho thư xác nhận, khi webhook không tới được máy chủ này
-     * (chạy localhost sau NAT, tunnel đã tắt, hoặc PayOS gọi hụt).
-     *
-     * Cố ý `await` chứ không dùng `after()`: hàm này còn được gọi từ server
-     * component của trang thanh toán, nơi `after()` không phải lúc nào cũng
-     * chạy tới nơi. Bên trong đã tự chống gửi trùng nên webhook và vòng poll
-     * cùng chạy vẫn chỉ ra đúng một lá thư.
-     */
-    if (next.status === "PAID") {
-      await sendOrderConfirmation(next);
-
-      return fulfillWarehouseOrder(next);
-    }
-
-    return next;
+    return (await updateOrder(order.ref, { status: "EXPIRED" })) ?? order;
   } catch (error) {
-    console.error(`[order-status] PayOS lookup failed for ${order.ref}`, error);
-    // PayOS also expires the link its side; this only keeps the UI honest meanwhile
-    if (Date.now() > order.expiresAt) return { ...order, status: "EXPIRED" };
-    return order;
+    // Ghi được hay không thì QR cũng đã hết hạn; nói thật với khách đang xem
+    // trang, còn webhook SePay đến muộn sẽ được kho ghi để nhân viên tra soát.
+    console.error(`[order-status] không ghi được hạn của ${order.ref}`, error);
+    return { ...order, status: "EXPIRED" };
   }
 }

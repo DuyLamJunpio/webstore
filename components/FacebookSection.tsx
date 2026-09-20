@@ -23,56 +23,55 @@ const perks = [
 export default function FacebookSection() {
   return (
     <section id="facebook" className="shell section">
-      <div className="overflow-hidden rounded-block bg-surface ring-1 ring-line shadow-xs">
-        <div className="grid items-center gap-10 px-6 py-12 sm:px-10 md:py-16 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14 xl:px-16">
+      <div className="border border-line bg-white shadow-xs">
+        <div className="grid items-center gap-10 p-6 sm:p-10 md:p-14 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">
           {/* ── Cột trái: Giới thiệu & Lợi ích ─────────────────── */}
           <div>
             <span
-              className="eyebrow inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[10px] text-white"
+              className="inline-flex items-center gap-2 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white"
               style={{ backgroundColor: FB_BLUE }}
             >
               <Facebook className="h-3.5 w-3.5" />
-              Fanpage chính thức
+              FANPAGE CHÍNH THỨC
             </span>
 
-            <h2 className="mt-5 font-serif text-[clamp(2rem,3.6vw,3.25rem)] font-medium leading-[1.05] tracking-[-0.015em] text-ink">
-              Kết nối cùng The Basic Concept trên Facebook
+            <h2 className="mt-4 font-sans text-[clamp(1.75rem,3.4vw,2.75rem)] font-extrabold uppercase leading-[1.1] tracking-[-0.015em] text-ink">
+              KẾT NỐI CÙNG THE BASIC CONCEPT TRÊN FACEBOOK
             </h2>
 
-            <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-muted">
-              Theo dõi trang Facebook chính thức của The Basic Concept để cập nhật nhanh nhất các bộ sưu tập
-              mới, đón xem lookbook outfit thường ngày và nhận hỗ trợ tư vấn trực tiếp từ đội ngũ của chúng tôi.
+            <p className="mt-4 max-w-lg text-sm sm:text-base leading-relaxed text-[#555555]">
+              Theo dõi fanpage chính thức để cập nhật nhanh nhất các bộ sưu tập mới, đón xem lookbook phối đồ LifeWear hằng ngày và nhận hỗ trợ tư vấn trực tiếp từ đội ngũ The Basic Concept.
             </p>
 
             {/* Danh sách lợi ích */}
-            <div className="mt-8 flex flex-col gap-4">
+            <div className="mt-8 flex flex-col gap-3.5">
               {perks.map((item) => (
                 <div
                   key={item.title}
-                  className="flex items-start gap-3.5 rounded-2xl bg-cream/60 p-3.5 ring-1 ring-line/60 transition-colors hover:bg-cream"
+                  className="flex items-start gap-3.5 border border-line bg-[#f7f7f7] p-3.5 transition-colors hover:border-black hover:bg-white"
                 >
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-gold shadow-2xs">
-                    <Sparkles className="h-4 w-4 text-gold-deep" />
+                  <span className="grid h-7 w-7 shrink-0 place-items-center bg-[#e60012] text-white">
+                    <Sparkles className="h-3.5 w-3.5 text-white" />
                   </span>
                   <div className="text-xs sm:text-[13px] leading-relaxed">
-                    <h3 className="font-semibold text-ink">{item.title}</h3>
-                    <p className="mt-0.5 text-muted">{item.desc}</p>
+                    <h3 className="font-bold uppercase tracking-wide text-ink">{item.title}</h3>
+                    <p className="mt-0.5 text-[#555555]">{item.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
 
             {/* Nút hành động */}
-            <div className="mt-9 flex flex-wrap items-center gap-3 sm:gap-4">
+            <div className="mt-8 flex flex-wrap items-center gap-3 sm:gap-4">
               <a
                 href={CONTACT.facebookUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-12 items-center gap-2 rounded-full px-7 text-sm font-semibold text-white shadow-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                className="inline-flex h-11 items-center gap-2 px-7 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:opacity-95"
                 style={{ backgroundColor: FB_BLUE }}
               >
                 <Facebook className="h-4 w-4" />
-                Ghé thăm Fanpage
+                <span>Ghé thăm Fanpage</span>
                 <ArrowUpRight className="h-4 w-4" />
               </a>
 
@@ -80,25 +79,26 @@ export default function FacebookSection() {
                 href={MESSENGER_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-12 items-center gap-2 rounded-full border border-line-strong bg-cream px-6 text-sm font-semibold text-ink shadow-2xs transition-all duration-300 hover:border-ink hover:bg-white active:scale-[0.98]"
+                className="inline-flex h-11 items-center gap-2 border border-black bg-white px-6 text-xs font-bold uppercase tracking-wider text-black shadow-2xs transition-colors hover:bg-black hover:text-white"
               >
                 <Messenger className="h-4 w-4 text-[#00B2FF]" />
-                Nhắn tin Messenger
+                <span>Nhắn tin Messenger</span>
               </a>
             </div>
           </div>
 
-          {/* ── Cột phải: Khung mô phỏng Fanpage Card sang trọng ── */}
+          {/* ── Cột phải: Khung mô phỏng Fanpage Card sắc sảo ── */}
           <div className="relative mx-auto w-full max-w-md lg:mx-0">
-            <div className="overflow-hidden rounded-3xl bg-cream shadow-xl ring-1 ring-line">
+            <div className="border border-line bg-[#f7f7f7] shadow-xs">
               {/* Cover Photo */}
-              <div className="relative h-32 w-full bg-gradient-to-r from-ink via-ink-soft to-[#3a302a] p-4 text-cream flex items-end justify-between">
-                <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#FAF7F2_1px,transparent_1px)] [background-size:12px_12px]" />
+              <div className="relative h-28 w-full bg-black p-4 text-white flex items-end justify-between">
                 <div className="relative z-10">
-                  <span className="eyebrow text-[10px] text-gold font-bold">The Basic Concept</span>
-                  <p className="text-[11px] text-cream/70">Simple. Everyday. For Everyone.</p>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#e60012]">
+                    THE BASIC CONCEPT
+                  </span>
+                  <p className="text-[11px] text-white/70">LifeWear: Simple. Everyday. For Everyone.</p>
                 </div>
-                <div className="relative z-10 flex items-center gap-1 rounded-full bg-white/15 backdrop-blur-xs px-2.5 py-1 text-[10px] text-cream font-medium">
+                <div className="relative z-10 flex items-center gap-1 bg-white/20 px-2.5 py-1 text-[10px] font-bold uppercase text-white">
                   <Facebook className="h-3 w-3 text-white" />
                   <span>Facebook Page</span>
                 </div>
@@ -107,56 +107,58 @@ export default function FacebookSection() {
               {/* Fanpage Header Profile */}
               <div className="relative px-5 pb-5 pt-3">
                 {/* Avatar */}
-                <div className="absolute -top-10 left-5 h-20 w-20 overflow-hidden rounded-2xl border-4 border-cream bg-white shadow-md">
+                <div className="absolute -top-8 left-5 h-16 w-16 overflow-hidden border-2 border-white bg-white shadow-sm">
                   <Image
                     src="/apple-icon.png"
                     alt="The Basic Concept Fanpage Avatar"
-                    width={80}
-                    height={80}
+                    width={64}
+                    height={64}
                     className="h-full w-full object-cover"
                   />
                 </div>
 
-                <div className="pt-11">
+                <div className="pt-9">
                   <div className="flex items-center gap-1.5">
-                    <h3 className="font-serif text-lg font-bold text-ink">The Basic Concept</h3>
+                    <h3 className="font-sans text-base font-extrabold uppercase tracking-tight text-ink">
+                      The Basic Concept
+                    </h3>
                     <span
                       title="Trang chính thức"
-                      className="grid h-4 w-4 place-items-center rounded-full bg-blue-500 text-white text-[9px]"
+                      className="grid h-4 w-4 place-items-center bg-blue-500 text-white text-[9px]"
                     >
                       <Check className="h-2.5 w-2.5 stroke-[2.5]" />
                     </span>
                   </div>
 
-                  <p className="text-xs text-muted mt-0.5">Thương hiệu thời trang · Trang phục thường ngày</p>
+                  <p className="text-xs text-[#777777] mt-0.5">Thời trang LifeWear · Trang phục thường ngày</p>
                   
                   {/* Quick stats */}
-                  <div className="mt-3.5 grid grid-cols-3 gap-2 border-y border-line/70 py-3 text-center">
+                  <div className="mt-3.5 grid grid-cols-3 gap-2 border-y border-[#e5e5e5] py-3 text-center">
                     <div>
-                      <span className="block text-sm font-bold text-ink">100%</span>
-                      <span className="text-[10px] text-muted">Phản hồi nhanh</span>
+                      <span className="block text-sm font-extrabold text-ink">100%</span>
+                      <span className="text-[10px] font-medium text-[#777777]">Phản hồi nhanh</span>
                     </div>
-                    <div className="border-x border-line/70">
-                      <span className="block text-sm font-bold text-ink">24/7</span>
-                      <span className="text-[10px] text-muted">Hỗ trợ online</span>
+                    <div className="border-x border-[#e5e5e5]">
+                      <span className="block text-sm font-extrabold text-ink">24/7</span>
+                      <span className="text-[10px] font-medium text-[#777777]">Hỗ trợ online</span>
                     </div>
                     <div>
-                      <span className="block text-sm font-bold text-ink">Lookbook</span>
-                      <span className="text-[10px] text-muted">Cập nhật tuần</span>
+                      <span className="block text-sm font-extrabold text-ink">Lookbook</span>
+                      <span className="text-[10px] font-medium text-[#777777]">Cập nhật tuần</span>
                     </div>
                   </div>
 
                   {/* Fanpage Link Box */}
-                  <div className="mt-4 rounded-xl bg-surface p-3 ring-1 ring-line/80 flex items-center justify-between gap-2">
+                  <div className="mt-4 border border-[#e5e5e5] bg-white p-3 flex items-center justify-between gap-2">
                     <div className="truncate text-xs">
-                      <span className="text-muted block text-[10px]">Đường dẫn trang Facebook:</span>
-                      <span className="font-medium text-ink truncate block">fb.com/TheBasicConcept</span>
+                      <span className="text-[#777777] block text-[10px] uppercase font-semibold">Đường dẫn:</span>
+                      <span className="font-bold text-ink truncate block">fb.com/TheBasicConcept</span>
                     </div>
                     <a
                       href={CONTACT.facebookUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="shrink-0 rounded-full bg-ink px-3 py-1.5 text-xs font-semibold text-cream transition-transform active:scale-95"
+                      className="shrink-0 bg-black px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#e60012]"
                     >
                       Mở trang
                     </a>

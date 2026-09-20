@@ -8,7 +8,7 @@
  * decides what that actually costs.
  *
  * Everything here is đồng, whole numbers, start to finish — the catalogue, the
- * cart, and the amount handed to PayOS are the same figure. There is no
+ * cart, and the amount sent through SePay are the same figure. There is no
  * conversion step left to disagree with itself.
  */
 
@@ -18,7 +18,7 @@ import type { VoucherQuote } from "./vouchers";
 
 // Phí giao hàng và ngưỡng miễn phí do trang quản trị khai (`lib/sales.tsx`),
 // không còn là hằng số ở đây.
-/** how long a bank-transfer QR stays valid before PayOS closes the link */
+/** how long a bank-transfer QR stays valid before the order expires */
 export const PAYMENT_WINDOW_MINUTES = 15;
 
 // ── what the browser posts ───────────────────────────────────────────
@@ -137,7 +137,7 @@ export type PricedCart = {
   voucherCode?: string;
   /** các mẫu áo in trong đơn; rỗng với đơn hàng bán sẵn thông thường */
   prints: PricedPrint[];
-  /** đồng, whole — this is exactly the figure handed to PayOS */
+  /** đồng, whole — this is exactly the figure placed in the SePay QR */
   total: number;
 };
 
@@ -230,7 +230,7 @@ export function priceCart(
   // Ngưỡng miễn phí bên quản trị khai theo số món, nên đếm món chứ không cộng tiền.
   const shipping = shippingFeeFor(sales, method, count);
 
-  // PayOS only accepts whole đồng; a catalogue price with a decimal in it would
+  // A bank transfer QR only accepts whole đồng; a catalogue price with a decimal in it would
   // otherwise reach the bank rounded and no longer match what the page showed
   const total = Math.max(0, Math.round(subtotal + shipping));
 

@@ -25,7 +25,7 @@ export default async function AnnouncementBar() {
   if (announcement.length === 0) return null;
 
   return (
-    <div aria-hidden className="overflow-hidden bg-ink py-2">
+    <div aria-hidden className="overflow-hidden bg-[#e60012] py-2 text-white">
       <div className="marquee">
         <Track items={announcement} />
         <Track items={announcement} />

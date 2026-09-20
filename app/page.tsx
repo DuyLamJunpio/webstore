@@ -3,6 +3,7 @@ import BestSellers from "@/components/BestSellers";
 import Categories from "@/components/Categories";
 import FacebookSection from "@/components/FacebookSection";
 import Hero from "@/components/Hero";
+import LifeWearStory from "@/components/LifeWearStory";
 import NewArrivals from "@/components/NewArrivals";
 import Newsletter from "@/components/Newsletter";
 import Promises from "@/components/Promises";
@@ -29,6 +30,7 @@ export default async function Home() {
         title={heading(content, "best_sellers.title", "Bán Chạy Nhất")}
         subtitle={heading(content, "best_sellers.subtitle", "Những mẫu trang phục được khách hàng yêu thích và lựa chọn nhiều nhất.")}
       />
+      <LifeWearStory />
       <ShopeeStore products={newArrivals.slice(0, 2)} />
       <FacebookSection />
       <Promises />

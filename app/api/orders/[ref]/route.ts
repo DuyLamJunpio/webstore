@@ -1,9 +1,8 @@
 /**
  * GET /api/orders/[ref] — what the payment page polls while the shopper pays.
  *
- * The webhook is the fast path, but it only fires if PayOS can reach this
- * deployment. On a laptop behind NAT it never will, so the page also asks PayOS
- * directly. Whichever answer arrives first wins; both write the same fields.
+ * SePay updates the stored order through its webhook. This endpoint only lets
+ * the page observe that state without exposing customer details.
  *
  * Only the payment status is returned, never the customer's details — `ref` is
  * unguessable but it still travels in a URL.
