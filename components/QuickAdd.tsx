@@ -76,36 +76,36 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
       />
 
       {/* ── Container: Bottom Sheet on Mobile, Centered Modal on Desktop ── */}
-      <div className="relative z-10 flex w-full max-h-[88vh] flex-col overflow-hidden rounded-t-[24px] bg-cream shadow-2xl sheet-up sm:max-w-lg sm:rounded-block sm:pop">
+      <div className="relative z-10 flex w-full max-h-[88vh] flex-col overflow-hidden bg-white shadow-2xl sheet-up sm:max-w-lg sm:border sm:border-line sm:pop">
         {/* Mobile handle indicator */}
         <div className="flex justify-center pt-3 pb-1 sm:hidden">
-          <div className="h-1.5 w-12 rounded-full bg-ink/20" />
+          <div className="h-1 w-10 bg-black/20" />
         </div>
 
         <div className="flex items-start gap-4 border-b border-line p-5">
           <Link
             href={`/products/${product.slug}`}
             onClick={onClose}
-            className="relative aspect-square w-18 shrink-0 overflow-hidden rounded-card bg-surface ring-1 ring-line"
+            className="relative aspect-square w-18 shrink-0 overflow-hidden bg-[#f4f4f4] border border-line"
           >
             <Image src={style.image || product.image} alt={product.name} fill sizes="80px" className="object-cover" />
           </Link>
 
           <div className="flex-1 min-w-0">
-            <p className="eyebrow text-gold">{product.category}</p>
-            <h2 className="mt-1 text-base sm:text-lg font-semibold leading-snug truncate">
-              <Link href={`/products/${product.slug}`} onClick={onClose} className="hover:text-gold-deep">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[#767676]">{product.category}</p>
+            <h2 className="mt-0.5 text-base font-bold leading-snug truncate text-ink">
+              <Link href={`/products/${product.slug}`} onClick={onClose} className="hover:text-[#e60012]">
                 {product.name}
               </Link>
             </h2>
             <p className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-              <span className={`text-base sm:text-lg font-bold ${showDiscount ? "text-[#c2410c]" : "text-ink"}`}>{formatPrice(price)}</span>
+              <span className={`text-base font-bold ${showDiscount ? "text-[#e60012]" : "text-ink"}`}>{formatPrice(price)}</span>
               {showDiscount && product.comparePrice && (
                 <>
-                  <span className="text-xs sm:text-sm text-muted line-through">
+                  <span className="text-xs text-muted line-through">
                     {formatPrice(product.comparePrice)}
                   </span>
-                  <span className="rounded-full bg-[#c2410c]/10 px-1.5 py-0.5 text-[10px] font-bold leading-none text-[#c2410c]">
+                  <span className="bg-[#e60012]/10 px-1 py-0.5 text-[9px] font-bold text-[#e60012]">
                     -{discountPercent}%
                   </span>
                 </>
@@ -117,7 +117,7 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
             type="button"
             onClick={onClose}
             aria-label="Đóng bảng thêm nhanh"
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-ink/5 hover:text-ink"
+            className="grid h-8 w-8 shrink-0 place-items-center text-muted transition-colors hover:bg-black/5 hover:text-ink"
           >
             <Close />
           </button>
@@ -134,9 +134,9 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
           {/* ── Chọn màu ── */}
           <div>
             <div className="flex items-baseline justify-between">
-              <p className="eyebrow text-ink/70">Màu sắc: <span className="font-medium text-ink">{color}</span></p>
+              <p className="text-xs font-bold uppercase tracking-wider text-ink/80">Màu sắc: <span className="font-bold text-ink">{color}</span></p>
             </div>
-            <div className="mt-3 flex flex-wrap gap-3">
+            <div className="mt-3 flex flex-wrap gap-2.5">
               {availableColors.map((option) => {
                 const soldOut = isColorSoldOut(option.name);
                 const isSelected = color === option.name;
@@ -148,20 +148,20 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
                     aria-pressed={isSelected}
                     aria-label={`${option.name}${soldOut ? " — hết hàng" : ""}`}
                     title={option.name}
-                    className={`relative grid h-10 w-10 place-items-center rounded-full ring-offset-2 ring-offset-cream transition-all ${
+                    className={`relative grid h-9 w-9 place-items-center transition-all ${
                       isSelected
-                        ? "ring-2 ring-ink scale-105"
-                        : "ring-1 ring-line-strong hover:ring-ink hover:scale-105"
+                        ? "ring-2 ring-black"
+                        : "ring-1 ring-line-strong hover:ring-black"
                     }`}
                   >
                     <span
-                      className="h-7 w-7 rounded-full shadow-inner"
+                      className="h-6 w-6 shadow-inner"
                       style={{ backgroundColor: option.hex }}
                       aria-hidden
                     />
                     {soldOut && (
                       <span aria-hidden className="absolute inset-0 grid place-items-center">
-                        <span className="h-px w-8 rotate-45 bg-ink/60" />
+                        <span className="h-px w-8 rotate-45 bg-black/60" />
                       </span>
                     )}
                   </button>
@@ -172,8 +172,8 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
 
           {/* ── Chọn size ── */}
           <div>
-            <p className="eyebrow text-ink/70">Kích cỡ</p>
-            <div className="mt-3 flex flex-wrap gap-2.5">
+            <p className="text-xs font-bold uppercase tracking-wider text-ink/80">Kích cỡ</p>
+            <div className="mt-3 flex flex-wrap gap-2">
               {availableSizes.map((option) => {
                 const stock = stockBySize[option] ?? 0;
                 const isSelected = size === option;
@@ -184,11 +184,11 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
                     disabled={stock === 0}
                     onClick={() => pickSize(option)}
                     aria-pressed={isSelected}
-                    className={`h-11 min-w-[56px] rounded-full border px-4 text-sm font-semibold transition-all ${
+                    className={`h-10 min-w-[52px] border px-3 text-xs font-bold tracking-wider transition-all ${
                       isSelected
-                        ? "border-ink bg-ink text-cream shadow-xs"
-                        : "border-line-strong text-ink/80 hover:border-ink hover:text-ink bg-surface"
-                    } disabled:cursor-not-allowed disabled:border-line disabled:text-muted/40 disabled:line-through disabled:hover:border-line disabled:bg-cream-dark/50`}
+                        ? "border-black bg-black text-white"
+                        : "border-[#cccccc] text-ink hover:border-black bg-white"
+                    } disabled:cursor-not-allowed disabled:border-line disabled:text-muted/40 disabled:line-through disabled:bg-[#f4f4f4]`}
                   >
                     {option}
                   </button>
@@ -196,13 +196,13 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
               })}
             </div>
 
-            <div className="mt-3 min-h-5 text-xs sm:text-[13px]">
+            <div className="mt-3 min-h-5 text-xs">
               {styleSoldOut ? (
                 <span className="text-muted">Mẫu này đã hết hàng — mời bạn chọn mẫu khác.</span>
               ) : colorSoldOut ? (
                 <span className="text-muted">Màu này đã hết hàng — mời bạn chọn màu khác.</span>
               ) : variant && variant.stock <= LOW_STOCK ? (
-                <span className="text-gold-deep font-medium">Chỉ còn {variant.stock} sản phẩm ở size này.</span>
+                <span className="text-[#e60012] font-semibold">Chỉ còn {variant.stock} sản phẩm ở size này.</span>
               ) : variant ? (
                 <span className="text-muted">Còn hàng — giao trong 1–2 ngày làm việc.</span>
               ) : (
@@ -212,9 +212,9 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
           </div>
         </div>
 
-        <div className="border-t border-line p-5 pb-6 sm:pb-5 pb-safe bg-surface/50">
+        <div className="border-t border-line p-5 pb-6 sm:pb-5 pb-safe bg-[#f7f7f7]">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-xs sm:text-[13px] font-semibold text-ink/70">Số lượng:</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-ink/70">Số lượng:</span>
             <QuantityStepper value={qty} onChange={setQty} max={Math.max(max, 1)} />
           </div>
 
@@ -223,7 +223,7 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
               type="button"
               onClick={submit}
               disabled={styleSoldOut || colorSoldOut}
-              className="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-full border-2 border-ink bg-surface px-3 text-xs sm:text-sm font-semibold text-ink transition-all hover:bg-ink hover:text-cream active:scale-[0.99] disabled:cursor-not-allowed disabled:border-line disabled:text-muted shadow-xs"
+              className="inline-flex h-11 w-full items-center justify-center gap-1.5 border-2 border-black bg-white px-3 text-xs font-bold uppercase tracking-wider text-black transition-colors hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:border-line disabled:text-muted"
             >
               <Bag className="h-4 w-4" />
               <span>{styleSoldOut || colorSoldOut ? "Hết hàng" : "Thêm vào giỏ"}</span>
@@ -235,16 +235,16 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
                 if (buyNow()) onClose();
               }}
               disabled={styleSoldOut || colorSoldOut || isBuying}
-              className="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-full bg-ink px-3 text-xs sm:text-sm font-semibold text-cream shadow-sm transition-all hover:bg-ink-soft active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-ink/40"
+              className="inline-flex h-11 w-full items-center justify-center gap-1.5 bg-[#e60012] px-3 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-[#cc0010] disabled:cursor-not-allowed disabled:bg-black/30"
             >
               {isBuying ? (
                 <>
-                  <Spinner className="h-4 w-4 text-gold" />
+                  <Spinner className="h-4 w-4 text-white" />
                   <span>Đang xử lý…</span>
                 </>
               ) : (
                 <>
-                  <Bolt className="h-4 w-4 text-gold" />
+                  <Bolt className="h-4 w-4 text-white" />
                   <span>{styleSoldOut || colorSoldOut ? "Hết hàng" : "Mua ngay"}</span>
                 </>
               )}
@@ -252,7 +252,7 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
           </div>
 
           {error && (
-            <p aria-live="polite" className="mt-2 text-xs font-medium text-gold-deep text-center">
+            <p aria-live="polite" className="mt-2 text-xs font-bold text-[#e60012] text-center">
               {error}
             </p>
           )}
@@ -261,7 +261,7 @@ function QuickAddDialog({ product, onClose }: { product: Product; onClose: () =>
             <Link
               href={`/products/${product.slug}`}
               onClick={onClose}
-              className="text-xs text-muted underline underline-offset-4 hover:text-ink"
+              className="text-xs text-muted underline underline-offset-4 hover:text-ink font-medium"
             >
               Xem chi tiết sản phẩm đầy đủ
             </Link>
@@ -277,21 +277,17 @@ export default function QuickAdd({ product }: { product: Product }) {
 
   return (
     <>
-      {/* ── Mobile: Nút tròn + nhỏ gọn góc phải không che ảnh ── */}
-      {/* ── Desktop: Nút ngang hiện khi hover ── */}
       <button
         type="button"
         onClick={() => setOpen(true)}
         aria-label={`Thêm nhanh ${product.name} vào giỏ hàng`}
-        className="absolute right-2.5 bottom-2.5 z-10 grid h-8.5 w-8.5 place-items-center rounded-full bg-white/95 text-ink shadow-md backdrop-blur-md transition-all duration-200 hover:scale-110 active:scale-90 lg:inset-x-3 lg:w-auto lg:h-10 lg:flex lg:items-center lg:justify-center lg:gap-1.5 lg:translate-y-2 lg:opacity-0 lg:group-hover:translate-y-0 lg:group-hover:opacity-100"
+        className="absolute right-2 bottom-2 z-10 grid h-8 w-8 place-items-center bg-white text-ink border border-line shadow-sm transition-all duration-150 hover:bg-black hover:text-white active:scale-95 lg:inset-x-2 lg:w-auto lg:h-9 lg:flex lg:items-center lg:justify-center lg:gap-1.5 lg:translate-y-2 lg:opacity-0 lg:group-hover:translate-y-0 lg:group-hover:opacity-100"
       >
-        <Plus className="h-4 w-4" />
-        <span className="hidden lg:inline text-xs font-semibold">Thêm nhanh</span>
+        <Plus className="h-3.5 w-3.5" />
+        <span className="hidden lg:inline text-[11px] font-bold uppercase tracking-wider">Thêm nhanh</span>
       </button>
 
       {open && <QuickAddDialog product={product} onClose={() => setOpen(false)} />}
     </>
   );
 }
-
-

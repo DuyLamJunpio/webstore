@@ -1,10 +1,8 @@
 /**
- * A VietQR payload built locally, used only when PayOS is not configured yet.
+ * A VietQR payload built locally for the SePay bank-transfer flow.
  *
- * PayOS returns a ready-made QR string with every order; this is the stand-in
- * so the checkout page is still testable before the merchant keys exist. It
- * produces a real, scannable transfer QR — but nothing is reconciling it, so an
- * order paid this way stays "chờ thanh toán" until a human checks the bank.
+ * It produces a real, scannable transfer QR. SePay recognises the payment
+ * code prefilled in the memo and notifies the application by webhook.
  *
  * Format: EMVCo Merchant-Presented QR, VietQR profile (NAPAS GUID A000000727).
  */
@@ -66,13 +64,4 @@ export function buildVietQr({ bin, accountNumber, amount, addInfo }: VietQrInput
 
   const withCrcTag = `${payload}6304`;
   return withCrcTag + crc16(withCrcTag);
-}
-
-/** the shop's own bank details, used only by the fallback above */
-export function readFallbackBank() {
-  const bin = process.env.SHOP_BANK_BIN;
-  const accountNumber = process.env.SHOP_BANK_ACCOUNT;
-  const accountName = process.env.SHOP_BANK_ACCOUNT_NAME;
-  if (!bin || !accountNumber || !accountName) return null;
-  return { bin, accountNumber, accountName, bankName: process.env.SHOP_BANK_NAME ?? "" };
 }

@@ -1,7 +1,7 @@
 /**
  * NAPAS bank codes → the name a shopper would recognise.
  *
- * PayOS returns the destination account as a 6-digit BIN, which is exactly what
+ * SePay's VietQR uses the destination account's 6-digit BIN, which is exactly what
  * a banking app needs and exactly what nobody can read. This map is only for
  * display; anything missing falls back to the raw code rather than guessing.
  */

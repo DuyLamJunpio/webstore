@@ -16,7 +16,6 @@ import type { NextRequest } from "next/server";
 import {
   cleanCustomer,
   EMPTY_CUSTOMER,
-  formatAddress,
   PAYMENT_WINDOW_MINUTES,
   applyVoucherQuote,
   priceCart,
@@ -27,8 +26,8 @@ import {
 } from "@/lib/checkout";
 import { fetchPrintDesign, printLineLabel } from "@/lib/print-order";
 import { reserveOrder, saveOrder, type Order, type OrderPayment } from "@/lib/orders";
-import { createPaymentLink, DESCRIPTION_MAX, isPayosConfigured, PayosError } from "@/lib/payos";
-import { buildVietQr, readFallbackBank } from "@/lib/vietqr";
+import { getSepayBankAccount, readSepayWebhookConfig, sepayPaymentCode } from "@/lib/sepay";
+import { buildVietQr } from "@/lib/vietqr";
 import { pushOrder } from "@/lib/warehouse";
 import { validateWarehouseVoucher } from "@/lib/warehouse-vouchers";
 
@@ -78,15 +77,6 @@ type Body = {
 
 const bad = (error: string, status = 400, extra: Record<string, unknown> = {}) =>
   Response.json({ error, ...extra }, { status });
-
-function siteUrl(request: NextRequest): string {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
-  if (configured) return configured;
-  // behind a proxy the request URL is the internal one, so prefer the forwarded host
-  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
-  const proto = request.headers.get("x-forwarded-proto") ?? "http";
-  return host ? `${proto}://${host}` : new URL(request.url).origin;
-}
 
 export async function POST(request: NextRequest) {
   if (rateLimited(clientIp(request))) {
@@ -196,7 +186,7 @@ export async function POST(request: NextRequest) {
     : null;
 
   // Chỉ cất phiên thanh toán nội bộ trước khi hiện QR. Đơn chuyển khoản thật và
-  // hàng đợi duyệt thiết kế chỉ được tạo sau webhook PayOS báo PAID.
+  // hàng đợi duyệt thiết kế chỉ được tạo sau webhook SePay báo PAID.
   const { ref, orderCode } = await reserveOrder();
   const createdAt = Date.now();
   let expiresAt = createdAt + PAYMENT_WINDOW_MINUTES * 60 * 1000;
@@ -216,76 +206,29 @@ export async function POST(request: NextRequest) {
       description: "",
       qrCode: "",
     };
-  } else if (isPayosConfigured()) {
-    const origin = siteUrl(request);
-    // PayOS allows nine characters when the shop is on a plain bank account, so
-    // the memo carries the tail of the order code rather than the full ref.
-    // Nothing depends on it: the webhook matches on the whole orderCode.
-    const description = `TBC${String(orderCode).slice(-(DESCRIPTION_MAX - 3))}`;
-
-    try {
-      const link = await createPaymentLink({
-        orderCode,
-        amount: cart.total,
-        description,
-        returnUrl: `${origin}/checkout/${ref}`,
-        cancelUrl: `${origin}/checkout/${ref}?huy=1`,
-        items: [
-          ...cart.lines.map((line) => ({
-            name: `${line.name} (${[line.styleName, line.color, line.size].filter(Boolean).join("/")})`.slice(0, 100),
-            quantity: line.qty,
-            price: line.unitPrice,
-          })),
-          ...cart.prints.map((print) => ({
-            name: `Áo in theo yêu cầu ${print.code}`.slice(0, 100),
-            quantity: print.qty,
-            price: print.unitPrice,
-          })),
-        ],
-        buyerName: customer.fullName,
-        buyerEmail: customer.email || undefined,
-        buyerPhone: customer.phone,
-        buyerAddress: formatAddress(customer),
-        expiredAt: Math.floor(expiresAt / 1000),
-      });
-
-      payment = {
-        provider: "payos",
-        bin: link.bin,
-        accountNumber: link.accountNumber,
-        accountName: link.accountName,
-        amount: link.amount,
-        // PayOS may prefix its own matching code, so its description wins over ours
-        description: link.description || description,
-        qrCode: link.qrCode,
-        checkoutUrl: link.checkoutUrl,
-        paymentLinkId: link.paymentLinkId,
-      };
-
-      // PayOS is the one enforcing the deadline, so its answer beats our clock
-      if (link.expiredAt) expiresAt = link.expiredAt * 1000;
-    } catch (error) {
-      const message =
-        error instanceof PayosError ? error.message : "Không tạo được liên kết thanh toán.";
-      console.error("[checkout] PayOS create failed", error);
-      return bad(message, 502);
-    }
   } else {
-    // no merchant keys yet — fall back to the shop's own account so the flow is testable
-    const bank = readFallbackBank();
-    if (!bank) {
+    const sepay = readSepayWebhookConfig();
+    if (!sepay) {
       return bad(
-        "Cổng thanh toán chưa được cấu hình. Vui lòng đặt PAYOS_CLIENT_ID, PAYOS_API_KEY và PAYOS_CHECKSUM_KEY.",
+        "SePay chưa được cấu hình. Vui lòng đặt SEPAY_WEBHOOK_API_KEY và SEPAY_PAYMENT_PREFIX.",
         503,
       );
     }
 
-    // our own QR, so no nine-character ceiling — spell the ref out in full,
-    // because reconciling this one is somebody reading a bank statement
-    const description = `TBC ${ref}`;
+    let bank;
+    try {
+      bank = await getSepayBankAccount();
+    } catch (error) {
+      console.error("[checkout] không lấy được tài khoản SePay", error);
+      return bad(error instanceof Error ? error.message : "Không lấy được tài khoản SePay.", 503);
+    }
+
+    // SePay nhận diện chính mã này (tiền tố + 10 ký tự ref), nên không chèn
+    // khoảng trắng hoặc rút gọn — khách nhập tay vẫn được đối soát tự động.
+    const description = sepayPaymentCode(ref, sepay);
 
     payment = {
-      provider: "fallback",
+      provider: "sepay",
       bin: bank.bin,
       bankName: bank.bankName,
       accountNumber: bank.accountNumber,
@@ -314,7 +257,7 @@ export async function POST(request: NextRequest) {
     refund,
   };
 
-  // COD không có sự kiện PAID từ PayOS. Đơn in luôn bị chặn COD ở trên, nên
+  // COD không có sự kiện PAID từ SePay. Đơn in luôn bị chặn COD ở trên, nên
   // nhánh này chỉ giữ nguyên cách bán hàng có sẵn khi khách chọn trả lúc nhận.
   if (method === "cod") {
     const warehouse = await pushOrder(customer, cart, method, refund);

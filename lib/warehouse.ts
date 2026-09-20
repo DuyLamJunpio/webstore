@@ -1,7 +1,7 @@
 /**
  * Đẩy đơn hàng sang trang quản trị (Laravel).
  *
- * Trang quản trị chỉ nhận đơn chuyển khoản sau khi PayOS đã xác nhận PAID. Trước
+ * Trang quản trị chỉ nhận đơn chuyển khoản sau khi SePay đã xác nhận PAID. Trước
  * đó, trang bán hàng chỉ lưu phiên thanh toán nội bộ để không đẩy đơn rác hoặc mẫu
  * chưa trả tiền vào màn hình nhân viên. COD hàng bán sẵn vẫn tạo đơn khi khách đặt.
  */
@@ -20,6 +20,10 @@ export type WarehouseResult =
 export type WarehouseFulfillmentResult =
   | { ok: true; orderCode: string }
   | { ok: false; error: string };
+
+export type SepayPaymentResult =
+  | { ok: true; order: { status?: string; ref?: string; [key: string]: unknown } }
+  | { ok: false; error: string; retryable: boolean };
 
 const TIMEOUT_MS = 15_000;
 
@@ -165,7 +169,7 @@ export async function pushOrder(
 
 /**
  * Chuyển một phiên thanh toán đã PAID thành Invoice trong trang quản trị.
- * Laravel khoá StorefrontOrder, nên webhook PayOS và lượt poll có gọi song song
+ * Laravel khoá StorefrontOrder, nên webhook SePay và lượt poll có gọi song song
  * cũng chỉ tạo duy nhất một đơn.
  */
 export async function fulfillPaidOrder(ref: string): Promise<WarehouseFulfillmentResult> {
@@ -190,8 +194,48 @@ export async function fulfillPaidOrder(ref: string): Promise<WarehouseFulfillmen
 }
 
 /**
+ * Lưu một giao dịch SePay sau khi route webhook bên webstore đã kiểm tra API key.
+ * Laravel khoá bản ghi đơn, nên cùng một webhook retry hoặc hai lần chuyển bổ sung
+ * không thể bị ghi nhận trùng.
+ */
+export async function recordSepayPayment(
+  ref: string,
+  transaction: { id: number; amount: number; reference?: string | null },
+): Promise<SepayPaymentResult> {
+  try {
+    const response = await warehouseFetch(
+      `/api/storefront/orders/${encodeURIComponent(ref)}/sepay-payment`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          transaction_id: transaction.id,
+          amount: transaction.amount,
+          reference: transaction.reference ?? null,
+        }),
+      },
+    );
+    const data = (await response.json().catch(() => null)) as
+      | { error?: string; status?: string; ref?: string; [key: string]: unknown }
+      | null;
+
+    if (!response.ok || !data) {
+      return {
+        ok: false,
+        error: data?.error ?? `Trang quản trị trả về HTTP ${response.status} khi ghi nhận SePay.`,
+        retryable: response.status >= 500,
+      };
+    }
+
+    return { ok: true, order: data };
+  } catch (error) {
+    console.error("[warehouse] không ghi được giao dịch SePay", error);
+    return { ok: false, error: "Không kết nối được tới trang quản trị.", retryable: true };
+  }
+}
+
+/**
  * Endpoint tương thích cho các luồng cũ đã có mã Invoice.
- * Đơn PayOS mới dùng fulfillPaidOrder để tạo Invoice sau khi nhận thanh toán.
+ * Đơn SePay dùng fulfillPaidOrder để tạo Invoice sau khi nhận thanh toán.
  */
 export async function markPaid(orderCode: string): Promise<boolean> {
   if (!isWarehouseConfigured()) return false;

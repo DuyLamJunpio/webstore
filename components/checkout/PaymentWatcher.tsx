@@ -8,10 +8,8 @@ const POLL_MS = 4000;
 /**
  * Watches an order while the shopper is in their banking app.
  *
- * PayOS's webhook is the fast path, but it needs a public URL — on a laptop
- * behind NAT it never arrives, so this asks the server every few seconds
- * instead. The server is the one that talks to PayOS; this only knows how to
- * ask, and how to refresh the page once the answer changes.
+ * SePay's webhook updates the stored order. This component only refreshes the
+ * page periodically so a shopper can see that update without manually reloading.
  */
 /** statuses that will never change again — polling past them is pure waste */
 const SETTLED = ["PAID", "CANCELLED", "EXPIRED", "FAILED"];

@@ -23,8 +23,8 @@ export default function CheckoutPage() {
         <span className="font-semibold text-ink">Thanh toán</span>
       </nav>
 
-      <h1 className="mt-4 font-serif text-[clamp(2.25rem,4vw,3.5rem)] font-medium leading-[1.05] tracking-[-0.015em] text-ink">
-        Thanh Toán Đơn Hàng
+      <h1 className="mt-4 font-sans text-[clamp(2rem,3.8vw,3.25rem)] font-black uppercase leading-[1.05] tracking-tight text-ink">
+        THANH TOÁN ĐƠN HÀNG
       </h1>
 
       <CheckoutForm />

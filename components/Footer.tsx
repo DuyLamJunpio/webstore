@@ -8,46 +8,38 @@ const payments = ["VietQR", "Visa", "Mastercard", "JCB", "Momo", "VNPay"];
 
 export default function Footer() {
   return (
-    <footer className="bg-ink text-cream pb-24 lg:pb-0">
-      <div className="shell py-14 md:py-20">
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,2fr)]">
+    <footer className="border-t border-[#e5e5e5] bg-[#f7f7f7] text-[#1b1b1b] pb-24 lg:pb-0">
+      <div className="shell py-12 md:py-16">
+        {/* ── Brand & Navigation Grid ───────────────────────────── */}
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,2fr)] lg:gap-14">
           <div>
             <Logo variant="stacked" align="left" />
-            <p className="mt-6 max-w-xs text-xs sm:text-sm leading-relaxed text-cream/65">
-              Thời trang thiết kế tối giản, sản xuất số lượng giới hạn từ chất liệu cao cấp và an toàn cho làn da.
+            <p className="mt-5 max-w-sm text-xs sm:text-sm leading-relaxed text-[#555555]">
+              <strong>LifeWear:</strong> Trang phục thường ngày được hoàn thiện từ sự tinh tế, chất lượng cao cấp và không ngừng đổi mới nhằm mang lại sự thoải mái nhất cho cuộc sống của bạn.
             </p>
 
-            <div className="mt-8">
-              <p className="text-sm font-semibold text-cream">Đăng ký nhận ưu đãi</p>
-              <p className="mt-1.5 max-w-xs text-xs sm:text-sm leading-relaxed text-cream/60">
-                Nhận thông báo về hàng mới về, ưu đãi riêng và mã giảm giá đặc biệt.
+            {/* Support hotline */}
+            <div className="mt-7 border-t border-[#e5e5e5] pt-6">
+              <p className="text-[11px] font-black uppercase tracking-widest text-[#e60012]">
+                HỖ TRỢ KHÁCH HÀNG
               </p>
-              <Link
-                href="/#newsletter"
-                className="mt-4 inline-flex h-10 items-center gap-2 rounded-full border border-cream/30 bg-cream/5 px-5 text-xs sm:text-sm font-semibold text-cream shadow-xs transition-transform hover:scale-105 hover:border-gold hover:bg-gold hover:text-cream active:scale-95"
-              >
-                <span>Đăng ký ngay</span>
-                <ArrowUpRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-
-            <div className="mt-8">
-              <p className="eyebrow text-gold font-bold">Chăm Sóc Khách Hàng</p>
-
               <a
                 href={CONTACT.phoneHref}
-                className="mt-3 inline-flex items-center gap-2.5 text-base sm:text-lg font-bold text-cream transition-colors hover:text-gold"
+                className="mt-2 inline-flex items-center gap-2 text-xl sm:text-2xl font-black tracking-tight text-black transition-colors hover:text-[#e60012]"
               >
-                <Phone className="h-4 w-4 text-gold" />
+                <Phone className="h-4 w-4 text-[#e60012]" />
                 <span>{CONTACT.phoneDisplay}</span>
               </a>
+              <p className="mt-1 text-xs text-[#777777]">
+                Thứ Hai – Chủ Nhật: 08:30 – 21:30 (Trừ ngày Lễ)
+              </p>
 
-              <div className="mt-3 flex flex-wrap items-center gap-2">
+              <div className="mt-4 flex flex-wrap items-center gap-2">
                 <a
                   href={CONTACT.zaloUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex h-8 items-center rounded-full border border-cream/25 bg-cream/5 px-3.5 text-xs font-medium text-cream/90 transition-colors hover:border-gold hover:text-gold"
+                  className="inline-flex h-8 items-center border border-black/20 bg-white px-3.5 text-xs font-bold uppercase tracking-wider text-black transition-colors hover:border-black hover:bg-black hover:text-white"
                 >
                   Nhắn Zalo
                 </a>
@@ -55,22 +47,33 @@ export default function Footer() {
                   href={CONTACT.facebookUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex h-8 items-center gap-1.5 rounded-full border border-cream/25 bg-cream/5 px-3.5 text-xs font-medium text-cream/90 transition-colors hover:border-gold hover:text-gold"
+                  className="inline-flex h-8 items-center gap-1.5 border border-black/20 bg-white px-3.5 text-xs font-bold uppercase tracking-wider text-black transition-colors hover:border-black hover:bg-black hover:text-white"
                 >
                   <Facebook className="h-3.5 w-3.5" />
                   <span>Fanpage</span>
                 </a>
+                <Link
+                  href="/#newsletter"
+                  className="inline-flex h-8 items-center gap-1.5 border border-[#e60012] bg-[#e60012] px-3.5 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#cc0010]"
+                >
+                  <span>Coupon 100K</span>
+                  <ArrowUpRight className="h-3 w-3" />
+                </Link>
               </div>
             </div>
           </div>
 
+          {/* Nav columns */}
           <div className="grid gap-8 grid-cols-2 lg:grid-cols-4">
             {footerNav.map((column) => (
               <nav key={column.title} aria-label={column.title}>
-                <h3 className="eyebrow text-gold font-bold">{column.title}</h3>
+                <h3 className="text-xs font-black uppercase tracking-wider text-black pb-3 border-b border-[#e5e5e5]">
+                  {column.title}
+                </h3>
                 <ul className="mt-4 flex flex-col gap-2.5">
                   {column.links.map((link) => {
-                    const style = "text-xs sm:text-sm text-cream/70 transition-colors hover:text-gold";
+                    const style =
+                      "text-xs sm:text-sm text-[#555555] transition-colors hover:text-[#e60012] hover:underline";
                     if (link.href.startsWith("/")) {
                       return (
                         <li key={link.label}>
@@ -102,17 +105,26 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-5 border-t border-cream/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-cream/50">
-            © {new Date().getFullYear()} The Basic Concept. Tất cả các quyền được bảo lưu.
-          </p>
+        {/* ── Sub-footer / Legal & Payments ─────────────────────── */}
+        <div className="mt-12 flex flex-col gap-5 border-t border-[#e5e5e5] pt-8 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-xs text-[#777777]">
+            <span className="font-bold uppercase tracking-wider text-black">
+              KHU VỰC: VIỆT NAM / TIẾNG VIỆT
+            </span>
+            <span className="hidden sm:inline text-line">|</span>
+            <span>
+              © {new Date().getFullYear()} THE BASIC CONCEPT. ALL RIGHTS RESERVED. LIFEWEAR.
+            </span>
+          </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-cream/50">Thanh toán an toàn:</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#777777]">
+              Phương thức thanh toán:
+            </span>
             {payments.map((label) => (
               <span
                 key={label}
-                className="rounded-md border border-cream/15 bg-cream/5 px-2 py-0.5 text-[10px] font-semibold text-cream/70"
+                className="border border-[#d5d5d5] bg-white px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-black"
               >
                 {label}
               </span>

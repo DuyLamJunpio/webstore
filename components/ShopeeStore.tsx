@@ -25,50 +25,50 @@ export default async function ShopeeStore({ products: initialProducts }: { produ
 
   return (
     <section id="shopee" className="shell section">
-      <div className="overflow-hidden rounded-block bg-cream-dark">
-        <div className="grid items-center gap-10 px-6 py-12 sm:px-10 md:py-16 lg:grid-cols-[1.05fr_1fr] lg:gap-16 xl:px-16">
+      <div className="border border-line bg-[#f7f7f7] p-6 sm:p-10 lg:p-14">
+        <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
           {/* ── Lời mời ────────────────────────────────────────────── */}
           <div>
             <span
-              className="eyebrow inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[10px] text-cream"
+              className="inline-flex items-center gap-2 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-white shadow-2xs"
               style={{ backgroundColor: SHOPEE_ORANGE }}
             >
               <Bag className="h-3.5 w-3.5" />
-              Gian hàng chính thức
+              GIAN HÀNG SHOPEE MALL
             </span>
 
-            <h2 className="mt-5 font-serif text-[clamp(2rem,3.6vw,3.25rem)] font-medium leading-[1.05] tracking-[-0.015em] text-ink">
-              Chúng tôi cũng có mặt trên Shopee
+            <h2 className="mt-4 font-sans text-[clamp(1.75rem,3.4vw,2.75rem)] font-extrabold uppercase leading-[1.1] tracking-[-0.01em] text-ink">
+              Gian hàng chính thức trên Shopee
             </h2>
 
-            <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-muted">
+            <p className="mt-3 max-w-lg text-sm leading-relaxed text-[#555555]">
               Quen đặt hàng bằng tài khoản Shopee hơn? Ghé gian hàng của The Basic Concept trên
-              sàn — vẫn là những thiết kế bạn đang xem ở đây, chỉ khác chỗ bấm nút mua.
+              sàn — sản phẩm chính hãng, bảo vệ quyền lợi người mua và giao nhanh toàn quốc.
             </p>
 
-            <ul className="mt-8 flex flex-col gap-3.5">
+            <ul className="mt-6 flex flex-col gap-3">
               {perks.map(({ Icon, text }) => (
-                <li key={text} className="flex items-center gap-3 text-[15px] text-ink/90">
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface text-gold shadow-2xs">
-                    <Icon className="h-[18px] w-[18px]" />
+                <li key={text} className="flex items-center gap-3 text-xs sm:text-sm text-ink/90">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center bg-white border border-line text-[#e60012]">
+                    <Icon className="h-4 w-4" />
                   </span>
-                  {text}
+                  <span>{text}</span>
                 </li>
               ))}
             </ul>
 
-            <div className="mt-9 flex flex-wrap items-center gap-x-5 gap-y-3">
+            <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
               <a
                 href={SHOPEE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-12 items-center gap-2 rounded-full px-7 text-sm font-medium text-cream shadow-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                className="inline-flex h-11 items-center gap-2 px-7 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-opacity hover:opacity-90 active:scale-98"
                 style={{ backgroundColor: SHOPEE_ORANGE }}
               >
-                Ghé gian hàng Shopee
-                <ArrowUpRight />
+                <span>GHÉ GIAN HÀNG SHOPEE</span>
+                <ArrowUpRight className="h-4 w-4" />
               </a>
-              <span className="text-[13px] text-muted">Mở tab mới · s.shopee.vn</span>
+              <span className="text-xs text-muted">Mở tab mới · s.shopee.vn</span>
             </div>
           </div>
 
@@ -77,58 +77,47 @@ export default async function ShopeeStore({ products: initialProducts }: { produ
             {item1 && cover1 ? (
               <Link
                 href={`/products/${item1.slug}`}
-                className="group relative block aspect-[4/5] w-[78%] overflow-hidden rounded-card bg-surface shadow-2xl ring-1 ring-line/80 transition-transform duration-300 hover:scale-[1.02]"
+                className="group relative block aspect-[4/5] w-[80%] overflow-hidden border border-line bg-white shadow-md transition-transform duration-300 hover:scale-[1.02]"
               >
                 <MediaFrame
                   media={cover1}
                   alt={item1.name}
                   sizes="(max-width: 1024px) 60vw, 360px"
-                  className="transition-transform duration-700 group-hover:scale-105"
+                  className="transition-transform duration-500 group-hover:scale-105"
                 />
                 {cover1.type === "video" && (
                   <PlayBadge className="absolute bottom-3 left-3 h-8 w-8" />
                 )}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/90 via-ink/40 to-transparent p-4 text-cream">
-                  <span className="eyebrow text-gold text-[10px] font-bold block">{item1.category}</span>
-                  <p className="font-medium text-sm text-cream line-clamp-1 group-hover:underline">{item1.name}</p>
-                  <p className="text-xs font-semibold text-cream/90 mt-0.5">{formatPrice(item1.price)}</p>
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-4 text-white">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#ff4d4f] block">{item1.category}</span>
+                  <p className="font-bold text-xs sm:text-sm text-white line-clamp-1 group-hover:underline">{item1.name}</p>
+                  <p className="text-xs font-bold text-white mt-0.5">{formatPrice(item1.price)}</p>
                 </div>
               </Link>
             ) : (
-              <div className="relative aspect-[4/5] w-[78%] overflow-hidden rounded-card bg-surface shadow-2xl" />
+              <div className="relative aspect-[4/5] w-[80%] overflow-hidden bg-white border border-line shadow-md" />
             )}
 
             {item2 && cover2 ? (
               <Link
                 href={`/products/${item2.slug}`}
-                className="group absolute bottom-0 right-0 block aspect-[3/4] w-[52%] overflow-hidden rounded-card bg-surface ring-8 ring-cream-dark shadow-2xl transition-transform duration-300 hover:scale-[1.03]"
+                className="group absolute bottom-0 right-0 block aspect-[3/4] w-[54%] overflow-hidden border-4 border-[#f7f7f7] bg-white shadow-lg transition-transform duration-300 hover:scale-[1.03]"
               >
                 <MediaFrame
                   media={cover2}
                   alt={item2.name}
                   sizes="(max-width: 1024px) 40vw, 240px"
-                  className="transition-transform duration-700 group-hover:scale-105"
+                  className="transition-transform duration-500 group-hover:scale-105"
                 />
                 {cover2.type === "video" && (
-                  <PlayBadge className="absolute bottom-2.5 left-2.5 h-6 w-6" />
+                  <PlayBadge className="absolute bottom-2 left-2 h-6 w-6" />
                 )}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/90 via-ink/40 to-transparent p-3 text-cream">
-                  <p className="font-medium text-xs text-cream truncate group-hover:underline">{item2.name}</p>
-                  <p className="text-[11px] font-semibold text-gold mt-0.5">{formatPrice(item2.price)}</p>
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-3 text-white">
+                  <p className="font-bold text-xs text-white truncate group-hover:underline">{item2.name}</p>
+                  <p className="text-[11px] font-bold text-[#ff4d4f] mt-0.5">{formatPrice(item2.price)}</p>
                 </div>
               </Link>
             ) : null}
-
-            <a
-              href={SHOPEE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Ghé gian hàng Shopee"
-              className="absolute -right-1 top-6 grid h-14 w-14 place-items-center rounded-full text-cream shadow-lg transition-transform hover:scale-110 active:scale-95"
-              style={{ backgroundColor: SHOPEE_ORANGE }}
-            >
-              <Bag className="h-6 w-6" />
-            </a>
           </div>
         </div>
       </div>

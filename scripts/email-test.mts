@@ -90,13 +90,13 @@ const sample = {
     total: 1_700_000,
   },
   payment: {
-    provider: "payos" as const,
+    provider: "sepay" as const,
     bin: "970418",
     bankName: "BIDV",
     accountNumber: "8852909690",
     accountName: "DAO DUY LAM",
     amount: 1_700_000,
-    description: "TBC THUNGHIEM",
+    description: "TBCTHUNGHIEM",
     qrCode: "",
   },
 };

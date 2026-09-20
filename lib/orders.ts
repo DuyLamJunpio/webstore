@@ -19,16 +19,16 @@
  */
 
 import type { CustomerInfo, PricedCart } from "./checkout";
-import type { PaymentStatus } from "./payos";
+import type { PaymentStatus } from "./payment-status";
 import type { PaymentMethodKey } from "./sales";
 import { warehouseFetch } from "./warehouse";
 
 export type OrderPayment = {
   /**
-   * "payos" once the merchant keys are in place; "fallback" is a local VietQR.
-   * "cod" là đơn trả khi nhận hàng — không có mã QR nào để hiện.
+   * SePay watches a local VietQR transfer. "fallback" is retained only so
+   * existing unpaid preview orders can still be displayed after the migration.
    */
-  provider: "payos" | "fallback" | "cod";
+  provider: "sepay" | "fallback" | "cod";
   bin: string;
   bankName?: string;
   accountNumber: string;
@@ -46,7 +46,7 @@ export type OrderPayment = {
 export type Order = {
   /** unguessable id used in the URL, so order pages cannot be enumerated */
   ref: string;
-  /** the integer PayOS keys the payment on */
+  /** Legacy numeric identifier retained for existing stored orders. */
   orderCode: number;
   createdAt: number;
   expiresAt: number;
@@ -54,7 +54,7 @@ export type Order = {
   paidAt?: number;
   /**
    * VND actually received. Only interesting when it falls short of
-   * `payment.amount` — PayOS reports that as UNDERPAID, and the shopper needs
+   * `payment.amount` — SePay reports transfers individually, and the shopper needs
    * to be told how much is still missing.
    */
   amountPaid?: number;
@@ -64,7 +64,7 @@ export type Order = {
    * Lúc thư xác nhận được nhận gửi, tính bằng mili giây.
    *
    * Có mặt = đã có người nhận việc gửi, đừng gửi nữa. Hai đường đều có thể xác
-   * nhận một đơn đã trả tiền — webhook của PayOS và vòng poll của trang thanh
+   * nhận một đơn đã trả tiền — webhook SePay và vòng poll của trang thanh
    * toán — nên thiếu cờ này là khách nhận hai, ba lá thư giống hệt nhau.
    */
   confirmationEmailSentAt?: number;
@@ -85,7 +85,7 @@ export type Order = {
   /**
    * Mã đơn bên trang quản trị (Laravel), ví dụ "DH2608171ABC".
    *
-   * Chỉ có sau khi PayOS báo PAID (trừ đơn COD hàng bán sẵn). Trước đó,
+   * Chỉ có sau khi SePay báo PAID (trừ đơn COD hàng bán sẵn). Trước đó,
    * StorefrontOrder chỉ là phiên thanh toán nội bộ, không phải đơn hiển thị cho nhân viên.
    */
   warehouseOrderCode?: string;
@@ -95,9 +95,10 @@ export type Order = {
 
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I/O/0/1 — these get read aloud
 
-/** short, unambiguous, unguessable: 12 chars of the reduced alphabet ≈ 60 bits */
+/** short, unambiguous, unguessable: 10 chars of the reduced alphabet ≈ 50 bits */
 function newRef(): string {
-  const bytes = new Uint8Array(12);
+  // SePay accepts payment-code suffixes up to 10 characters.
+  const bytes = new Uint8Array(10);
   crypto.getRandomValues(bytes);
   return Array.from(bytes, (byte) => ALPHABET[byte % ALPHABET.length]).join("");
 }
@@ -106,9 +107,8 @@ function newRef(): string {
 let lastOrderCode = 0;
 
 /**
- * PayOS wants a positive integer, unique for the lifetime of the merchant
- * account. Milliseconds since the epoch is unique per shop and stays well
- * inside the 2^53 ceiling.
+ * The value is retained as a stable legacy identifier. Milliseconds since the
+ * epoch avoids collisions even when several orders are created in quick succession.
  *
  * Cột `order_code` bên kho là UNIQUE, nên trùng mã bị chặn thẳng chứ không âm
  * thầm khớp sai giao dịch. Bộ đếm dưới đây lo phần hay xảy ra: hai đơn rơi vào
@@ -145,7 +145,7 @@ async function readOrder(url: string): Promise<Order | null> {
 }
 
 /**
- * reserves ref + orderCode before the payment link exists, so PayOS can be told both
+ * Reserves ref + orderCode before the payment QR is persisted.
  *
  * Không gọi mạng: mã sinh ngay tại đây, và bảng bên kho tự chặn trùng lúc lưu.
  * Thêm một chặng mạng vào đây chỉ làm khách chờ thêm ngay trước khi thấy mã QR.
@@ -182,7 +182,7 @@ export function getOrderByCode(orderCode: number): Promise<Order | null> {
  * Ghi một phần thay đổi vào đơn.
  *
  * Bên kho hoà `patch` vào đơn trong một transaction có khoá dòng, nên webhook
- * PayOS và vòng poll chạy sát nhau vẫn không xoá mất phần của nhau.
+ * webhook SePay và vòng poll chạy sát nhau vẫn không xoá mất phần của nhau.
  */
 export async function updateOrder(ref: string, patch: Partial<Order>): Promise<Order | null> {
   const response = await warehouseFetch(at(ref), {

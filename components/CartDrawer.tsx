@@ -56,11 +56,11 @@ export default function CartDrawer() {
         className="absolute inset-0 bg-ink/50 backdrop-blur-xs fade-in"
       />
 
-      <div className="absolute inset-y-0 right-0 flex w-[min(94vw,440px)] flex-col bg-cream shadow-2xl transition-transform duration-300">
-        <header className="flex items-center justify-between border-b border-line px-5 py-4">
+      <div className="absolute inset-y-0 right-0 flex w-[min(94vw,440px)] flex-col bg-white shadow-2xl transition-transform duration-300">
+        <header className="flex items-center justify-between border-b border-[#e5e5e5] px-5 py-4">
           <div className="flex items-center gap-2">
-            <p className="text-lg font-semibold text-ink">Giỏ hàng</p>
-            <span className="rounded-full bg-ink px-2 py-0.5 text-xs font-bold text-cream">
+            <p className="text-sm font-black uppercase tracking-wider text-ink">GIỎ HÀNG</p>
+            <span className="bg-[#e60012] px-2 py-0.5 text-xs font-black text-white">
               {totalCount}
             </span>
           </div>
@@ -68,50 +68,50 @@ export default function CartDrawer() {
             type="button"
             onClick={closeCart}
             aria-label="Đóng giỏ hàng"
-            className="grid h-9 w-9 place-items-center rounded-full text-muted transition-colors hover:bg-ink/5 hover:text-ink"
+            className="grid h-8 w-8 place-items-center text-ink transition-colors hover:bg-black/5"
           >
-            <Close />
+            <Close className="h-4 w-4" />
           </button>
         </header>
 
         {!hasItems ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
-            <div className="grid h-16 w-16 place-items-center rounded-full bg-surface shadow-xs ring-1 ring-line">
-              <Bag className="h-7 w-7 text-muted" />
+            <div className="grid h-16 w-16 place-items-center border border-[#e5e5e5] bg-[#f7f7f7] shadow-xs">
+              <Bag className="h-7 w-7 text-[#777777]" />
             </div>
-            <p className="font-serif text-2xl font-semibold text-ink">Giỏ hàng đang trống</p>
-            <p className="text-xs sm:text-sm leading-relaxed text-muted max-w-xs">
-              Thêm một món yêu thích và nó sẽ nằm lại đây mà không cần đăng nhập.
+            <p className="font-sans text-xl font-black uppercase text-ink">Giỏ hàng đang trống</p>
+            <p className="text-xs sm:text-sm leading-relaxed text-[#777777] max-w-xs">
+              Thêm một món đồ LifeWear yêu thích và nó sẽ nằm lại đây mà không cần đăng nhập.
             </p>
             <Link
               href="/shop"
               onClick={closeCart}
-              className="mt-2 inline-flex h-11 items-center rounded-full bg-ink px-7 text-sm font-semibold text-cream shadow-xs transition-transform hover:scale-105 active:scale-95"
+              className="mt-2 inline-flex h-11 items-center bg-black px-8 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-[#e60012]"
             >
-              Bắt đầu mua sắm
+              BẮT ĐẦU MUA SẮM
             </Link>
           </div>
         ) : (
           <>
             {/* ── Tiến trình freeship ── */}
             {hienThanhMienPhi && (
-              <div className="border-b border-line bg-surface/50 px-5 py-3.5">
-                <div className="flex items-center justify-between text-xs sm:text-[13px]">
+              <div className="border-b border-[#e5e5e5] bg-[#f7f7f7] px-5 py-3.5">
+                <div className="flex items-center justify-between text-xs">
                   {conThieu > 0 ? (
-                    <p className="text-muted">
-                      Mua thêm <strong className="text-ink font-semibold">{conThieu} sản phẩm</strong> để nhận Freeship.
+                    <p className="text-[#555555]">
+                      Mua thêm <strong className="text-ink font-black">{conThieu} sản phẩm</strong> để nhận Freeship.
                     </p>
                   ) : (
-                    <p className="flex items-center gap-1.5 font-semibold text-gold-deep">
-                      <Sparkles className="h-4 w-4" />
-                      <span>Đã đạt Freeship toàn quốc!</span>
+                    <p className="flex items-center gap-1.5 font-bold text-[#e60012]">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      <span>ĐÃ ĐẠT TIÊU CHUẨN FREESHIP!</span>
                     </p>
                   )}
-                  <span className="text-xs font-bold text-muted">{Math.round(progress)}%</span>
+                  <span className="text-xs font-black text-ink">{Math.round(progress)}%</span>
                 </div>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-line-strong/40">
+                <div className="mt-2 h-1 overflow-hidden bg-[#e5e5e5]">
                   <div
-                    className="h-full rounded-full bg-gold transition-all duration-500"
+                    className="h-full bg-[#e60012] transition-all duration-500"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
@@ -119,13 +119,13 @@ export default function CartDrawer() {
             )}
 
             {/* ── Danh sách sản phẩm ── */}
-            <ul className="flex-1 overflow-y-auto px-5 divide-y divide-line">
+            <ul className="flex-1 overflow-y-auto px-5 divide-y divide-[#e5e5e5]">
               {items.map((line) => (
                 <li key={line.id} className="flex gap-3.5 py-4">
                   <Link
                     href={`/products/${line.slug}`}
                     onClick={closeCart}
-                    className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-card bg-surface ring-1 ring-line shadow-xs"
+                    className="relative aspect-square w-20 shrink-0 overflow-hidden border border-[#e5e5e5] bg-white shadow-xs"
                   >
                     <Image src={line.image} alt={line.name} fill sizes="80px" className="object-cover" />
                   </Link>
@@ -136,16 +136,16 @@ export default function CartDrawer() {
                         <Link
                           href={`/products/${line.slug}`}
                           onClick={closeCart}
-                          className="line-clamp-2 text-sm font-semibold leading-snug text-ink hover:text-gold-deep transition-colors"
+                          className="line-clamp-2 text-xs sm:text-sm font-bold leading-snug text-ink hover:text-[#e60012] transition-colors"
                           title={line.name}
                         >
                           {line.name}
                         </Link>
-                        <p className="shrink-0 text-sm font-bold text-ink">
+                        <p className="shrink-0 text-xs sm:text-sm font-black text-ink">
                           {formatPrice(line.price * line.qty)}
                         </p>
                       </div>
-                      <p className="mt-1 text-xs text-muted">
+                      <p className="mt-1 text-xs text-[#777777]">
                         {[line.styleName, line.color, `Size ${line.size}`].filter(Boolean).join(" · ")}
                       </p>
                     </div>
@@ -161,7 +161,7 @@ export default function CartDrawer() {
                       <button
                         type="button"
                         onClick={() => remove(line.id)}
-                        className="text-xs text-muted hover:text-ink underline underline-offset-4 transition-colors"
+                        className="text-xs text-[#777777] hover:text-[#e60012] underline underline-offset-4 transition-colors"
                       >
                         Xoá
                       </button>
@@ -172,7 +172,7 @@ export default function CartDrawer() {
 
               {printDrafts.map((printDraft) => (
                 <li key={printDraft.code} className="flex gap-3.5 py-4">
-                  <div className="relative grid aspect-square w-20 shrink-0 place-items-center overflow-hidden rounded-card bg-gold/8 ring-1 ring-gold-soft shadow-xs">
+                  <div className="relative grid aspect-square w-20 shrink-0 place-items-center overflow-hidden border border-[#e5e5e5] bg-[#f7f7f7] shadow-xs">
                     {printDraft.thumbUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -181,7 +181,7 @@ export default function CartDrawer() {
                         className="h-full w-full object-contain p-2"
                       />
                     ) : (
-                      <Bag className="h-7 w-7 text-gold-deep" />
+                      <Bag className="h-6 w-6 text-ink" />
                     )}
                   </div>
 
@@ -189,28 +189,28 @@ export default function CartDrawer() {
                     <div>
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="line-clamp-2 text-sm font-semibold leading-snug text-ink">
-                            Áo in theo yêu cầu
+                          <p className="line-clamp-2 text-xs sm:text-sm font-bold leading-snug text-ink">
+                            Áo in theo yêu cầu (UTme!)
                           </p>
-                          <p className="mt-1 text-xs text-muted">{printDraft.label}</p>
+                          <p className="mt-1 text-xs text-[#777777]">{printDraft.label}</p>
                         </div>
-                        <p className="shrink-0 text-sm font-bold text-ink">
+                        <p className="shrink-0 text-xs sm:text-sm font-black text-ink">
                           {formatPrice(printDraft.total)}
                         </p>
                       </div>
-                      <p className="mt-1 font-mono text-[11px] text-gold-deep">
+                      <p className="mt-1 font-mono text-[11px] text-[#e60012]">
                         {printDraft.code} · {printDraft.qty} áo · giao sau {printDraft.leadDays} ngày
                       </p>
                     </div>
 
                     <div className="mt-2 flex items-center justify-between gap-3">
-                      <span className="rounded-full bg-cream px-3 py-1 text-xs font-semibold text-ink ring-1 ring-line">
+                      <span className="border border-[#e5e5e5] bg-white px-2.5 py-0.5 text-xs font-bold text-ink">
                         SL {printDraft.qty}
                       </span>
                       <button
                         type="button"
                         onClick={() => removePrintDraft(printDraft.code)}
-                        className="text-xs text-muted underline underline-offset-4 transition-colors hover:text-ink"
+                        className="text-xs text-[#777777] underline underline-offset-4 transition-colors hover:text-[#e60012]"
                       >
                         Xoá
                       </button>
@@ -221,29 +221,29 @@ export default function CartDrawer() {
             </ul>
 
             {/* ── Footer ── */}
-            <footer className="border-t border-line bg-surface/40 px-5 py-4 pb-safe shadow-sm">
+            <footer className="border-t border-[#e5e5e5] bg-[#f7f7f7] px-5 py-4 pb-safe shadow-sm">
               <div className="flex items-baseline justify-between">
-                <p className="text-sm text-muted">Tạm tính</p>
-                <p className="text-lg font-bold text-ink">{formatPrice(totalSubtotal)}</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-[#777777]">TẠM TÍNH</p>
+                <p className="text-lg font-black text-ink">{formatPrice(totalSubtotal)}</p>
               </div>
-              <p className="mt-0.5 text-xs text-muted">
-                Phí giao hàng được tính khi thanh toán.
+              <p className="mt-0.5 text-[11px] text-[#777777]">
+                Phí vận chuyển và coupon giảm giá sẽ được áp dụng ở bước thanh toán.
               </p>
 
               <div className="mt-4 flex flex-col gap-2">
                 <Link
                   href="/cart"
                   onClick={closeCart}
-                  className="flex h-12 items-center justify-center rounded-full bg-ink text-sm font-semibold text-cream shadow-sm transition-all hover:bg-ink-soft hover:scale-[1.01] active:scale-[0.98]"
+                  className="flex h-12 items-center justify-center bg-[#e60012] text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-[#cc0010]"
                 >
-                  Xem giỏ hàng & thanh toán
+                  THANH TOÁN ĐƠN HÀNG
                 </Link>
                 <button
                   type="button"
                   onClick={closeCart}
-                  className="h-10 w-full rounded-full border border-line-strong bg-surface text-xs font-semibold text-ink transition-colors hover:border-ink"
+                  className="h-10 w-full border border-black bg-white text-xs font-bold uppercase tracking-wider text-black transition-colors hover:bg-black hover:text-white"
                 >
-                  Tiếp tục xem sản phẩm
+                  TIẾP TỤC MUA SẮM
                 </button>
               </div>
             </footer>

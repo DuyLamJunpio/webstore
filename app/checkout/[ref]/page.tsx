@@ -6,7 +6,7 @@ import ClearCartOnPaid from "@/components/checkout/ClearCartOnPaid";
 import CopyField from "@/components/checkout/CopyField";
 import PaymentWatcher from "@/components/checkout/PaymentWatcher";
 import QrCode from "@/components/checkout/QrCode";
-import { ArrowRight, ArrowUpRight, Bag, Shield } from "@/components/icons";
+import { ArrowRight, Bag, Shield } from "@/components/icons";
 import { bankName } from "@/lib/banks";
 import { formatAddress } from "@/lib/checkout";
 import { isOpen, syncOrderStatus } from "@/lib/order-status";
@@ -278,16 +278,13 @@ export default async function OrderPage(props: PageProps<"/checkout/[ref]">) {
 
               {huy && (
                 <p className="mt-4 rounded-card border border-line bg-surface px-4 py-3 text-[13px] leading-relaxed text-muted">
-                  Bạn đã rời khỏi trang thanh toán của PayOS. Mã QR bên dưới vẫn còn hiệu lực nếu bạn
-                  muốn tiếp tục.
+                  Mã QR bên dưới vẫn còn hiệu lực nếu bạn muốn tiếp tục thanh toán.
                 </p>
               )}
 
-              {payment.provider === "fallback" && (
+              {payment.provider === "sepay" && (
                 <p className="mt-4 rounded-card border border-gold-soft bg-surface px-4 py-3 text-[13px] leading-relaxed text-muted">
-                  <span className="font-medium text-ink">Chế độ xem thử.</span> Cửa hàng chưa cấu hình
-                  PayOS, nên mã QR này trỏ thẳng tới tài khoản ngân hàng của cửa hàng và không có hệ
-                  thống nào tự động đối soát. Đơn hàng sẽ được xác nhận thủ công.
+                  SePay sẽ tự động đối soát sau khi ngân hàng báo giao dịch thành công.
                 </p>
               )}
 
@@ -332,17 +329,6 @@ export default async function OrderPage(props: PageProps<"/checkout/[ref]">) {
                 an toàn nhất. Nếu nhập tay, vui lòng sao chép chính xác từng dòng ở trên.
               </p>
 
-              {payment.checkoutUrl && (
-                <a
-                  href={payment.checkoutUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-medium underline underline-offset-4 transition-colors hover:text-gold-deep"
-                >
-                  Mở trang thanh toán PayOS
-                  <ArrowUpRight className="h-3.5 w-3.5" />
-                </a>
-              )}
             </>
           )}
         </section>

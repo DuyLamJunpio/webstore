@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Be_Vietnam_Pro, Playfair_Display } from "next/font/google";
+import { Be_Vietnam_Pro } from "next/font/google";
 import CartDrawer from "@/components/CartDrawer";
 import { getContent } from "@/lib/content";
 import { SalesProvider } from "@/lib/sales-context";
@@ -9,18 +9,8 @@ import Header from "@/components/Header";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import "./globals.css";
 
-/**
- * Cả hai font đều phải khai `subsets: ["latin", "vietnamese"]`.
- */
 const beVietnam = Be_Vietnam_Pro({
   variable: "--font-be-vietnam",
-  subsets: ["latin", "vietnamese"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
-
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
   subsets: ["latin", "vietnamese"],
   weight: ["400", "500", "600", "700"],
   display: "swap",
@@ -29,11 +19,11 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: {
-    default: "The Basic Concept — Đơn giản. Hằng ngày. Cho tất cả.",
+    default: "The Basic Concept — LifeWear. Đơn giản tạo nên sự hoàn hảo.",
     template: "%s — The Basic Concept",
   },
   description:
-    "Những món đồ mùa mới cho sự tự tin mỗi ngày. Áo khoác, đồ len và đồ cơ bản cho nam, nữ và trẻ em.",
+    "Trang phục LifeWear thường ngày khởi nguồn từ triết lý đơn giản, chất lượng và độ bền. Thời trang nam, nữ và trẻ em chất lượng cao cho mọi khoảnh khắc.",
   icons: {
     icon: [
       { url: "/icon.png", sizes: "32x32", type: "image/png" },
@@ -53,9 +43,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="vi"
-      className={`${beVietnam.variable} ${playfair.variable} h-full antialiased`}
+      className={`${beVietnam.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">
+      <body className="min-h-full flex flex-col font-sans bg-white text-ink">
         <SalesProvider value={sales}>
           <Header />
           <main className="flex-1 pb-16 lg:pb-0">{children}</main>

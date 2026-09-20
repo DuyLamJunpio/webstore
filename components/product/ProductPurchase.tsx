@@ -38,6 +38,7 @@ export default function ProductPurchase({ product }: { product: Product }) {
     buyNow,
   } = useSharedVariantSelection();
 
+
   const discountPercent = product.comparePrice && product.comparePrice > product.price
     ? Math.round((1 - product.price / product.comparePrice) * 100)
     : 0;
@@ -47,14 +48,14 @@ export default function ProductPurchase({ product }: { product: Product }) {
     <div id="product-purchase-box">
       {/* ── Giá sản phẩm ── */}
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
-        <p className={`text-2xl sm:text-3xl font-bold ${showDiscount ? "text-[#c2410c]" : "text-ink"}`}>{formatPrice(price)}</p>
+        <p className={`text-2xl sm:text-3xl font-black ${showDiscount ? "text-[#e60012]" : "text-ink"}`}>{formatPrice(price)}</p>
         {showDiscount && product.comparePrice && (
           <>
-            <p className="text-base sm:text-lg text-muted line-through">
+            <p className="text-base sm:text-lg text-[#777777] line-through">
               {formatPrice(product.comparePrice)}
             </p>
-            <span className="eyebrow rounded-full bg-[#c2410c] px-2.5 py-1 text-[10px] font-bold text-white shadow-xs">
-              Giảm {discountPercent}%
+            <span className="bg-[#e60012] px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white shadow-2xs">
+              GIẢM {discountPercent}%
             </span>
           </>
         )}
@@ -71,11 +72,11 @@ export default function ProductPurchase({ product }: { product: Product }) {
       {/* ── Lựa chọn màu sắc ── */}
       <div className="mt-6">
         <div className="flex items-baseline justify-between">
-          <p className="eyebrow text-ink/70">
-            Màu sắc: <span className="font-semibold text-ink">{color}</span>
+          <p className="text-xs font-bold uppercase tracking-wider text-[#666666]">
+            MÀU SẮC: <span className="font-black text-ink">{color}</span>
           </p>
         </div>
-        <div className="mt-3 flex flex-wrap gap-3">
+        <div className="mt-3 flex flex-wrap gap-2.5">
           {availableColors.map((option) => {
             const soldOut = isColorSoldOut(option.name);
             const isSelected = color === option.name;
@@ -87,20 +88,20 @@ export default function ProductPurchase({ product }: { product: Product }) {
                 aria-pressed={isSelected}
                 aria-label={`${option.name}${soldOut ? " — hết hàng" : ""}`}
                 title={option.name}
-                className={`relative grid h-10 w-10 place-items-center rounded-full ring-offset-2 ring-offset-cream transition-all ${
+                className={`relative grid h-9 w-9 place-items-center rounded-full ring-offset-2 ring-offset-white transition-all ${
                   isSelected
-                    ? "ring-2 ring-ink scale-105"
-                    : "ring-1 ring-line-strong hover:ring-ink hover:scale-105"
+                    ? "ring-2 ring-black scale-105"
+                    : "ring-1 ring-[#d5d5d5] hover:ring-black"
                 }`}
               >
                 <span
-                  className="h-7 w-7 rounded-full shadow-inner"
+                  className="h-6 w-6 rounded-full shadow-inner border border-black/10"
                   style={{ backgroundColor: option.hex }}
                   aria-hidden
                 />
                 {soldOut && (
                   <span aria-hidden className="absolute inset-0 grid place-items-center">
-                    <span className="h-px w-8 rotate-45 bg-ink/60" />
+                    <span className="h-px w-8 rotate-45 bg-black/70" />
                   </span>
                 )}
               </button>
@@ -112,16 +113,16 @@ export default function ProductPurchase({ product }: { product: Product }) {
       {/* ── Lựa chọn kích cỡ ── */}
       <div className="mt-6">
         <div className="flex items-baseline justify-between">
-          <p className="eyebrow text-ink/70">Kích cỡ</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-[#666666]">KÍCH CỠ</p>
           <button
             type="button"
-            className="text-xs sm:text-[13px] text-gold-deep font-semibold underline underline-offset-4 transition-colors hover:text-ink"
+            className="text-xs text-black font-bold uppercase tracking-wider underline underline-offset-4 transition-colors hover:text-[#e60012]"
             onClick={() => setShowSizeGuide(true)}
           >
-            Hướng dẫn chọn size
+            Bảng hướng dẫn chọn size
           </button>
         </div>
-        <div className="mt-3 flex flex-wrap gap-2.5">
+        <div className="mt-3 flex flex-wrap gap-2">
           {availableSizes.map((option) => {
             const stock = stockBySize[option] ?? 0;
             const selected = size === option;
@@ -132,11 +133,11 @@ export default function ProductPurchase({ product }: { product: Product }) {
                 disabled={stock === 0}
                 onClick={() => pickSize(option)}
                 aria-pressed={selected}
-                className={`h-11 min-w-[56px] rounded-full border px-4 text-sm font-semibold transition-all ${
+                className={`h-10 min-w-[52px] border px-4 text-xs font-bold uppercase transition-all ${
                   selected
-                    ? "border-ink bg-ink text-cream shadow-xs"
-                    : "border-line-strong bg-surface text-ink/80 hover:border-ink hover:text-ink"
-                } disabled:cursor-not-allowed disabled:border-line disabled:text-muted/40 disabled:line-through disabled:hover:border-line disabled:bg-cream-dark/50`}
+                    ? "border-black bg-black text-white shadow-2xs"
+                    : "border-[#d5d5d5] bg-white text-ink hover:border-black"
+                } disabled:cursor-not-allowed disabled:border-[#e5e5e5] disabled:text-[#999999]/40 disabled:line-through disabled:bg-[#f7f7f7]`}
               >
                 {option}
               </button>
@@ -145,19 +146,19 @@ export default function ProductPurchase({ product }: { product: Product }) {
         </div>
 
         {/* ── Trạng thái tồn kho ── */}
-        <div className="mt-3 min-h-5 text-xs sm:text-[13px]">
+        <div className="mt-3 min-h-5 text-xs">
           {styleSoldOut ? (
-            <span className="text-muted">Mẫu này đã hết hàng — mời bạn chọn mẫu khác.</span>
+            <span className="text-[#777777]">Mẫu này đã hết hàng — mời bạn chọn mẫu khác.</span>
           ) : colorSoldOut ? (
-            <span className="text-muted">Màu này đã hết hàng — mời bạn chọn màu khác.</span>
+            <span className="text-[#777777]">Màu này đã hết hàng — mời bạn chọn màu khác.</span>
           ) : variant && variant.stock === 0 ? (
-            <span className="text-muted">Size này đã hết hàng.</span>
+            <span className="text-[#777777]">Size này đã hết hàng.</span>
           ) : variant && variant.stock <= LOW_STOCK ? (
-            <span className="text-gold-deep font-semibold">Chỉ còn {variant.stock} sản phẩm ở size này.</span>
+            <span className="text-[#e60012] font-bold">Chỉ còn {variant.stock} sản phẩm ở size này.</span>
           ) : variant ? (
-            <span className="text-muted">Còn hàng — giao trong 1–2 ngày làm việc.</span>
+            <span className="text-[#777777]">Còn hàng — giao trong 1–2 ngày làm việc.</span>
           ) : (
-            <span className="text-muted">Chọn kích cỡ của bạn.</span>
+            <span className="text-[#777777]">Vui lòng chọn kích cỡ phù hợp.</span>
           )}
         </div>
       </div>
@@ -165,7 +166,7 @@ export default function ProductPurchase({ product }: { product: Product }) {
       {/* ── Số lượng & Các nút Mua hàng ── */}
       <div className="mt-6 space-y-3">
         <div className="flex items-center gap-3">
-          <span className="text-xs sm:text-[13px] font-semibold text-ink/70">Số lượng:</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-[#666666]">SỐ LƯỢNG:</span>
           <QuantityStepper value={qty} onChange={setQty} max={Math.max(max, 1)} />
         </div>
 
@@ -174,27 +175,27 @@ export default function ProductPurchase({ product }: { product: Product }) {
             type="button"
             onClick={() => addToCart()}
             disabled={styleSoldOut || colorSoldOut}
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border-2 border-ink bg-surface px-6 text-sm font-semibold text-ink shadow-xs transition-all hover:bg-ink hover:text-cream active:scale-[0.98] disabled:cursor-not-allowed disabled:border-line disabled:text-muted disabled:bg-surface/50"
+            className="inline-flex h-12 w-full items-center justify-center gap-2 border-2 border-black bg-white px-6 text-xs font-bold uppercase tracking-wider text-black shadow-xs transition-colors hover:bg-black hover:text-white active:scale-[0.98] disabled:cursor-not-allowed disabled:border-[#e5e5e5] disabled:text-[#999999]"
           >
-            <Bag className="h-[18px] w-[18px]" />
-            <span>{styleSoldOut || colorSoldOut ? "Hết hàng" : "Thêm vào giỏ"}</span>
+            <Bag className="h-4 w-4" />
+            <span>{styleSoldOut || colorSoldOut ? "HẾT HÀNG" : "THÊM VÀO GIỎ"}</span>
           </button>
 
           <button
             type="button"
             onClick={buyNow}
             disabled={styleSoldOut || colorSoldOut || isBuying}
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-ink px-6 text-sm font-semibold text-cream shadow-md transition-all hover:bg-ink-soft hover:shadow-lg active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-ink/40"
+            className="inline-flex h-12 w-full items-center justify-center gap-2 bg-[#e60012] px-6 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-[#cc0010] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#e60012]/40"
           >
             {isBuying ? (
               <>
-                <Spinner className="h-[18px] w-[18px] text-gold" />
-                <span>Đang xử lý…</span>
+                <Spinner className="h-4 w-4 text-white" />
+                <span>ĐANG XỬ LÝ…</span>
               </>
             ) : (
               <>
-                <Bolt className="h-[18px] w-[18px] text-gold" />
-                <span>{styleSoldOut || colorSoldOut ? "Hết hàng" : "Mua ngay"}</span>
+                <Bolt className="h-4 w-4 text-white" />
+                <span>{styleSoldOut || colorSoldOut ? "HẾT HÀNG" : "MUA NGAY"}</span>
               </>
             )}
           </button>
@@ -202,14 +203,14 @@ export default function ProductPurchase({ product }: { product: Product }) {
       </div>
 
       {error && (
-        <p aria-live="polite" className="mt-3 text-xs sm:text-[13px] font-semibold text-gold-deep">
+        <p aria-live="polite" className="mt-3 text-xs font-bold text-[#e60012]">
           {error}
         </p>
       )}
 
-      <p className="mt-4 text-xs sm:text-[13px] leading-relaxed text-muted">
+      <p className="mt-4 text-xs leading-relaxed text-[#777777]">
         Không cần đăng ký tài khoản — giỏ hàng được lưu tự động trên thiết bị này.{" "}
-        <Link href="/cart" className="font-medium text-ink underline underline-offset-4 hover:text-gold-deep">
+        <Link href="/cart" className="font-bold text-black underline underline-offset-4 hover:text-[#e60012]">
           Xem giỏ hàng
         </Link>
       </p>

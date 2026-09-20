@@ -2,11 +2,13 @@ import Link from "next/link";
 import { ArrowUpRight } from "./icons";
 
 export default function SectionHeading({
+  eyebrow,
   title,
   subtitle,
   action,
   align = "between",
 }: {
+  eyebrow?: string;
   title: string;
   subtitle?: string;
   action?: { label: string; href: string };
@@ -15,17 +17,22 @@ export default function SectionHeading({
   if (align === "center") {
     return (
       <div className="flex flex-col items-center text-center">
-        <h2 className="max-w-3xl font-serif text-[clamp(2.25rem,4vw,3.5rem)] font-medium leading-[1.05] tracking-[-0.015em]">
+        {eyebrow && (
+          <span className="mb-2 inline-block bg-[#e60012] px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white">
+            {eyebrow}
+          </span>
+        )}
+        <h2 className="max-w-3xl font-sans text-[clamp(1.75rem,3.5vw,2.75rem)] font-extrabold leading-[1.1] tracking-[-0.01em] uppercase text-ink">
           {title}
         </h2>
-        {subtitle && <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-muted">{subtitle}</p>}
+        {subtitle && <p className="mt-3 max-w-xl text-sm sm:text-[15px] leading-relaxed text-[#666666]">{subtitle}</p>}
         {action && (
           <Link
             href={action.href}
-            className="mt-7 inline-flex h-11 items-center gap-2 rounded-full border border-line-strong px-6 text-sm font-medium transition-colors hover:border-ink hover:bg-ink hover:text-cream"
+            className="mt-6 inline-flex h-10 items-center gap-2 border border-black px-6 text-xs font-bold uppercase tracking-wider text-ink transition-colors hover:bg-black hover:text-white"
           >
-            {action.label}
-            <ArrowUpRight />
+            <span>{action.label}</span>
+            <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
         )}
       </div>
@@ -33,20 +40,25 @@ export default function SectionHeading({
   }
 
   return (
-    <div className="flex flex-wrap items-end justify-between gap-6">
+    <div className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-4">
       <div>
-        <h2 className="max-w-2xl font-serif text-[clamp(2.25rem,4vw,3.5rem)] font-medium leading-[1.05] tracking-[-0.015em]">
+        {eyebrow && (
+          <span className="mb-2 inline-block bg-[#e60012] px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white">
+            {eyebrow}
+          </span>
+        )}
+        <h2 className="max-w-2xl font-sans text-[clamp(1.75rem,3.5vw,2.75rem)] font-extrabold leading-[1.1] tracking-[-0.01em] uppercase text-ink">
           {title}
         </h2>
-        {subtitle && <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-muted">{subtitle}</p>}
+        {subtitle && <p className="mt-2 max-w-lg text-sm sm:text-[15px] leading-relaxed text-[#666666]">{subtitle}</p>}
       </div>
       {action && (
         <Link
           href={action.href}
-          className="inline-flex h-11 items-center gap-2 rounded-full border border-line-strong px-6 text-sm font-medium transition-colors hover:border-ink hover:bg-ink hover:text-cream"
+          className="inline-flex h-9 items-center gap-2 border border-black bg-white px-5 text-xs font-bold uppercase tracking-wider text-ink transition-colors hover:bg-black hover:text-white"
         >
-          {action.label}
-          <ArrowUpRight />
+          <span>{action.label}</span>
+          <ArrowUpRight className="h-3.5 w-3.5" />
         </Link>
       )}
     </div>

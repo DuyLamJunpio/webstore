@@ -86,10 +86,10 @@ export default function ProductGallery({
               aria-selected={index === activeIndex}
               aria-label={`${item.type === "video" ? "Xem video" : "Xem ảnh"} ${index + 1}`}
               onClick={() => selectIndex(index)}
-              className={`relative aspect-square w-14 shrink-0 overflow-hidden rounded-card bg-surface transition-all sm:w-16 md:w-20 ${
+              className={`relative aspect-square w-14 shrink-0 overflow-hidden border bg-white transition-all sm:w-16 md:w-20 ${
                 index === activeIndex
-                  ? "ring-2 ring-ink scale-102 shadow-xs"
-                  : "ring-1 ring-line hover:ring-ink/40 opacity-75 hover:opacity-100"
+                  ? "border-2 border-black"
+                  : "border-[#e5e5e5] opacity-75 hover:opacity-100 hover:border-black"
               }`}
             >
               <MediaFrame media={item} alt="" sizes="80px" />
@@ -101,7 +101,7 @@ export default function ProductGallery({
 
       {/* ── Main Viewport ── */}
       <div
-        className="group relative flex-1 overflow-hidden rounded-block bg-surface ring-1 ring-line shadow-xs"
+        className="group relative flex-1 overflow-hidden border border-[#e5e5e5] bg-white shadow-xs"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
@@ -137,27 +137,27 @@ export default function ProductGallery({
 
             <span
               aria-hidden
-              className="absolute bottom-4 right-4 grid h-10 w-10 place-items-center rounded-full bg-white/90 text-ink shadow-md backdrop-blur transition-opacity duration-300 lg:opacity-0 lg:group-hover:opacity-100"
+              className="absolute bottom-3 right-3 grid h-9 w-9 place-items-center border border-black/15 bg-white text-ink shadow-xs transition-opacity duration-300 lg:opacity-0 lg:group-hover:opacity-100"
             >
-              <Search className="h-[18px] w-[18px]" />
+              <Search className="h-4 w-4" />
             </span>
           </button>
         )}
 
         {badge && (
-          <span className="eyebrow pointer-events-none absolute left-3.5 top-3.5 rounded-full bg-gold px-3 py-1 text-[9px] font-bold leading-none text-cream shadow-xs">
+          <span className="pointer-events-none absolute left-3 top-3 bg-[#e60012] px-2.5 py-1 text-[10px] font-black uppercase tracking-widest leading-none text-white shadow-xs">
             {badge}
           </span>
         )}
 
-        {/* ── Mobile Dot Indicators ── */}
+        {/* ── Mobile Dash Indicators ── */}
         {displayedMedia.length > 1 && (
-          <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 md:hidden pointer-events-none">
+          <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1 md:hidden pointer-events-none">
             {displayedMedia.map((item, index) => (
               <span
                 key={`${item.type}:${item.src}`}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  index === activeIndex ? "w-6 bg-ink shadow-xs" : "w-1.5 bg-ink/30"
+                className={`h-0.5 transition-all duration-300 ${
+                  index === activeIndex ? "w-5 bg-black" : "w-2 bg-black/30"
                 }`}
               />
             ))}

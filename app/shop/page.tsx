@@ -65,10 +65,10 @@ export default async function ShopPage(props: PageProps<"/shop">) {
       </nav>
 
       <header className="mt-4 max-w-2xl">
-        <h1 className="font-serif text-[clamp(2.25rem,4vw,3.5rem)] font-medium leading-[1.05] tracking-[-0.015em] text-ink">
+        <h1 className="font-sans text-[clamp(2rem,3.8vw,3.25rem)] font-black uppercase leading-[1.05] tracking-tight text-ink">
           {pageTitle}
         </h1>
-        <p className="mt-3 text-sm sm:text-[15px] leading-relaxed text-muted">
+        <p className="mt-2.5 text-xs sm:text-sm leading-relaxed text-[#666666]">
           {pageDescription}
         </p>
       </header>
@@ -104,18 +104,18 @@ export default async function ShopPage(props: PageProps<"/shop">) {
               ))}
             </div>
           ) : (
-            <div className="mt-8 rounded-block border border-line bg-surface px-6 py-16 text-center shadow-xs">
-              <p className="font-serif text-2xl font-semibold text-ink">
+            <div className="mt-8 border border-line bg-white px-6 py-16 text-center shadow-xs">
+              <p className="font-sans text-xl sm:text-2xl font-black uppercase text-ink">
                 Không tìm thấy sản phẩm phù hợp
               </p>
-              <p className="measure mt-3 text-sm sm:text-[15px] leading-relaxed text-muted">
+              <p className="measure mt-3 text-xs sm:text-sm leading-relaxed text-[#666666]">
                 Thử bỏ bớt bộ lọc đã chọn, nới rộng khoảng giá hoặc tìm kiếm với từ khoá khác.
               </p>
               <Link
                 href="/shop"
-                className="mt-6 inline-flex h-11 items-center rounded-full bg-ink px-6 text-sm font-semibold text-cream shadow-xs transition-transform hover:scale-105 active:scale-95"
+                className="mt-6 inline-flex h-11 items-center bg-black px-7 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#e60012]"
               >
-                Đặt lại toàn bộ
+                Đặt lại toàn bộ bộ lọc
               </Link>
             </div>
           )}

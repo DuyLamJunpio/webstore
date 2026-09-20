@@ -11,27 +11,33 @@ export default function Testimonials() {
     <section id="reviews" className="shell section">
       <SectionHeading
         align="center"
-        title="Được hàng nghìn khách hàng yêu thích"
-        subtitle="Lý do khách hàng quay lại: kiểu dáng không lỗi mốt, cảm giác mặc cao cấp và sự tự tin mỗi ngày."
+        eyebrow="Ý KIẾN KHÁCH HÀNG"
+        title="ĐƯỢC HÀNG NGHÌN KHÁCH HÀNG TIN CHỌN"
+        subtitle="Trải nghiệm trang phục tối giản, chất lượng cao cấp và cảm giác thoải mái trọn vẹn mỗi ngày từ khách hàng thực tế."
       />
 
-      <div className="mt-8 sm:mt-12 grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-8 sm:mt-12 grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {testimonials.map((tile, i) =>
           tile.type === "quote" ? (
             <figure
               key={`q-${i}`}
-              className="flex min-h-[220px] flex-col justify-between rounded-2xl bg-surface p-6 sm:p-8 ring-1 ring-line shadow-xs xl:p-10"
+              className="flex min-h-[220px] flex-col justify-between border border-line bg-white p-6 sm:p-8 shadow-xs"
             >
-              <Diamond className="h-2.5 w-2.5 text-gold" />
-              <blockquote className="mt-4 text-base sm:text-[17px] leading-relaxed xl:text-[19px] text-ink font-normal">
+              <div className="flex items-center gap-1 text-[#e60012] text-xs font-black tracking-widest">
+                <span>★★★★★</span>
+                <span className="ml-2 text-[10px] text-muted font-bold uppercase tracking-wider">ĐÁNH GIÁ 5 SAO</span>
+              </div>
+              <blockquote className="mt-4 text-sm sm:text-base leading-relaxed text-ink font-normal">
                 &ldquo;{tile.quote}&rdquo;
               </blockquote>
-              <figcaption className="mt-4 text-xs sm:text-sm font-medium text-muted">— {tile.author}</figcaption>
+              <figcaption className="mt-5 border-t border-[#f0f0f0] pt-3 text-xs font-bold uppercase tracking-wider text-muted">
+                — {tile.author}
+              </figcaption>
             </figure>
           ) : (
             <div
               key={`i-${i}`}
-              className="relative min-h-[220px] overflow-hidden rounded-2xl bg-cream-dark"
+              className="relative min-h-[220px] overflow-hidden border border-line bg-[#f7f7f7]"
             >
               <Image
                 src={tile.src}

@@ -4,7 +4,7 @@
  * Server only. Chỉ được gọi sau khi đơn đã thật sự sang trạng thái PAID — thư
  * này là lời khẳng định đã nhận tiền, gửi nhầm lúc chưa nhận là mất uy tín.
  *
- * Hai đường cùng có thể xác nhận một đơn: webhook của PayOS và vòng poll của
+ * Hai đường cùng có thể xác nhận một đơn: webhook của SePay và vòng poll của
  * trang thanh toán. `sendOrderConfirmation` an toàn khi bị gọi nhiều lần —
  * quyền gửi được giành qua `claimConfirmationEmail`, ai giành trước thì gửi.
  */

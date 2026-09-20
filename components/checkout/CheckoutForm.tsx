@@ -273,7 +273,7 @@ function CheckoutFields({
         // private mode — the address just will not be remembered
       }
 
-      // Giữ mẫu trong giỏ cho tới khi PayOS xác nhận. Khách đóng trang QR,
+      // Giữ mẫu trong giỏ cho tới khi SePay xác nhận. Khách đóng trang QR,
       // chuyển thiếu tiền hoặc để QR hết hạn vẫn có thể quay lại thanh toán; ClearCartOnPaid
       // mới dọn cả giỏ sau sự kiện PAID.
 
@@ -812,19 +812,19 @@ function CheckoutFields({
                     href={CONTACT.zaloUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded-full bg-ink px-5 py-3 text-[13px] font-semibold text-cream transition-colors hover:bg-gold-deep"
+                    className="border border-black bg-black px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#e60012] hover:border-[#e60012]"
                   >
                     Nhắn Zalo
                   </a>
                   <a
                     href={CONTACT.phoneHref}
-                    className="rounded-full border border-line-strong px-5 py-3 text-[13px] font-semibold text-ink transition-colors hover:border-ink"
+                    className="border border-black bg-white px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-black transition-colors hover:bg-black hover:text-white"
                   >
                     Gọi {CONTACT.phoneDisplay}
                   </a>
                 </div>
 
-                <p className="mt-3 font-mono text-[11px] text-gold-deep">
+                <p className="mt-3 font-mono text-[11px] text-[#e60012]">
                   Mã mẫu: {printDrafts.map((draft) => draft.code).join(", ")}
                 </p>
               </div>
@@ -832,11 +832,11 @@ function CheckoutFields({
               <button
                 type="submit"
                 disabled={submitting}
-                className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-ink text-sm font-semibold text-cream transition-all hover:bg-ink-soft active:scale-[0.99] disabled:opacity-75 disabled:cursor-wait shadow-sm"
+                className="mt-5 flex h-12 w-full items-center justify-center gap-2 bg-[#e60012] text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#cc0010] active:scale-[0.99] disabled:opacity-75 disabled:cursor-wait shadow-xs"
               >
                 {submitting ? (
                   <>
-                    <Spinner className="h-4 w-4 text-cream" />
+                    <Spinner className="h-4 w-4 text-white" />
                     <span>{NHAN_NUT_DANG_GUI[method]}</span>
                   </>
                 ) : (

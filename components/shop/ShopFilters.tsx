@@ -22,8 +22,8 @@ const pricePresets = [
 
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="border-b border-line py-5 first:pt-0">
-      <h3 className="eyebrow text-ink/70">{title}</h3>
+    <section className="border-b border-[#e5e5e5] py-5 first:pt-0">
+      <h3 className="text-xs font-black uppercase tracking-wider text-ink">{title}</h3>
       <div className="mt-3.5">{children}</div>
     </section>
   );
@@ -43,8 +43,8 @@ function Checkbox({
   const disabled = count === 0 && !checked;
   return (
     <label
-      className={`flex cursor-pointer items-center gap-3 py-2 text-[14px] sm:text-[15px] transition-opacity ${
-        disabled ? "cursor-not-allowed opacity-35" : "hover:text-gold-deep"
+      className={`flex cursor-pointer items-center gap-3 py-1.5 text-xs sm:text-sm transition-colors ${
+        disabled ? "cursor-not-allowed opacity-35" : "hover:text-[#e60012]"
       }`}
     >
       <input
@@ -52,10 +52,10 @@ function Checkbox({
         checked={checked}
         disabled={disabled}
         onChange={onChange}
-        className="h-[18px] w-[18px] shrink-0 appearance-none rounded-[5px] border border-line-strong bg-surface transition-colors checked:border-ink checked:bg-ink checked:bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22 fill=%22none%22 stroke=%22%23f5efe6%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22m3.5 8.5 3 3 6-6%22/></svg>')] checked:bg-center checked:bg-no-repeat"
+        className="h-4 w-4 shrink-0 appearance-none rounded-none border border-[#999999] bg-white transition-colors checked:border-black checked:bg-black checked:bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22 fill=%22none%22 stroke=%22%23ffffff%22 stroke-width=%222.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22m3.5 8.5 3 3 6-6%22/></svg>')] checked:bg-center checked:bg-no-repeat"
       />
       <span className="flex-1 font-medium">{label}</span>
-      <span className="text-xs text-muted">({count})</span>
+      <span className="text-xs text-[#777777]">({count})</span>
     </label>
   );
 }
@@ -97,7 +97,7 @@ function Facets({ queryString, counts, facets }: Omit<Props, "activeCount">) {
   };
 
   const flag = (key: string, label: string) => (
-    <label className="flex cursor-pointer items-center gap-3 py-2 text-[14px] sm:text-[15px] hover:text-gold-deep">
+    <label className="flex cursor-pointer items-center gap-3 py-1.5 text-xs sm:text-sm hover:text-[#e60012]">
       <input
         type="checkbox"
         checked={params.get(key) === "1"}
@@ -107,7 +107,7 @@ function Facets({ queryString, counts, facets }: Omit<Props, "activeCount">) {
             if (event.target.checked) next.set(key, "1");
           })
         }
-        className="h-[18px] w-[18px] shrink-0 appearance-none rounded-[5px] border border-line-strong bg-surface transition-colors checked:border-ink checked:bg-ink checked:bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22 fill=%22none%22 stroke=%22%23f5efe6%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22m3.5 8.5 3 3 6-6%22/></svg>')] checked:bg-center checked:bg-no-repeat"
+        className="h-4 w-4 shrink-0 appearance-none rounded-none border border-[#999999] bg-white transition-colors checked:border-black checked:bg-black checked:bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22 fill=%22none%22 stroke=%22%23ffffff%22 stroke-width=%222.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22m3.5 8.5 3 3 6-6%22/></svg>')] checked:bg-center checked:bg-no-repeat"
       />
       <span className="font-medium">{label}</span>
     </label>
@@ -131,7 +131,7 @@ function Facets({ queryString, counts, facets }: Omit<Props, "activeCount">) {
         <div className="flex flex-col gap-4">
           {facets.sizeGroups.map((group) => (
             <div key={group.label}>
-              <p className="mb-2 text-xs font-semibold text-muted uppercase tracking-wider">{group.label}</p>
+              <p className="mb-2 text-[11px] font-bold text-[#777777] uppercase tracking-wider">{group.label}</p>
               <div className="flex flex-wrap gap-2">
                 {group.sizes.map((size) => {
                   const checked = has(PARAM.size, size);
@@ -143,11 +143,11 @@ function Facets({ queryString, counts, facets }: Omit<Props, "activeCount">) {
                       aria-pressed={checked}
                       disabled={count === 0 && !checked}
                       onClick={() => toggle(PARAM.size, size)}
-                      className={`h-9 min-w-[44px] rounded-full border px-3 text-[13px] font-semibold transition-all ${
+                      className={`h-9 min-w-[44px] border px-3 text-xs font-bold uppercase transition-all ${
                         checked
-                          ? "border-ink bg-ink text-cream shadow-xs"
-                          : "border-line-strong bg-surface text-ink/80 hover:border-ink hover:text-ink"
-                      } disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-line-strong`}
+                          ? "border-black bg-black text-white shadow-2xs"
+                          : "border-[#d5d5d5] bg-white text-ink hover:border-black"
+                      } disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-[#d5d5d5]`}
                     >
                       {size}
                     </button>
@@ -173,12 +173,12 @@ function Facets({ queryString, counts, facets }: Omit<Props, "activeCount">) {
                 aria-pressed={checked}
                 disabled={count === 0 && !checked}
                 onClick={() => toggle(PARAM.color, color.name)}
-                className={`grid h-9 w-9 place-items-center rounded-full ring-offset-2 ring-offset-cream transition-all ${
-                  checked ? "ring-2 ring-ink scale-105" : "ring-1 ring-line-strong hover:ring-ink"
+                className={`grid h-8 w-8 place-items-center rounded-full ring-offset-2 ring-offset-white transition-all ${
+                  checked ? "ring-2 ring-black scale-105" : "ring-1 ring-[#d5d5d5] hover:ring-black"
                 } disabled:cursor-not-allowed disabled:opacity-25`}
               >
                 <span
-                  className="h-6 w-6 rounded-full shadow-inner"
+                  className="h-5 w-5 rounded-full shadow-inner border border-black/10"
                   style={{ backgroundColor: color.hex }}
                   aria-hidden
                 />
@@ -198,10 +198,10 @@ function Facets({ queryString, counts, facets }: Omit<Props, "activeCount">) {
                 key={preset.label}
                 type="button"
                 onClick={() => applyPreset(preset.min, preset.max)}
-                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                className={`border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-colors ${
                   isActive
-                    ? "border-ink bg-ink text-cream font-semibold"
-                    : "border-line-strong bg-surface text-ink/75 hover:border-ink"
+                    ? "border-black bg-black text-white"
+                    : "border-[#d5d5d5] bg-white text-ink/80 hover:border-black"
                 }`}
               >
                 {preset.label}
@@ -220,9 +220,9 @@ function Facets({ queryString, counts, facets }: Omit<Props, "activeCount">) {
             onBlur={() => applyPrice()}
             placeholder="Từ đ"
             aria-label="Giá thấp nhất"
-            className="h-10 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-xs sm:text-sm outline-none focus:border-ink"
+            className="h-10 w-full border border-[#d5d5d5] bg-white px-3 text-xs outline-none focus:border-black"
           />
-          <span className="text-muted">–</span>
+          <span className="text-[#777777]">–</span>
           <input
             type="number"
             inputMode="numeric"
@@ -232,7 +232,7 @@ function Facets({ queryString, counts, facets }: Omit<Props, "activeCount">) {
             onBlur={() => applyPrice()}
             placeholder="Đến đ"
             aria-label="Giá cao nhất"
-            className="h-10 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-xs sm:text-sm outline-none focus:border-ink"
+            className="h-10 w-full border border-[#d5d5d5] bg-white px-3 text-xs outline-none focus:border-black"
           />
         </form>
       </Group>
@@ -264,12 +264,12 @@ export default function ShopFilters({ queryString, counts, facets, activeCount }
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="inline-flex h-11 items-center gap-2 rounded-full border border-line-strong bg-surface px-5 text-sm font-semibold text-ink shadow-xs transition-colors hover:border-ink active:scale-95"
+          className="inline-flex h-10 items-center gap-2 border border-black bg-white px-5 text-xs font-bold uppercase tracking-wider text-black shadow-xs transition-colors hover:bg-black hover:text-white active:scale-95"
         >
-          <Filter className="h-4 w-4 text-gold-deep" />
-          <span>Bộ lọc</span>
+          <Filter className="h-3.5 w-3.5" />
+          <span>BỘ LỌC</span>
           {activeCount > 0 && (
-            <span className="grid h-5 min-w-5 place-items-center rounded-full bg-ink px-1.5 text-[10px] font-bold text-cream">
+            <span className="grid h-4 min-w-4 place-items-center bg-[#e60012] px-1 text-[10px] font-black text-white">
               {activeCount}
             </span>
           )}
@@ -281,19 +281,15 @@ export default function ShopFilters({ queryString, counts, facets, activeCount }
             <div
               aria-hidden
               onClick={() => setOpen(false)}
-              className="fixed inset-0 bg-ink/50 backdrop-blur-xs fade-in"
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs fade-in"
             />
-            <div className="relative z-10 flex w-full max-h-[85vh] flex-col rounded-t-[24px] bg-cream shadow-2xl sheet-up">
-              {/* Handle */}
-              <div className="flex justify-center pt-3 pb-1">
-                <div className="h-1.5 w-12 rounded-full bg-ink/20" />
-              </div>
-
-              <div className="flex items-center justify-between border-b border-line px-6 py-4">
+            <div className="relative z-10 flex w-full max-h-[85vh] flex-col bg-white shadow-2xl sheet-up">
+              {/* Top Bar */}
+              <div className="flex items-center justify-between border-b border-[#e5e5e5] px-6 py-4">
                 <div className="flex items-center gap-2">
-                  <p className="text-lg font-semibold">Bộ lọc sản phẩm</p>
+                  <p className="text-sm font-black uppercase tracking-wider">BỘ LỌC TÌM KIẾM</p>
                   {activeCount > 0 && (
-                    <span className="rounded-full bg-gold px-2 py-0.5 text-xs font-bold text-cream">
+                    <span className="bg-[#e60012] px-1.5 py-0.5 text-[10px] font-black text-white">
                       {activeCount}
                     </span>
                   )}
@@ -302,9 +298,9 @@ export default function ShopFilters({ queryString, counts, facets, activeCount }
                   type="button"
                   onClick={() => setOpen(false)}
                   aria-label="Đóng bộ lọc"
-                  className="grid h-9 w-9 place-items-center rounded-full text-muted transition-colors hover:bg-ink/5 hover:text-ink"
+                  className="grid h-8 w-8 place-items-center text-ink transition-colors hover:bg-black/5"
                 >
-                  <Close />
+                  <Close className="h-4 w-4" />
                 </button>
               </div>
 
@@ -312,18 +308,18 @@ export default function ShopFilters({ queryString, counts, facets, activeCount }
                 <Facets queryString={queryString} counts={counts} facets={facets} />
               </div>
 
-              <div className="flex gap-3 border-t border-line bg-surface/60 px-6 py-4 pb-safe">
+              <div className="flex gap-3 border-t border-[#e5e5e5] bg-white px-6 py-4 pb-safe">
                 <button
                   type="button"
                   onClick={clearAll}
-                  className="h-11 flex-1 rounded-full border border-line-strong bg-surface text-sm font-semibold text-ink transition-colors hover:border-ink active:scale-95"
+                  className="h-11 flex-1 border border-black bg-white text-xs font-bold uppercase tracking-wider text-black transition-colors hover:bg-black hover:text-white active:scale-95"
                 >
                   Xoá tất cả
                 </button>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="h-11 flex-1 rounded-full bg-ink text-sm font-semibold text-cream transition-opacity hover:opacity-90 active:scale-95 shadow-xs"
+                  className="h-11 flex-1 bg-[#e60012] text-xs font-bold uppercase tracking-wider text-white transition-opacity hover:opacity-90 active:scale-95"
                 >
                   Xem kết quả
                 </button>
@@ -336,13 +332,13 @@ export default function ShopFilters({ queryString, counts, facets, activeCount }
       {/* ── Desktop Sticky Sidebar ── */}
       <aside className="hidden lg:block">
         <div className="sticky top-[92px] max-h-[calc(100vh-112px)] overflow-y-auto pr-3">
-          <div className="flex items-center justify-between pb-4 border-b border-line">
-            <p className="eyebrow font-bold">Bộ lọc sản phẩm</p>
+          <div className="flex items-center justify-between pb-3 border-b border-[#e5e5e5]">
+            <p className="text-xs font-black uppercase tracking-wider text-black">BỘ LỌC TÌM KIẾM</p>
             {activeCount > 0 && (
               <button
                 type="button"
                 onClick={clearAll}
-                className="text-xs text-gold-deep font-semibold underline underline-offset-4 transition-colors hover:text-ink"
+                className="text-xs text-[#e60012] font-bold uppercase tracking-wider underline underline-offset-4 transition-colors hover:text-black"
               >
                 Xoá tất cả ({activeCount})
               </button>

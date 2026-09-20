@@ -29,7 +29,7 @@ export default async function SeasonalDrop() {
           className="shell section"
         >
           <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-            <div className="relative min-h-[380px] sm:min-h-[460px] overflow-hidden rounded-block bg-ink shadow-md lg:min-h-full">
+            <div className="relative min-h-[380px] sm:min-h-[460px] overflow-hidden bg-black border border-line lg:min-h-full">
               <Image
                 src={collection.imageUrl ?? "/images/seasonal-drop.png"}
                 alt={collection.title}
@@ -37,19 +37,21 @@ export default async function SeasonalDrop() {
                 sizes="(max-width: 1024px) 100vw, 45vw"
                 className="object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/25 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-6 sm:p-9 text-cream">
-                <span className="eyebrow text-gold-soft">Bộ Sưu Tập Giới Hạn</span>
-                <h2 className="mt-2 font-serif text-[clamp(2rem,3.2vw,3.25rem)] font-medium leading-[1.05] tracking-[-0.015em]">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-6 sm:p-9 text-white">
+                <span className="inline-block bg-[#e60012] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-white shadow-2xs">
+                  BỘ SƯU TẬP ĐẶC BIỆT
+                </span>
+                <h2 className="mt-3 font-sans text-[clamp(1.75rem,3.2vw,3rem)] font-extrabold uppercase leading-[1.05] tracking-[-0.015em] text-white">
                   {collection.title}
                 </h2>
                 {collection.subtitle ? (
-                  <p className="mt-3 max-w-xs text-sm leading-relaxed text-cream/80">{collection.subtitle}</p>
+                  <p className="mt-3 max-w-xs text-sm leading-relaxed text-white/80">{collection.subtitle}</p>
                 ) : null}
                 {collection.ctaLabel && collection.ctaLink ? (
                   <Link
                     href={collection.ctaLink}
-                    className="mt-6 inline-flex h-11 items-center gap-2 rounded-full bg-cream px-6 text-sm font-semibold text-ink shadow-md transition-transform duration-200 hover:scale-105 active:scale-95"
+                    className="mt-6 inline-flex h-11 items-center gap-2 bg-white px-7 text-xs font-bold uppercase tracking-wider text-ink transition-colors hover:bg-[#e60012] hover:text-white"
                   >
                     <span>{collection.ctaLabel}</span>
                     <ArrowUpRight className="h-4 w-4" />
