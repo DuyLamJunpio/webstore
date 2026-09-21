@@ -31,6 +31,7 @@ import {
 import { useSales } from "@/lib/sales-context";
 import type { Voucher, VoucherQuote } from "@/lib/vouchers";
 import { ArrowRight, Bag, Bolt, Spinner } from "../icons";
+import LocationPicker from "./LocationPicker";
 
 /** the shop has no accounts, so the last address typed is the only "profile" there is */
 const DRAFT_KEY = "tbc.checkout.v1";
@@ -472,22 +473,11 @@ function CheckoutFields({
               placeholder="ban@email.com"
               onChange={update}
             />
-            <Field
-              name="city"
-              label="Tỉnh / Thành phố"
-              value={customer.city}
-              error={errors.city}
-              autoComplete="address-level1"
-              placeholder="TP. Hồ Chí Minh"
-              onChange={update}
-            />
-            <Field
-              name="ward"
-              label="Phường / Xã"
-              value={customer.ward}
-              error={errors.ward}
-              autoComplete="address-level2"
-              placeholder="Phường Bến Nghé"
+            <LocationPicker
+              city={customer.city}
+              ward={customer.ward}
+              cityError={errors.city}
+              wardError={errors.ward}
               onChange={update}
             />
             <Field

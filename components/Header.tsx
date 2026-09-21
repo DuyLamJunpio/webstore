@@ -16,10 +16,8 @@ type NavLink = {
 };
 
 const links: NavLink[] = [
-  { label: "NỮ", href: "/shop?audience=N%E1%BB%AF" },
-  { label: "NAM", href: "/shop?audience=Nam" },
-  { label: "TRẺ EM", href: "/shop?audience=Tr%E1%BA%BB%20em" },
-  { label: "BỘ SƯU TẬP", href: "/shop" },
+  { label: "TẤT CẢ SẢN PHẨM", href: "/shop" },
+  { label: "SẢN PHẨM MỚI", href: "/shop?new=1" },
   {
     label: "KHUYẾN MÃI",
     href: "/shop?sale=1",
