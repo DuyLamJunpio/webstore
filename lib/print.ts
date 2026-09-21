@@ -125,6 +125,8 @@ export type PrintBlank = {
   name: string;
   description: string | null;
   base_price: number;
+  /** Giá bày trên webstore khi quản trị bật gộp phôi + kỹ thuật. */
+  display_price?: number | null;
   product_id: number | null;
   /**
    * null = phôi chưa xếp danh mục; thiếu hẳn khoá = trang quản trị đời cũ chưa
@@ -163,6 +165,7 @@ export type PrintAsset = {
 
 export type PrintCatalogue = PrintPricingData & {
   pricing_version_id: number | null;
+  display_combined_price?: boolean;
   positions: PrintPosition[];
   blanks: PrintBlank[];
   library: PrintAsset[];

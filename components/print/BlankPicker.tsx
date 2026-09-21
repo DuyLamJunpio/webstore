@@ -103,7 +103,7 @@ export default function BlankPicker({ blanks }: { blanks: PrintBlank[] }) {
                   )}
                   <h3 className="mt-1 font-semibold text-ink leading-snug">{blank.name}</h3>
                   <p className="mt-1 text-sm text-muted tabular-nums">
-                    Từ {formatPrice(blank.base_price)}
+                    Từ {formatPrice(blank.display_price ?? blank.base_price)}
                   </p>
                   <p className="mt-2 flex flex-wrap gap-1.5">
                     {blank.colors.slice(0, 6).map((color) => (

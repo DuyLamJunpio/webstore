@@ -203,7 +203,7 @@ export default function PrintStudio({ catalogue, blank }: Props) {
    * chỉnh khung, xưởng dàn chữ cho vừa khung đó.
    */
   const addText = useCallback(() => {
-    if (!position || !catalogue.fonts.length) return;
+    if (!position) return;
 
     const wMm = position.max_width_mm * 0.7;
     const hMm = Math.min(wMm * TEXT_BOX_RATIO, position.max_height_mm);
@@ -213,7 +213,9 @@ export default function PrintStudio({ catalogue, blank }: Props) {
       position: position.key,
       kind: "text",
       assetId: null,
-      text: { content: "Chữ của bạn", fontId: catalogue.fonts[0].id, color: "#1a1614" },
+      // Khi shop chưa khai báo phông riêng, dùng 0 làm dấu hiệu phông hệ
+      // thống; máy chủ sẽ nhận null và dựng chữ bằng sans-serif an toàn.
+      text: { content: "Chữ của bạn", fontId: catalogue.fonts[0]?.id ?? 0, color: "#1a1614" },
       ...dropAt(position, wMm, hMm),
       wMm,
       hMm,
@@ -374,7 +376,7 @@ export default function PrintStudio({ catalogue, blank }: Props) {
             kind: p.kind,
             asset_id: p.assetId,
             text_content: p.text?.content ?? null,
-            text_font_id: p.text?.fontId ?? null,
+            text_font_id: p.text?.fontId || null,
             text_color: p.text?.color ?? null,
             x_mm: p.xMm,
             y_mm: p.yMm,
@@ -801,21 +803,27 @@ export default function PrintStudio({ catalogue, blank }: Props) {
                   />
 
                   <div className="flex gap-2">
-                    <select
-                      value={selectedPlacement.text?.fontId ?? 0}
-                      onChange={(e) =>
-                        updatePlacement(selectedPlacement.key, {
-                          text: { ...selectedPlacement.text!, fontId: Number(e.target.value) },
-                        })
-                      }
-                      className="min-w-0 flex-1 rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm outline-none focus:border-ink"
-                    >
-                      {catalogue.fonts.map((f) => (
-                        <option key={f.id} value={f.id}>
-                          {f.name}
-                        </option>
-                      ))}
-                    </select>
+                    {catalogue.fonts.length > 0 ? (
+                      <select
+                        value={selectedPlacement.text?.fontId ?? catalogue.fonts[0].id}
+                        onChange={(e) =>
+                          updatePlacement(selectedPlacement.key, {
+                            text: { ...selectedPlacement.text!, fontId: Number(e.target.value) },
+                          })
+                        }
+                        className="min-w-0 flex-1 rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm outline-none focus:border-ink"
+                      >
+                        {catalogue.fonts.map((f) => (
+                          <option key={f.id} value={f.id}>
+                            {f.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="flex min-w-0 flex-1 items-center rounded-lg border border-line bg-cream-dark/30 px-3 py-2 text-xs text-muted">
+                        Phông mặc định
+                      </span>
+                    )}
 
                     <input
                       type="color"
@@ -901,14 +909,17 @@ export default function PrintStudio({ catalogue, blank }: Props) {
               />
             </label>
 
-            {catalogue.fonts.length > 0 && (
-              <button
-                type="button"
-                onClick={addText}
-                className="mt-3 w-full rounded-lg border border-line-strong px-4 py-3 text-sm font-semibold text-ink transition-colors hover:border-gold hover:bg-cream-dark/40"
-              >
-                Thêm dòng chữ
-              </button>
+            <button
+              type="button"
+              onClick={addText}
+              className="mt-3 w-full rounded-lg border border-line-strong px-4 py-3 text-sm font-semibold text-ink transition-colors hover:border-gold hover:bg-cream-dark/40"
+            >
+              Thêm dòng chữ
+            </button>
+            {catalogue.fonts.length === 0 && (
+              <p className="mt-2 text-[11px] leading-relaxed text-muted">
+                Shop chưa khai báo phông riêng, chữ sẽ dùng phông mặc định nhưng vẫn in được.
+              </p>
             )}
 
             {catalogue.library.length > 0 && (
