@@ -104,21 +104,14 @@ export async function getStorefrontCategories(): Promise<CategoryItem[]> {
       .map(apiCategory)
       .filter((item): item is ApiCategory => item !== null);
 
-    // Không hiển thị danh mục rỗng: bấm vào một ô trên trang chủ phải luôn có
-    // sản phẩm. Với cây cha-con, giữ danh mục cha nếu chính nó hoặc một nhánh
-    // con có hàng.
-    const roots = apiCategories
-      .filter((item) => item.parentId === null)
-      .filter((item) => isPrintCategory(item.name) || item.count > 0 || apiCategories.some(
-        (candidate) => candidate.parentId === item.id && candidate.count > 0,
-      ));
-    const displayed = roots.length > 0
-      ? roots
-      : apiCategories.filter((item) => item.count > 0);
+    // Backend chỉ trả danh mục đang sử dụng. Danh mục rỗng chỉ xuất hiện khi
+    // chủ shop đã chủ động bật nó (ví dụ Đồng Phục dẫn tới trang in áo).
+    const roots = apiCategories.filter((item) => item.parentId === null);
+    const displayed = roots.length > 0 ? roots : apiCategories;
 
     return displayed.map((item) => {
       const childNames = apiCategories
-        .filter((candidate) => candidate.parentId === item.id && candidate.count > 0)
+        .filter((candidate) => candidate.parentId === item.id)
         .map((candidate) => candidate.name);
       // Giữ cả danh mục gốc: một số shop xếp hàng trực tiếp vào nhóm gốc,
       // số khác xếp vào nhóm con; cả hai đều phải ra kết quả khi khách bấm.
@@ -131,7 +124,7 @@ export async function getStorefrontCategories(): Promise<CategoryItem[]> {
       return {
         id: item.id,
         name,
-        image: item.image ?? apiCategories.find((candidate) => candidate.parentId === item.id && candidate.count > 0)?.image ?? null,
+        image: item.image ?? apiCategories.find((candidate) => candidate.parentId === item.id)?.image ?? null,
         href: item.linkUrl ?? (isPrintCategory(name) ? "/in-ao" : `/shop?${params.toString()}`),
       };
     });
