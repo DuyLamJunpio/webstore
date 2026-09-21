@@ -56,6 +56,11 @@ function apiCategory(value: unknown): ApiCategory | null {
   };
 }
 
+const categoryKey = (name: string) =>
+  name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+
+const isPrintCategory = (name: string) => categoryKey(name) === "dong phuc";
+
 /**
  * Nạp danh mục trực tiếp từ API backend (`/api/storefront/categories`).
  * Tự động đồng bộ với nhãn cache CATALOGUE_TAG khi trang quản trị cập nhật.
@@ -102,7 +107,7 @@ export async function getStorefrontCategories(): Promise<CategoryItem[]> {
     // con có hàng.
     const roots = apiCategories
       .filter((item) => item.parentId === null)
-      .filter((item) => item.count > 0 || apiCategories.some(
+      .filter((item) => isPrintCategory(item.name) || item.count > 0 || apiCategories.some(
         (candidate) => candidate.parentId === item.id && candidate.count > 0,
       ));
     const displayed = roots.length > 0
@@ -125,7 +130,7 @@ export async function getStorefrontCategories(): Promise<CategoryItem[]> {
         id: item.id,
         name,
         image: item.image ?? apiCategories.find((candidate) => candidate.parentId === item.id && candidate.count > 0)?.image ?? null,
-        href: `/shop?${params.toString()}`,
+        href: isPrintCategory(name) ? "/in-ao" : `/shop?${params.toString()}`,
       };
     });
   } catch {
