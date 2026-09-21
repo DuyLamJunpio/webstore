@@ -36,6 +36,7 @@ type ApiCategory = {
   name: string;
   parentId: number | null;
   count: number;
+  linkUrl: string | null;
   image: string | null;
 };
 
@@ -52,6 +53,7 @@ function apiCategory(value: unknown): ApiCategory | null {
     name: value.name,
     parentId: typeof value.parent_id === "number" ? value.parent_id : null,
     count: typeof value.count === "number" ? value.count : 0,
+    linkUrl: typeof value.link_url === "string" && value.link_url.trim() ? value.link_url.trim() : null,
     image: normalizeImageUrl(typeof value.image === "string" ? value.image : null),
   };
 }
@@ -130,7 +132,7 @@ export async function getStorefrontCategories(): Promise<CategoryItem[]> {
         id: item.id,
         name,
         image: item.image ?? apiCategories.find((candidate) => candidate.parentId === item.id && candidate.count > 0)?.image ?? null,
-        href: isPrintCategory(name) ? "/in-ao" : `/shop?${params.toString()}`,
+        href: item.linkUrl ?? (isPrintCategory(name) ? "/in-ao" : `/shop?${params.toString()}`),
       };
     });
   } catch {
