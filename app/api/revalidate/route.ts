@@ -28,9 +28,10 @@ export async function POST(request: Request) {
   revalidateTag(CATALOGUE_TAG, { expire: 0 });
   revalidateTag(CONTENT_TAG, { expire: 0 });
   revalidateTag(PRINT_TAG, { expire: 0 });
-  // Trang chủ là Server Component có sẵn HTML/RSC trong Full Route Cache.
-  // Xoá luôn trang này để request kế tiếp dựng lại ngay từ dữ liệu mới.
-  revalidatePath("/", "page");
+  // Xoá từ root layout để các trang /shop, /products/* và /in-ao/* cùng bỏ
+  // Router/Full Route Cache; chỉ xoá "/" trước đây khiến những trang khác vẫn
+  // có thể giữ HTML cũ dù tag catalogue đã hết hạn.
+  revalidatePath("/", "layout");
 
   return NextResponse.json({ revalidated: true });
 }

@@ -30,10 +30,11 @@ import {
 export const CATALOGUE_TAG = "catalogue";
 
 /**
- * Trần thời gian dữ liệu được phép cũ khi không có ai gọi revalidate.
- * Ngắn hơn nữa thì mỗi lượt khách vào là một lần gọi sang quản trị.
+ * Trần thời gian dữ liệu được phép cũ khi webhook tạm lỗi. HTML storefront
+ * được dựng động để CDN không trả cả trang cũ, còn dữ liệu giữ 5 giây để không
+ * gọi Render cho mọi lượt tải. Vì vậy fallback vẫn dưới ngưỡng 10 giây.
  */
-const REVALIDATE_SECONDS = 60;
+const REVALIDATE_SECONDS = 5;
 
 const TIMEOUT_MS = 10_000;
 

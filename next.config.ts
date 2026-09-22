@@ -42,6 +42,19 @@ const warehouseImages = [
 ];
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // Không giữ RSC/Router Cache trong trình duyệt sau khi người dùng chuyển
+    // trang. Catalogue là dữ liệu vận hành; một Link hoặc thao tác Back không
+    // được phép bày lại danh mục/sản phẩm vừa được admin bật hoặc tắt.
+    staleTimes: {
+      // Next 16 yêu cầu route static giữ tối thiểu 30 giây. Các trang storefront
+      // đã là dynamic qua `app/layout.tsx`, nên giá trị này chỉ áp dụng tài sản
+      // tĩnh và không làm cũ catalogue.
+      static: 30,
+      dynamic: 0,
+    },
+  },
+
   /**
    * `next dev` serves its assets to localhost only; any other origin gets a 403
    * on /_next/static/chunks/*.js, which means React never hydrates and the whole
