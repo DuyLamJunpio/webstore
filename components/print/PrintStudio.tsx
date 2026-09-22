@@ -955,7 +955,9 @@ export default function PrintStudio({ catalogue, blank }: Props) {
           </div>
         </div>
 
-        {/* ── Bảng kê ── */}
+        {/* ── Giá bán cho khách ──
+            Quote vẫn tính riêng giá phôi, giá in và các phụ phí ở phía dưới để
+            đơn hàng chính xác. Trên storefront chỉ công bố một giá áo trọn gói. */}
         <aside className="space-y-4 lg:sticky lg:top-24">
           {notice && <Alert kind="bad">{notice}</Alert>}
           {result.errors.map((error) => (
@@ -966,31 +968,12 @@ export default function PrintStudio({ catalogue, blank }: Props) {
           ))}
 
           <div className="rounded-block border border-line bg-surface p-5">
-            <p className="eyebrow text-ink/70">Bảng kê chi tiết</p>
-
-            <div className="mt-3">
-              {result.lines.map((row, i) => (
-                <div
-                  key={`${row.label}-${i}`}
-                  className={`flex items-baseline justify-between gap-3 border-b border-dashed border-line py-2 last:border-0 ${
-                    row.sub ? "pl-3.5" : ""
-                  }`}
-                >
-                  <span className={row.sub ? "text-xs text-muted" : "text-[13px] text-ink"}>
-                    {row.sub && <span className="text-gold-deep">↳ </span>}
-                    {row.label}
-                    {row.meta && <span className="block text-[10.5px] text-muted">{row.meta}</span>}
-                  </span>
-                  <span
-                    className={`font-mono text-[13px] tabular-nums ${
-                      row.amount < 0 ? "text-[#4f7a52]" : "text-ink"
-                    }`}
-                  >
-                    {row.amount < 0 ? "−" : ""}
-                    {formatPrice(Math.abs(row.amount))}
-                  </span>
-                </div>
-              ))}
+            <p className="eyebrow text-ink/70">Giá áo thiết kế</p>
+            <div className="mt-3 border-b border-dashed border-line pb-3">
+              <p className="text-[13px] font-medium text-ink">{blank.name}</p>
+              <p className="mt-1 text-xs leading-relaxed text-muted">
+                Đã bao gồm phôi áo và chi phí in {technique ? `theo kỹ thuật ${technique.name}` : ""}.
+              </p>
             </div>
 
             <label className="mt-4 block">
@@ -1005,7 +988,7 @@ export default function PrintStudio({ catalogue, blank }: Props) {
             </label>
 
             <div className="mt-4 flex items-baseline justify-between border-t-2 border-ink pt-3">
-              <span className="text-xs font-semibold text-muted">Mỗi áo</span>
+              <span className="text-xs font-semibold text-muted">Giá mỗi áo</span>
               <span className="font-mono text-xl font-bold tabular-nums text-ink">
                 {formatPrice(result.unitPrice)}
               </span>
