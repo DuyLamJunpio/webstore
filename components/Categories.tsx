@@ -35,7 +35,6 @@ type ApiCategory = {
   id: number;
   name: string;
   parentId: number | null;
-  count: number;
   linkUrl: string | null;
   image: string | null;
 };
@@ -52,7 +51,6 @@ function apiCategory(value: unknown): ApiCategory | null {
     id: value.id,
     name: value.name,
     parentId: typeof value.parent_id === "number" ? value.parent_id : null,
-    count: typeof value.count === "number" ? value.count : 0,
     linkUrl: typeof value.link_url === "string" && value.link_url.trim() ? value.link_url.trim() : null,
     image: normalizeImageUrl(typeof value.image === "string" ? value.image : null),
   };
@@ -104,21 +102,17 @@ export async function getStorefrontCategories(): Promise<CategoryItem[]> {
       .map(apiCategory)
       .filter((item): item is ApiCategory => item !== null);
 
-    // Không hiển thị danh mục rỗng: bấm vào một ô trên trang chủ phải luôn có
-    // sản phẩm. Với cây cha-con, giữ danh mục cha nếu chính nó hoặc một nhánh
-    // con có hàng.
-    const roots = apiCategories
-      .filter((item) => item.parentId === null)
-      .filter((item) => isPrintCategory(item.name) || item.count > 0 || apiCategories.some(
-        (candidate) => candidate.parentId === item.id && candidate.count > 0,
-      ));
+    // API đã chỉ trả danh mục có trạng thái "Đang dùng". Không lọc tiếp theo
+    // số sản phẩm, vì danh mục như "Đồng Phục" có thể dẫn đến một trang riêng
+    // hoặc đang được chuẩn bị hàng nhưng vẫn cần hiện ở trang chủ.
+    const roots = apiCategories.filter((item) => item.parentId === null);
     const displayed = roots.length > 0
       ? roots
-      : apiCategories.filter((item) => item.count > 0);
+      : apiCategories;
 
     return displayed.map((item) => {
       const childNames = apiCategories
-        .filter((candidate) => candidate.parentId === item.id && candidate.count > 0)
+        .filter((candidate) => candidate.parentId === item.id)
         .map((candidate) => candidate.name);
       // Giữ cả danh mục gốc: một số shop xếp hàng trực tiếp vào nhóm gốc,
       // số khác xếp vào nhóm con; cả hai đều phải ra kết quả khi khách bấm.
@@ -131,7 +125,7 @@ export async function getStorefrontCategories(): Promise<CategoryItem[]> {
       return {
         id: item.id,
         name,
-        image: item.image ?? apiCategories.find((candidate) => candidate.parentId === item.id && candidate.count > 0)?.image ?? null,
+        image: item.image ?? apiCategories.find((candidate) => candidate.parentId === item.id)?.image ?? null,
         href: item.linkUrl ?? (isPrintCategory(name) ? "/in-ao" : `/shop?${params.toString()}`),
       };
     });
