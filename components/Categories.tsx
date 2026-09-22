@@ -77,7 +77,9 @@ export async function getStorefrontCategories(): Promise<CategoryItem[]> {
     const response = await fetch(`${base}/api/storefront/categories`, {
       headers: { Accept: "application/json" },
       signal: AbortSignal.timeout(6000),
-      next: { revalidate: 60, tags: [CATALOGUE_TAG] },
+      // Webhook là đường chính. 5 giây là lưới an toàn khi webhook
+      // tạm lỗi, để lần tải trang tiếp theo không giữ danh mục cũ lâu.
+      next: { revalidate: 5, tags: [CATALOGUE_TAG] },
     });
 
     if (!response.ok) {
@@ -142,7 +144,7 @@ export default async function Categories({
   allCategoriesLabel = "XEM TẤT CẢ DANH MỤC SẢN PHẨM",
 }: CategoriesProps = {}) {
   const categories =
-    propCategories && propCategories.length > 0
+    propCategories !== undefined
       ? propCategories
       : await getStorefrontCategories();
 

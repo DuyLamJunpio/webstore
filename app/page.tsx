@@ -1,6 +1,6 @@
 import AnnouncementBar from "@/components/AnnouncementBar";
 import BestSellers from "@/components/BestSellers";
-import Categories from "@/components/Categories";
+import Categories, { getStorefrontCategories } from "@/components/Categories";
 import FacebookSection from "@/components/FacebookSection";
 import Hero from "@/components/Hero";
 import LifeWearStory from "@/components/LifeWearStory";
@@ -17,9 +17,15 @@ import { bookableBlanks, getPrintCatalogue } from "@/lib/print-catalogue";
 import { coverMockup } from "@/lib/print";
 
 export default async function Home() {
-  const { bestSellers, bestSellerFilters, newArrivals } = await getCatalogue();
-  const content = await getContent();
-  const printCatalogue = await getPrintCatalogue();
+  // Bốn nguồn dữ liệu độc lập: tải song song để thời gian dựng
+  // trang chủ chỉ bằng request chậm nhất, không phải tổng của cả bốn.
+  const [catalogue, content, printCatalogue, categories] = await Promise.all([
+    getCatalogue(),
+    getContent(),
+    getPrintCatalogue(),
+    getStorefrontCategories(),
+  ]);
+  const { bestSellers, bestSellerFilters, newArrivals } = catalogue;
 
   /*
    * Trang chủ chỉ bày những phôi có thể đặt thật: còn vị trí in và có ít
@@ -48,7 +54,7 @@ export default async function Home() {
       <AnnouncementBar />
 
       {/* 1. Tìm theo danh mục */}
-      <Categories />
+      <Categories categories={categories} />
 
       {/* 2. Khuyến mãi có hạn */}
       <LimitedOffer />

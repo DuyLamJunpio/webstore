@@ -8,7 +8,7 @@
  * `WAREHOUSE_WEBHOOK_SECRET` mà web dùng khi báo đã thanh toán, chỉ đổi chiều.
  */
 
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { CATALOGUE_TAG } from "@/lib/catalogue";
 import { CONTENT_TAG } from "@/lib/content";
@@ -28,6 +28,9 @@ export async function POST(request: Request) {
   revalidateTag(CATALOGUE_TAG, { expire: 0 });
   revalidateTag(CONTENT_TAG, { expire: 0 });
   revalidateTag(PRINT_TAG, { expire: 0 });
+  // Trang chủ là Server Component có sẵn HTML/RSC trong Full Route Cache.
+  // Xoá luôn trang này để request kế tiếp dựng lại ngay từ dữ liệu mới.
+  revalidatePath("/", "page");
 
   return NextResponse.json({ revalidated: true });
 }
