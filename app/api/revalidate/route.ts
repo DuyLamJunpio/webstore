@@ -8,7 +8,7 @@
  * `WAREHOUSE_WEBHOOK_SECRET` mà web dùng khi báo đã thanh toán, chỉ đổi chiều.
  */
 
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { CATALOGUE_TAG } from "@/lib/catalogue";
 import { CONTENT_TAG } from "@/lib/content";
@@ -28,6 +28,10 @@ export async function POST(request: Request) {
   revalidateTag(CATALOGUE_TAG, { expire: 0 });
   revalidateTag(CONTENT_TAG, { expire: 0 });
   revalidateTag(PRINT_TAG, { expire: 0 });
+  // Xoá từ root layout để các trang /shop, /products/* và /in-ao/* cùng bỏ
+  // Router/Full Route Cache; chỉ xoá "/" trước đây khiến những trang khác vẫn
+  // có thể giữ HTML cũ dù tag catalogue đã hết hạn.
+  revalidatePath("/", "layout");
 
   return NextResponse.json({ revalidated: true });
 }

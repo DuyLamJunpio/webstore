@@ -35,7 +35,6 @@ type ApiCategory = {
   id: number;
   name: string;
   parentId: number | null;
-  count: number;
   linkUrl: string | null;
   image: string | null;
 };
@@ -52,7 +51,6 @@ function apiCategory(value: unknown): ApiCategory | null {
     id: value.id,
     name: value.name,
     parentId: typeof value.parent_id === "number" ? value.parent_id : null,
-    count: typeof value.count === "number" ? value.count : 0,
     linkUrl: typeof value.link_url === "string" && value.link_url.trim() ? value.link_url.trim() : null,
     image: normalizeImageUrl(typeof value.image === "string" ? value.image : null),
   };
@@ -79,7 +77,9 @@ export async function getStorefrontCategories(): Promise<CategoryItem[]> {
     const response = await fetch(`${base}/api/storefront/categories`, {
       headers: { Accept: "application/json" },
       signal: AbortSignal.timeout(6000),
-      next: { revalidate: 60, tags: [CATALOGUE_TAG] },
+      // Webhook là đường chính. 5 giây là lưới an toàn khi webhook
+      // tạm lỗi, để lần tải trang tiếp theo không giữ danh mục cũ lâu.
+      next: { revalidate: 5, tags: [CATALOGUE_TAG] },
     });
 
     if (!response.ok) {
@@ -104,10 +104,13 @@ export async function getStorefrontCategories(): Promise<CategoryItem[]> {
       .map(apiCategory)
       .filter((item): item is ApiCategory => item !== null);
 
-    // Backend chỉ trả danh mục đang sử dụng. Danh mục rỗng chỉ xuất hiện khi
-    // chủ shop đã chủ động bật nó (ví dụ Đồng Phục dẫn tới trang in áo).
+    // API chỉ trả danh mục có trạng thái "Đang dùng". Không lọc tiếp theo số
+    // sản phẩm: danh mục rỗng chỉ hiện khi chủ shop chủ động bật (ví dụ "Đồng
+    // Phục" dẫn đến trang in áo hoặc danh mục đang được chuẩn bị hàng).
     const roots = apiCategories.filter((item) => item.parentId === null);
-    const displayed = roots.length > 0 ? roots : apiCategories;
+    const displayed = roots.length > 0
+      ? roots
+      : apiCategories;
 
     return displayed.map((item) => {
       const childNames = apiCategories
@@ -141,7 +144,7 @@ export default async function Categories({
   allCategoriesLabel = "XEM TẤT CẢ DANH MỤC SẢN PHẨM",
 }: CategoriesProps = {}) {
   const categories =
-    propCategories && propCategories.length > 0
+    propCategories !== undefined
       ? propCategories
       : await getStorefrontCategories();
 

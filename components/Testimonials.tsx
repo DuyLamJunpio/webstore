@@ -1,7 +1,6 @@
 import Image from "next/image";
 import { testimonials } from "@/lib/data";
 import SectionHeading from "./SectionHeading";
-import { Diamond } from "./icons";
 
 export default function Testimonials() {
   // Chưa có đánh giá thật thì không dựng cả khối, thay vì hiện tiêu đề rỗng.

@@ -18,7 +18,9 @@ import type { PrintCatalogue } from "./print";
 /** Nhãn cache để trang quản trị xoá được sau khi xuất bản bảng giá. */
 export const PRINT_TAG = "print-catalogue";
 
-const REVALIDATE_SECONDS = 60;
+// Cùng chính sách với catalogue bán sẵn: webhook là đường chính, 5 giây là
+// lưới an toàn khi webhook có sự cố để phôi/danh mục không nằm lại bản cũ lâu.
+const REVALIDATE_SECONDS = 5;
 const TIMEOUT_MS = 10_000;
 
 const BASE = (process.env.WAREHOUSE_API_URL ?? "").replace(/\/$/, "");

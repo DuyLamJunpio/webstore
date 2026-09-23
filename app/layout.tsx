@@ -9,6 +9,14 @@ import Header from "@/components/Header";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import "./globals.css";
 
+/**
+ * Catalogue là dữ liệu vận hành: bật/tắt danh mục hoặc sản phẩm phải hiện ở
+ * lần tải kế tiếp. Nếu để toàn bộ layout prerender, CDN có thể trả HTML ISR
+ * cũ trong lúc dựng lại dù webhook đã xoá Data Cache. `0` giữ HTML động nhưng
+ * vẫn cho các fetch bên dưới dùng cache dữ liệu ngắn của riêng chúng.
+ */
+export const revalidate = 0;
+
 const beVietnam = Be_Vietnam_Pro({
   variable: "--font-be-vietnam",
   subsets: ["latin", "vietnamese"],
