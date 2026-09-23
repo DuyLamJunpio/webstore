@@ -396,7 +396,6 @@ export const sortOptions = [
   { value: "newest", label: "Mới nhất" },
   { value: "price-asc", label: "Giá thấp đến cao" },
   { value: "price-desc", label: "Giá cao đến thấp" },
-  { value: "rating", label: "Đánh giá cao nhất" },
   { value: "name", label: "Tên A–Z" },
 ] as const;
 
@@ -484,7 +483,6 @@ export function filterProducts(catalogue: Catalogue, query: ShopQuery): Product[
     newest: moiNhatTruoc,
     "price-asc": (a, b) => a.price - b.price,
     "price-desc": (a, b) => b.price - a.price,
-    rating: (a, b) => b.rating - a.rating || b.reviews - a.reviews,
     name: (a, b) => a.name.localeCompare(b.name, "vi"),
   };
 
@@ -603,7 +601,7 @@ export const footerNav = [
       { label: "Đồ nam", href: "/shop?audience=Nam" },
       { label: "Đồ nữ", href: "/shop?audience=N%E1%BB%AF" },
       { label: "Đồ trẻ em", href: "/shop?audience=Tr%E1%BA%BB%20em" },
-      { label: "Bán chạy nhất", href: "/shop?sort=rating" },
+      { label: "Bán chạy nhất", href: "/#best-sellers" },
       { label: "Đang giảm giá", href: "/shop?sale=1" },
       { label: "Hàng mới về", href: "/shop?new=1" },
     ],

@@ -104,9 +104,9 @@ export async function getStorefrontCategories(): Promise<CategoryItem[]> {
       .map(apiCategory)
       .filter((item): item is ApiCategory => item !== null);
 
-    // API đã chỉ trả danh mục có trạng thái "Đang dùng". Không lọc tiếp theo
-    // số sản phẩm, vì danh mục như "Đồng Phục" có thể dẫn đến một trang riêng
-    // hoặc đang được chuẩn bị hàng nhưng vẫn cần hiện ở trang chủ.
+    // API chỉ trả danh mục có trạng thái "Đang dùng". Không lọc tiếp theo số
+    // sản phẩm: danh mục rỗng chỉ hiện khi chủ shop chủ động bật (ví dụ "Đồng
+    // Phục" dẫn đến trang in áo hoặc danh mục đang được chuẩn bị hàng).
     const roots = apiCategories.filter((item) => item.parentId === null);
     const displayed = roots.length > 0
       ? roots

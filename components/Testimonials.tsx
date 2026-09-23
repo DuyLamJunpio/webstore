@@ -1,7 +1,6 @@
 import Image from "next/image";
 import { testimonials } from "@/lib/data";
 import SectionHeading from "./SectionHeading";
-import { Diamond } from "./icons";
 
 export default function Testimonials() {
   // Chưa có đánh giá thật thì không dựng cả khối, thay vì hiện tiêu đề rỗng.
@@ -23,11 +22,7 @@ export default function Testimonials() {
               key={`q-${i}`}
               className="flex min-h-[220px] flex-col justify-between border border-line bg-white p-6 sm:p-8 shadow-xs"
             >
-              <div className="flex items-center gap-1 text-[#8f633e] text-xs font-black tracking-widest">
-                <span>★★★★★</span>
-                <span className="ml-2 text-[10px] text-muted font-bold uppercase tracking-wider">ĐÁNH GIÁ 5 SAO</span>
-              </div>
-              <blockquote className="mt-4 text-sm sm:text-base leading-relaxed text-ink font-normal">
+              <blockquote className="text-sm sm:text-base leading-relaxed text-ink font-normal">
                 &ldquo;{tile.quote}&rdquo;
               </blockquote>
               <figcaption className="mt-5 border-t border-[#f0f0f0] pt-3 text-xs font-bold uppercase tracking-wider text-muted">
