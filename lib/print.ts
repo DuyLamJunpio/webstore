@@ -536,10 +536,6 @@ export function quote(
     }
   }
 
-  if (!positionContexts.length && !errors.length) {
-    warnings.push("Chưa có hình nào trên áo — mới tính tiền phôi.");
-  }
-
   const baseCtx = { techniqueId: technique.id, blankId: blank.id, tone, qty, inkColors };
 
   // ── BƯỚC 3 — phụ phí CỘNG ──────────────────────────────────────────
