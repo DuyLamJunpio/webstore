@@ -123,12 +123,6 @@ export default function ProductCard({
             )}
           </div>
 
-          {/* Rating đánh giá */}
-          <div className="mt-1 flex items-center gap-1 text-[11px] text-muted">
-            <span className="text-[#8f633e]">★</span>
-            <span className="font-semibold text-ink">{product.rating.toFixed(1)}</span>
-            <span>({product.reviews})</span>
-          </div>
         </div>
       </div>
     </article>

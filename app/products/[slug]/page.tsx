@@ -32,13 +32,6 @@ export async function generateMetadata(props: PageProps<"/products/[slug]">): Pr
   };
 }
 
-const Stars = ({ rating }: { rating: number }) => (
-  <span aria-hidden className="text-[#8f633e] tracking-tighter">
-    {"★★★★★".slice(0, Math.round(rating))}
-    <span className="text-[#cccccc]">{"★★★★★".slice(Math.round(rating))}</span>
-  </span>
-);
-
 export default async function ProductPage(props: PageProps<"/products/[slug]">) {
   const { slug } = await props.params;
   const catalogue = await getCatalogue();
@@ -92,15 +85,6 @@ export default async function ProductPage(props: PageProps<"/products/[slug]">) 
           <h1 className="mt-3 font-sans text-[clamp(1.75rem,3.2vw,2.5rem)] font-black uppercase leading-[1.08] tracking-tight text-ink">
             {product.name}
           </h1>
-
-          <div className="mt-3 flex items-center gap-2 text-xs sm:text-sm text-muted">
-            <Stars rating={product.rating} />
-            <span className="font-bold text-ink">
-              {product.rating.toFixed(1)}
-            </span>
-            <span>·</span>
-            <span>{product.reviews} đánh giá</span>
-          </div>
 
           <p className="mt-4 text-xs sm:text-sm leading-relaxed text-[#555555]">{product.description}</p>
 
