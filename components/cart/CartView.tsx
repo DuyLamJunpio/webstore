@@ -124,13 +124,13 @@ export default function CartView() {
 
           {printDrafts.map((printDraft) => (
             <li key={printDraft.code} className="flex gap-4 py-5 first:pt-0">
-              <div className="relative grid aspect-square w-24 shrink-0 place-items-center overflow-hidden rounded-card bg-gold/8 ring-1 ring-gold-soft shadow-xs sm:w-28">
+              <div className="relative grid aspect-square w-24 shrink-0 place-items-center overflow-hidden rounded-card bg-surface ring-1 ring-line shadow-xs sm:w-28">
                 {printDraft.thumbUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={printDraft.thumbUrl}
-                    alt=""
-                    className="h-full w-full object-contain p-3"
+                    alt={printDraft.label}
+                    className="h-full w-full object-contain p-1"
                   />
                 ) : (
                   <Bag className="h-8 w-8 text-gold-deep" />

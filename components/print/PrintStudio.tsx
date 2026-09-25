@@ -28,6 +28,7 @@ import { BULK_PRINT_FROM, isBulkPrint } from "@/lib/print-bulk";
 import { addPrintDraft } from "@/lib/print-draft";
 import {
   boundingBox,
+  coverMockup,
   dpiAt,
   pickTier,
   quote,
@@ -436,13 +437,14 @@ export default function PrintStudio({ catalogue, blank }: Props) {
        * đúng thiết kế), nhưng không vào giỏ — giá của đơn đó do người thật chốt.
        */
       if (!donSoLuongLon) {
+        const blankMockupUrl = mockup?.url ?? coverMockup(blank)?.url ?? null;
         addPrintDraft({
           code: data.code,
           label: `${blank.name} · ${design.colorName} · size ${design.size}`,
           qty: design.qty,
           unitPrice: data.unit_price,
           total: data.total_price,
-          thumbUrl: assets.get(design.placements[0]?.assetId ?? -1)?.url ?? null,
+          thumbUrl: data.thumb_url || blankMockupUrl,
           leadDays: Math.max(blank.lead_days, technique?.lead_days ?? 0),
         });
       }

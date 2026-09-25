@@ -175,11 +175,6 @@ function CheckoutFields({
   );
 
   const [customer, setCustomer] = useState<CustomerInfo>(readDraft);
-  /*
-   * Tài khoản nhận hoàn tiền. Chỉ hỏi khi đơn có mẫu in, vì chỉ đơn in mới có
-   * khả năng bị shop từ chối sau khi đã thu tiền.
-   */
-  const [refund, setRefund] = useState({ bankName: "", accountNumber: "", accountName: "" });
   const [errors, setErrors] = useState<CustomerErrors>({});
   const [formError, setFormError] = useState("");
   // Nhớ đang gửi bằng hình thức nào để chỉ khoá đúng nút khách vừa bấm.
@@ -243,7 +238,9 @@ function CheckoutFields({
           // Chỉ gửi MÃ mẫu in. Giá của nó máy chủ đọc lại từ trang quản trị,
           // đúng như giá hàng bán sẵn được dựng lại từ catalogue.
           printCodes: printDrafts.map((d) => d.code),
-          refund,
+          printThumbUrls: Object.fromEntries(
+            printDrafts.filter((d) => d.thumbUrl).map((d) => [d.code, d.thumbUrl!]),
+          ),
           voucherCode: voucherStillMatchesCart ? appliedVoucher?.voucher.code : undefined,
         }),
       });
@@ -537,14 +534,23 @@ function CheckoutFields({
                 key={printDraft.code}
                 className="mt-4 flex gap-3 rounded-card border border-gold-soft bg-gold/8 p-3"
               >
-                {printDraft.thumbUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={printDraft.thumbUrl}
-                    alt=""
-                    className="h-14 w-14 shrink-0 rounded-lg bg-surface object-contain p-1"
-                  />
-                )}
+                <div className="relative aspect-square w-14 shrink-0 overflow-hidden rounded-card bg-cream ring-1 ring-line">
+                  {printDraft.thumbUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={printDraft.thumbUrl}
+                      alt={printDraft.label}
+                      className="h-full w-full object-contain p-1"
+                    />
+                  ) : (
+                    <div className="grid h-full w-full place-items-center bg-gold/8">
+                      <Bag className="h-6 w-6 text-gold-deep" />
+                    </div>
+                  )}
+                  <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-ink px-1 text-[11px] font-medium text-cream">
+                    {printDraft.qty}
+                  </span>
+                </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[14px] font-medium text-ink">Áo in theo yêu cầu</p>
                   <p className="text-xs text-muted">{printDraft.label}</p>
@@ -555,48 +561,6 @@ function CheckoutFields({
                 <p className="shrink-0 text-[14px] font-medium">{formatPrice(printDraft.total)}</p>
               </div>
             ))}
-
-            {printDrafts.length > 0 && (
-              <div className="mt-4 rounded-card border border-line bg-cream-dark/30 p-4">
-                <p className="text-[13px] font-medium text-ink">Tài khoản nhận hoàn tiền</p>
-                <p className="mt-1 text-xs leading-relaxed text-muted">
-                  Shop duyệt file thiết kế trước khi in. Nếu file không in được, shop hoàn tiền đầy đủ
-                  vào tài khoản này — điền sẵn để khỏi phải chờ shop gọi hỏi.
-                </p>
-
-                <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
-                  <input
-                    type="text"
-                    value={refund.bankName}
-                    onChange={(e) => setRefund((r) => ({ ...r, bankName: e.target.value }))}
-                    placeholder="Ngân hàng"
-                    autoComplete="off"
-                    className="h-11 rounded-card border border-line-strong bg-surface px-3.5 text-sm outline-none transition-colors placeholder:text-muted/60 focus:border-ink"
-                  />
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={refund.accountNumber}
-                    onChange={(e) => setRefund((r) => ({ ...r, accountNumber: e.target.value }))}
-                    placeholder="Số tài khoản"
-                    autoComplete="off"
-                    className="h-11 rounded-card border border-line-strong bg-surface px-3.5 text-sm tabular-nums outline-none transition-colors placeholder:text-muted/60 focus:border-ink"
-                  />
-                  <input
-                    type="text"
-                    value={refund.accountName}
-                    onChange={(e) => setRefund((r) => ({ ...r, accountName: e.target.value }))}
-                    placeholder="Tên chủ tài khoản"
-                    autoComplete="off"
-                    className="h-11 rounded-card border border-line-strong bg-surface px-3.5 text-sm uppercase outline-none transition-colors placeholder:text-muted/60 placeholder:normal-case focus:border-ink sm:col-span-2"
-                  />
-                </div>
-
-                <p className="mt-2 text-[11px] text-muted">
-                  Bỏ trống cũng đặt được — lúc cần shop sẽ liên hệ hỏi sau.
-                </p>
-              </div>
-            )}
 
             {/* ── Ô nhập mã ưu đãi / Voucher ── */}
             <div className="mt-6 border-t border-line pt-5">

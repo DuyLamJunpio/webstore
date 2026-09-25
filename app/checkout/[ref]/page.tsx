@@ -12,6 +12,8 @@ import { formatAddress } from "@/lib/checkout";
 import { isOpen, syncOrderStatus } from "@/lib/order-status";
 import { getOrder, type Order } from "@/lib/orders";
 import { formatPrice } from "@/lib/data";
+import { getPrintCatalogue } from "@/lib/print-catalogue";
+import { resolvePrintImage } from "@/lib/print-order";
 
 export const metadata: Metadata = {
   title: "Thanh toán đơn hàng",
@@ -20,9 +22,17 @@ export const metadata: Metadata = {
 };
 
 /** items, totals and where it is going — the same panel on every branch */
-function OrderSummary({ order }: { order: Order }) {
+async function OrderSummary({ order }: { order: Order }) {
   const { cart, customer } = order;
   const prints = cart.prints ?? [];
+  const catalogue = prints.length > 0 ? await getPrintCatalogue() : null;
+
+  const printImages: Record<string, string | null> = {};
+  await Promise.all(
+    prints.map(async (print) => {
+      printImages[print.code] = await resolvePrintImage(print, catalogue);
+    }),
+  );
 
   return (
     <aside className="lg:sticky lg:top-[92px] lg:self-start">
@@ -52,24 +62,40 @@ function OrderSummary({ order }: { order: Order }) {
             </li>
           ))}
 
-          {prints.map((print) => (
-            <li key={print.code} className="flex gap-3">
-              <div className="relative grid aspect-square w-14 shrink-0 place-items-center overflow-hidden rounded-card bg-gold/8 ring-1 ring-gold-soft">
-                <Bag className="h-6 w-6 text-gold-deep" />
-                <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-ink px-1 text-[11px] font-medium text-cream">
-                  {print.qty}
-                </span>
-              </div>
-              <div className="flex flex-1 items-start justify-between gap-3">
-                <div>
-                  <p className="text-[14px] font-medium leading-snug">Áo in theo yêu cầu</p>
-                  <p className="mt-0.5 text-[12px] text-muted">{print.label}</p>
-                  <p className="mt-0.5 font-mono text-[11px] text-gold-deep">{print.code}</p>
+          {prints.map((print) => {
+            const printImage = printImages[print.code] || print.image;
+
+            return (
+              <li key={print.code} className="flex gap-3">
+                <div className="relative aspect-square w-14 shrink-0 overflow-hidden rounded-card bg-cream ring-1 ring-line">
+                  {printImage ? (
+                    <Image
+                      src={printImage}
+                      alt={print.label}
+                      fill
+                      sizes="56px"
+                      className="object-contain p-1"
+                    />
+                  ) : (
+                    <div className="grid h-full w-full place-items-center bg-gold/8">
+                      <Bag className="h-6 w-6 text-gold-deep" />
+                    </div>
+                  )}
+                  <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-ink px-1 text-[11px] font-medium text-cream">
+                    {print.qty}
+                  </span>
                 </div>
-                <p className="shrink-0 text-[14px] font-medium">{formatPrice(print.total)}</p>
-              </div>
-            </li>
-          ))}
+                <div className="flex flex-1 items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[14px] font-medium leading-snug">Áo in theo yêu cầu</p>
+                    <p className="mt-0.5 text-[12px] text-muted">{print.label}</p>
+                    <p className="mt-0.5 font-mono text-[11px] text-gold-deep">{print.code}</p>
+                  </div>
+                  <p className="shrink-0 text-[14px] font-medium">{formatPrice(print.total)}</p>
+                </div>
+              </li>
+            );
+          })}
         </ul>
 
         <dl className="mt-6 flex flex-col gap-3 border-t border-line pt-5 text-[15px]">

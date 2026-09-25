@@ -25,6 +25,8 @@ import {
   type PricedPrint,
 } from "@/lib/checkout";
 import { fetchPrintDesign, printLineLabel } from "@/lib/print-order";
+import { coverMockup } from "@/lib/print";
+import { getPrintCatalogue } from "@/lib/print-catalogue";
 import { reserveOrder, saveOrder, type Order, type OrderPayment } from "@/lib/orders";
 import { getSepayBankAccount, readSepayWebhookConfig, sepayPaymentCode } from "@/lib/sepay";
 import { buildVietQr, readFallbackBank } from "@/lib/vietqr";
@@ -69,6 +71,8 @@ type Body = {
   paymentMethod?: string;
   /** mã các mẫu áo khách đã thiết kế ở /in-ao; giá đọc lại từ trang quản trị */
   printCodes?: string[];
+  /** ảnh mockup phôi gửi từ client */
+  printThumbUrls?: Record<string, string>;
   /** tài khoản nhận hoàn tiền, chỉ hỏi khi đơn có mẫu in */
   refund?: { bankName?: string; accountNumber?: string; accountName?: string };
   /** mã giảm giá voucher khách áp dụng */
@@ -121,6 +125,11 @@ export async function POST(request: NextRequest) {
   }
 
   const prints: PricedPrint[] = [];
+  const printCatalogue = codes.length > 0 ? await getPrintCatalogue() : null;
+  const clientThumbs: Record<string, string> =
+    body.printThumbUrls && typeof body.printThumbUrls === "object"
+      ? (body.printThumbUrls as Record<string, string>)
+      : {};
 
   for (const code of codes) {
     const design = await fetchPrintDesign(code);
@@ -133,12 +142,25 @@ export async function POST(request: NextRequest) {
       return bad(`Mẫu ${code} đã được đặt rồi. Vui lòng bỏ nó khỏi giỏ và đặt lại.`, 409);
     }
 
+    let blankImage: string | null = clientThumbs[code] ?? design.thumb_url ?? null;
+    if (!blankImage && printCatalogue && design.blank_slug) {
+      const blank = printCatalogue.blanks.find((b) => b.slug === design.blank_slug);
+      if (blank) {
+        const color = blank.colors.find(
+          (c) => c.name.toLowerCase() === (design.color_name ?? "").toLowerCase(),
+        );
+        const mockup = color ? blank.mockups.find((m) => m.color_id === color.id) : null;
+        blankImage = mockup?.url ?? coverMockup(blank)?.url ?? null;
+      }
+    }
+
     prints.push({
       code: design.code,
       label: printLineLabel(design),
       qty: design.qty,
       unitPrice: design.unit_price,
       total: design.total_price,
+      image: blankImage,
     });
   }
 

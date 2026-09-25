@@ -126,6 +126,7 @@ export type PricedPrint = {
   /** đồng, mỗi áo */
   unitPrice: number;
   total: number;
+  image?: string | null;
 };
 
 export type PricedCart = {
