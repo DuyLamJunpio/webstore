@@ -30,7 +30,6 @@ import {
   boundingBox,
   coverMockup,
   dpiAt,
-  pickTier,
   quote,
   type DesignState,
   type Placement,
@@ -458,7 +457,6 @@ export default function PrintStudio({ catalogue, blank }: Props) {
 
   const livePlacements = design.placements.filter((p) => p.position === positionKey);
   const bbox = livePlacements.length ? boundingBox(livePlacements) : null;
-  const tier = bbox ? pickTier(bbox, catalogue.tiers) : null;
   const overCap =
     !!bbox && !!position && (bbox.w > position.max_width_mm + 0.5 || bbox.h > position.max_height_mm + 0.5);
   const selectedPlacement = design.placements.find((p) => p.key === selected);
@@ -816,17 +814,14 @@ export default function PrintStudio({ catalogue, blank }: Props) {
             })}
           </div>
 
-          {/*
-            Con số này là chỗ khách nhìn thấy tiền in đổi theo tay mình: kéo to
-            một chút là nhảy bậc khổ, và bảng kê bên phải đổi ngay theo.
-          */}
+          {/* Khung bao chỉ dùng để kiểm tra giới hạn của từng vị trí in. */}
           <p
             className={`mt-2.5 text-center text-xs tabular-nums ${overCap ? "font-semibold text-[#a8452f]" : "text-muted"}`}
           >
             {bbox
               ? overCap
                 ? `Khung bao ${round1(bbox.w)} × ${round1(bbox.h)} mm — vượt giới hạn ${position?.max_width_mm} × ${position?.max_height_mm} mm, thu nhỏ lại giúp shop nhé`
-                : `Khung bao ${round1(bbox.w)} × ${round1(bbox.h)} mm → bậc ${tier?.name ?? "vượt khổ lớn nhất"}`
+                : `Khung bao ${round1(bbox.w)} × ${round1(bbox.h)} mm — trong giới hạn in của ${position?.label}`
               : position
                 ? `${position.label} — thêm hình bên dưới rồi kéo tới chỗ bạn muốn · in được tối đa ${position.max_width_mm} × ${position.max_height_mm} mm`
                 : ""}
@@ -1060,7 +1055,7 @@ export default function PrintStudio({ catalogue, blank }: Props) {
             ) : null}
             {isEstimate && position ? (
               <p className="mt-1 text-right text-[11px] text-muted">
-                Tạm tính khi in 1 vị trí ({position.label}) — thêm hình để ra giá chính xác
+                Phí kỹ thuật chỉ tính một lần cho cả áo, dù in thêm vị trí, hình hoặc chữ
               </p>
             ) : null}
             <div className="mt-1.5 flex items-baseline justify-between">
