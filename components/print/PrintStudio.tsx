@@ -120,7 +120,33 @@ export default function PrintStudio({ catalogue, blank }: Props) {
   const color = blank.colors.find((c) => c.name === design.colorName) ?? blank.colors[0];
   const position = positions.find((p) => p.key === positionKey) ?? positions[0];
 
-  const result = useMemo(() => quote(design, blank, catalogue, assets), [design, blank, catalogue, assets]);
+  /*
+   * Chưa có hình thì tạm tính như khi in MỘT vị trí (vị trí đang chọn) bằng kỹ
+   * thuật đang chọn — đúng con số "Từ ..." trên thẻ phôi, để khách bấm vào chi
+   * tiết không thấy giá tụt xuống chỉ còn tiền phôi. Hình giả chỉ nằm trong bản
+   * xem giá: nút đặt vẫn đòi hình thật, và máy chủ báo giá lại từ hình thật.
+   */
+  const pricedDesign = useMemo<DesignState>(() => {
+    if (design.placements.length || !position) return design;
+    const estimate: Placement = {
+      key: "estimate",
+      position: position.key,
+      kind: "text",
+      assetId: null,
+      xMm: 0,
+      yMm: 0,
+      wMm: 1,
+      hMm: 1,
+      rotation: 0,
+    };
+    return { ...design, placements: [estimate] };
+  }, [design, position]);
+  const isEstimate = pricedDesign !== design;
+
+  const result = useMemo(
+    () => quote(pricedDesign, blank, catalogue, assets),
+    [pricedDesign, blank, catalogue, assets],
+  );
 
   /*
    * Đơn số lượng lớn: studio vẫn dựng và vẫn lưu mẫu, nhưng không cho vào giỏ.
@@ -1030,6 +1056,11 @@ export default function PrintStudio({ catalogue, blank }: Props) {
                 : !design.placements.length
                   ? "Thêm hình để tiếp tục"
                   : donSoLuongLon
+            {isEstimate && position ? (
+              <p className="mt-1 text-right text-[11px] text-muted">
+                Tạm tính khi in 1 vị trí ({position.label}) — thêm hình để ra giá chính xác
+              </p>
+            ) : null}
                     ? "Lưu mẫu & liên hệ shop"
                     : "Thêm vào giỏ hàng"}
             </button>
