@@ -22,7 +22,11 @@ export type WarehouseFulfillmentResult =
   | { ok: false; error: string };
 
 export type SepayPaymentResult =
-  | { ok: true; order: { status?: string; ref?: string; [key: string]: unknown } }
+  | {
+      ok: true;
+      /** `ignored` is set when the order had already closed (StorefrontOrderController::recordSepayPayment) */
+      order: { status?: string; ref?: string; ignored?: string; [key: string]: unknown };
+    }
   | { ok: false; error: string; retryable: boolean };
 
 const TIMEOUT_MS = 15_000;

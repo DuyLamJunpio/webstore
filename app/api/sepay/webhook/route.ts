@@ -8,19 +8,25 @@
 
 import { after } from "next/server";
 import { sendOrderConfirmation } from "@/lib/order-email";
-import { getOrder, type Order } from "@/lib/orders";
+import type { Order } from "@/lib/orders";
 import {
   asVnd,
+  findSepayOrder,
   hasValidSepayAuthorization,
   readSepayWebhookConfig,
-  sepayPaymentCode,
+  sepayPaymentRefs,
   type SepayWebhook,
 } from "@/lib/sepay";
 import { fulfillPaidOrder, recordSepayPayment } from "@/lib/warehouse";
 
-const REF_PATTERN = /^[A-Za-z0-9]{1,32}$/;
-
-const ignored = (reason: string) => Response.json({ success: true, ignored: reason });
+/**
+ * 200 so SePay stops retrying — but say why in the log. Without this line a
+ * transfer SePay could not read looks exactly like SePay never calling.
+ */
+function ignored(reason: string, transactionId: unknown): Response {
+  console.info(`[sepay] bỏ qua giao dịch ${String(transactionId)}: ${reason}`);
+  return Response.json({ success: true, ignored: reason });
+}
 
 export async function GET() {
   return Response.json({ success: true });
@@ -40,35 +46,37 @@ export async function POST(request: Request) {
 
   const body = (await request.json().catch(() => null)) as SepayWebhook | null;
   if (!body) return Response.json({ success: false, error: "Bad payload" }, { status: 400 });
-  if (body.transferType?.toLowerCase() !== "in") return ignored("not_an_incoming_transfer");
+  if (body.transferType?.toLowerCase() !== "in") return ignored("not_an_incoming_transfer", body.id);
 
   const transactionId = Number(body.id);
   const amount = asVnd(body.transferAmount);
-  const code = typeof body.code === "string" ? body.code.trim() : "";
-  if (!Number.isSafeInteger(transactionId) || transactionId < 1 || !amount || !code) {
-    return ignored("incomplete_transfer");
+  if (!Number.isSafeInteger(transactionId) || transactionId < 1 || !amount) {
+    return ignored("incomplete_transfer", body.id);
   }
 
-  if (!code.startsWith(config.paymentPrefix)) return ignored("different_payment_prefix");
-  const ref = code.slice(config.paymentPrefix.length);
-  if (!REF_PATTERN.test(ref)) return ignored("invalid_payment_code");
+  const refs = sepayPaymentRefs(body, config);
+  if (refs.length === 0) return ignored("no_payment_code", transactionId);
 
-  const order = await getOrder(ref);
-  if (!order || order.payment.provider !== "sepay" || order.payment.description !== sepayPaymentCode(ref, config)) {
-    return ignored("unknown_order");
-  }
+  const order = await findSepayOrder(refs, config);
+  if (!order) return ignored("unknown_order", transactionId);
 
-  const recorded = await recordSepayPayment(ref, {
+  const recorded = await recordSepayPayment(order.ref, {
     id: transactionId,
     amount,
     reference: typeof body.referenceCode === "string" ? body.referenceCode : null,
   });
   if (!recorded.ok) {
+    console.error(`[sepay] không ghi nhận được giao dịch ${transactionId} cho đơn ${order.ref}: ${recorded.error}`);
     // A mismatch will not become valid on retry; infrastructure failures should.
     return Response.json(
       { success: !recorded.retryable, error: recorded.error },
       { status: recorded.retryable ? 500 : 200 },
     );
+  }
+
+  if (recorded.order.ignored) {
+    // The money is in the account but the QR had already closed, so no order follows.
+    console.warn(`[sepay] giao dịch ${transactionId} về sau khi đơn ${order.ref} đã đóng — cần đối soát tay`);
   }
 
   const settled = recorded.order as Order;
