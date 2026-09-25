@@ -16,6 +16,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import SizeGuideModal from "@/components/product/SizeGuideModal";
 import { formatPrice } from "@/lib/data";
 import { blankCategories, coverMockup, UNSORTED_BLANKS, type PrintBlank } from "@/lib/print";
 
@@ -25,6 +26,7 @@ const ALL = "*";
 export default function BlankPicker({ blanks }: { blanks: PrintBlank[] }) {
   const categories = useMemo(() => blankCategories(blanks), [blanks]);
   const [active, setActive] = useState<string>(ALL);
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
 
   /*
    * Danh mục đang chọn có thể biến mất sau một lần trang được dựng lại — chủ
@@ -47,29 +49,41 @@ export default function BlankPicker({ blanks }: { blanks: PrintBlank[] }) {
 
   return (
     <>
-      {categories.length > 1 && (
-        <div
-          role="group"
-          aria-label="Lọc phôi theo danh mục"
-          className="mt-6 -mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
-        >
-          <Chip
-            label="Tất cả"
-            count={blanks.length}
-            active={selected === ALL}
-            onSelect={() => setActive(ALL)}
-          />
-          {categories.map((category) => (
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {categories.length > 1 ? (
+          <div
+            role="group"
+            aria-label="Lọc phôi theo danh mục"
+            className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
+          >
             <Chip
-              key={category.slug || "khac"}
-              label={category.name}
-              count={category.count}
-              active={selected === category.slug}
-              onSelect={() => setActive(category.slug)}
+              label="Tất cả"
+              count={blanks.length}
+              active={selected === ALL}
+              onSelect={() => setActive(ALL)}
             />
-          ))}
-        </div>
-      )}
+            {categories.map((category) => (
+              <Chip
+                key={category.slug || "khac"}
+                label={category.name}
+                count={category.count}
+                active={selected === category.slug}
+                onSelect={() => setActive(category.slug)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div />
+        )}
+
+        <button
+          type="button"
+          onClick={() => setShowSizeGuide(true)}
+          className="inline-flex items-center gap-1.5 self-start sm:self-auto text-xs font-bold uppercase tracking-wider text-ink hover:text-[#8f633e] transition-colors underline underline-offset-4 shrink-0 py-1"
+        >
+          Bảng hướng dẫn chọn size
+        </button>
+      </div>
 
       <ul className="mt-8 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         {visible.map((blank) => {
@@ -137,6 +151,8 @@ export default function BlankPicker({ blanks }: { blanks: PrintBlank[] }) {
           );
         })}
       </ul>
+
+      {showSizeGuide && <SizeGuideModal onClose={() => setShowSizeGuide(false)} />}
     </>
   );
 }

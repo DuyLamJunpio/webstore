@@ -216,7 +216,17 @@ export default function ProductPurchase({ product }: { product: Product }) {
       </p>
 
       {/* ── Modal Bảng Hướng Dẫn Chọn Size ── */}
-      {showSizeGuide && <SizeGuideModal onClose={() => setShowSizeGuide(false)} />}
+      {showSizeGuide && (
+        <SizeGuideModal
+          onClose={() => setShowSizeGuide(false)}
+          initialTab={
+            product.audience === "Trẻ em" ||
+            product.sizes.some((s) => s.toLowerCase().startsWith("size") || /^[1-5]$/.test(s))
+              ? "kids"
+              : "adult"
+          }
+        />
+      )}
     </div>
   );
 }

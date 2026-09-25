@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import SectionHeading from "@/components/SectionHeading";
 import { ArrowUpRight, Check, Phone, Sparkles } from "@/components/icons";
 import BlankPicker from "@/components/print/BlankPicker";
+import SizeGuideTabs from "@/components/product/SizeGuideTabs";
 import { CONTACT } from "@/lib/contact";
 import { bookableBlanks, getPrintCatalogue } from "@/lib/print-catalogue";
 
@@ -111,6 +112,17 @@ export default async function PrintLandingPage() {
             </li>
           ))}
         </ol>
+      </section>
+
+      {/* ── Bảng size phôi áo chuẩn ── */}
+      <section className="shell mt-16 sm:mt-20">
+        <SectionHeading
+          title="Bảng size phôi áo tiêu chuẩn"
+          subtitle="Kích thước và thông số chi tiết của các dòng phôi áo thun, polo người lớn và trẻ em."
+        />
+        <div className="mt-8 overflow-hidden rounded-2xl border border-line bg-surface shadow-xs max-w-4xl mx-auto">
+          <SizeGuideTabs defaultTab="adult" />
+        </div>
       </section>
     </main>
   );
