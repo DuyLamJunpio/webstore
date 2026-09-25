@@ -67,6 +67,75 @@ export async function fetchPrintDesign(code: string): Promise<PrintOrderDesign |
   }
 }
 
+import { coverMockup, type PrintCatalogue } from "./print";
+
 /** Dòng hiển thị của mẫu in trong giỏ hàng và trang thanh toán. */
 export const printLineLabel = (design: PrintOrderDesign) =>
   [design.blank_name, design.color_name, `size ${design.size}`].filter(Boolean).join(" · ");
+
+/**
+ * Tìm ảnh đại diện phôi áo cho một mẫu in:
+ * 1. Ảnh đã lưu sẵn trong print (nếu có)
+ * 2. Tìm phôi và màu tương ứng trong catalogue phôi in dựa trên label
+ * 3. Đọc lại mẫu thiết kế qua fetchPrintDesign nếu cần
+ */
+export async function resolvePrintImage(
+  print: { code: string; label: string; image?: string | null },
+  catalogue: PrintCatalogue | null,
+): Promise<string | null> {
+  if (print.image) return print.image;
+
+  // 1. Tìm trong catalogue phôi in dựa trên label ("Tên phôi · Màu sắc · Size")
+  if (catalogue?.blanks?.length && print.label) {
+    const parts = print.label.split(" · ");
+    const blankName = parts[0]?.trim();
+    const colorName = parts[1]?.trim();
+
+    const blank = catalogue.blanks.find((b) => {
+      const bName = b.name.trim().toLowerCase();
+      const lName = (blankName ?? "").toLowerCase();
+      return bName === lName || lName.includes(bName) || bName.includes(lName);
+    });
+
+    if (blank) {
+      if (colorName) {
+        const color = blank.colors.find(
+          (c) => c.name.trim().toLowerCase() === colorName.toLowerCase(),
+        );
+        if (color) {
+          const mockup = blank.mockups.find((m) => m.color_id === color.id);
+          if (mockup?.url) return mockup.url;
+        }
+      }
+      const fallback = coverMockup(blank)?.url ?? blank.mockups[0]?.url;
+      if (fallback) return fallback;
+    }
+  }
+
+  // 2. Dự phòng: Đọc lại design từ kho theo code
+  try {
+    const design = await fetchPrintDesign(print.code);
+    if (design) {
+      if (design.thumb_url) return design.thumb_url;
+
+      if (catalogue && design.blank_slug) {
+        const blank = catalogue.blanks.find((b) => b.slug === design.blank_slug);
+        if (blank) {
+          const color = blank.colors.find(
+            (c) => c.name.trim().toLowerCase() === (design.color_name ?? "").trim().toLowerCase(),
+          );
+          if (color) {
+            const mockup = blank.mockups.find((m) => m.color_id === color.id);
+            if (mockup?.url) return mockup.url;
+          }
+          const fallback = coverMockup(blank)?.url ?? blank.mockups[0]?.url;
+          if (fallback) return fallback;
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  return null;
+}

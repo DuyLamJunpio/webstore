@@ -172,13 +172,13 @@ export default function CartDrawer() {
 
               {printDrafts.map((printDraft) => (
                 <li key={printDraft.code} className="flex gap-3.5 py-4">
-                  <div className="relative grid aspect-square w-20 shrink-0 place-items-center overflow-hidden border border-[#e5e5e5] bg-[#f7f7f7] shadow-xs">
+                  <div className="relative grid aspect-square w-20 shrink-0 place-items-center overflow-hidden border border-[#e5e5e5] bg-white shadow-xs">
                     {printDraft.thumbUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={printDraft.thumbUrl}
-                        alt=""
-                        className="h-full w-full object-contain p-2"
+                        alt={printDraft.label}
+                        className="h-full w-full object-contain p-1"
                       />
                     ) : (
                       <Bag className="h-6 w-6 text-ink" />
