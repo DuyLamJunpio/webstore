@@ -18,6 +18,10 @@ export interface FeaturedBlank {
   categoryName?: string;
   badge?: string;
   price: number;
+  /** Giá trước giảm, gạch ngang cạnh `price`; null khi phôi không giảm. */
+  comparePrice?: number | null;
+  /** Nhãn mức giảm dựng sẵn bên quản trị, ví dụ "−10%". */
+  discountLabel?: string | null;
   image: string | null;
   colors: Array<{ name: string; hex: string }>;
   moq?: number;
@@ -257,11 +261,25 @@ export default function PrintOnDemandSection({
                       </Link>
                     </h4>
 
-                    <div className="mt-2.5 flex items-baseline gap-1.5">
+                    <div className="mt-2.5 flex flex-wrap items-baseline gap-x-1.5">
                       <span className="text-xs text-muted">Từ</span>
-                      <span className="text-base font-extrabold text-ink tabular-nums">
+                      <span
+                        className={`text-base font-extrabold tabular-nums ${
+                          blank.comparePrice ? "text-[#8f633e]" : "text-ink"
+                        }`}
+                      >
                         {formatPrice(blank.price)}
                       </span>
+                      {blank.comparePrice && (
+                        <span className="text-[11px] text-muted line-through tabular-nums">
+                          {formatPrice(blank.comparePrice)}
+                        </span>
+                      )}
+                      {blank.comparePrice && blank.discountLabel && (
+                        <span className="bg-[#8f633e]/10 px-1 text-[9px] font-bold text-[#8f633e]">
+                          {blank.discountLabel}
+                        </span>
+                      )}
                     </div>
 
                     {/* Vòng tròn hiển thị bảng màu */}

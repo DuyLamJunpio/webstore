@@ -102,8 +102,18 @@ export default function BlankPicker({ blanks }: { blanks: PrintBlank[] }) {
                     <p className="eyebrow text-[10px] text-gold-deep">{blank.category.name}</p>
                   )}
                   <h3 className="mt-1 font-semibold text-ink leading-snug">{blank.name}</h3>
-                  <p className="mt-1 text-sm text-muted tabular-nums">
-                    Từ {formatPrice(blank.display_price ?? blank.base_price)}
+                  <p className="mt-1 flex flex-wrap items-baseline gap-x-1.5 text-sm text-muted tabular-nums">
+                    <span className={blank.compare_price ? "font-semibold text-[#8f633e]" : undefined}>
+                      Từ {formatPrice(blank.display_price ?? blank.base_price)}
+                    </span>
+                    {blank.compare_price && blank.discount && (
+                      <>
+                        <span className="text-[11px] line-through">{formatPrice(blank.compare_price)}</span>
+                        <span className="bg-[#8f633e]/10 px-1 text-[10px] font-bold text-[#8f633e]">
+                          {blank.discount.label}
+                        </span>
+                      </>
+                    )}
                   </p>
                   <p className="mt-2 flex flex-wrap gap-1.5">
                     {blank.colors.slice(0, 6).map((color) => (

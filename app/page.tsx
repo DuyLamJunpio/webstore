@@ -41,6 +41,8 @@ export default async function Home() {
         name: blank.name,
         categoryName: blank.category?.name,
         price: blank.display_price ?? blank.base_price,
+        comparePrice: blank.compare_price ?? null,
+        discountLabel: blank.discount?.label ?? null,
         image: coverMockup(blank)?.url ?? null,
         colors: blank.colors.map(({ name, hex }) => ({ name, hex })),
         moq: blank.moq,
