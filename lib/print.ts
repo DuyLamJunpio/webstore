@@ -11,7 +11,7 @@
  * Vì là bản sao nên nó phải đi đúng SÁU BƯỚC theo đúng thứ tự của bản PHP:
  *
  *   1. giá phôi (+ phụ thu size)
- *   2. giá in cơ bản — ma trận kỹ thuật × bậc khổ, tính cho từng vị trí
+ *   2. giá in cơ bản — một phí kỹ thuật cho toàn bộ áo có in
  *   3. phụ phí CỘNG
  *   4. hệ số NHÂN
  *   5. chiết khấu số lượng
@@ -38,6 +38,8 @@ export type PrintTechnique = {
   lead_days: number;
   moq: number;
   is_active: boolean;
+  /** Phí kỹ thuật cố định cho một áo, không nhân theo vị trí in. */
+  price?: number | null;
 };
 
 export type PrintSizeTier = {
@@ -172,6 +174,8 @@ export type PrintAsset = {
 
 export type PrintCatalogue = PrintPricingData & {
   pricing_version_id: number | null;
+  /** Bảng giá hiện hành dùng một phí kỹ thuật cho toàn bộ áo. */
+  pricing_mode?: "flat" | "simple" | "legacy";
   display_combined_price?: boolean;
   positions: PrintPosition[];
   blanks: PrintBlank[];
@@ -480,7 +484,7 @@ export function quote(
   );
   if (surcharge) lines.push(line(`phụ thu size ${design.size}`, surcharge, null, true));
 
-  // ── BƯỚC 2 — giá in cơ bản, tính riêng từng vị trí ─────────────────
+  // ── BƯỚC 2 — kiểm tra từng vị trí, tính phí kỹ thuật một lần / áo ──
   const byPosition = new Map<string, Placement[]>();
   for (const p of design.placements) {
     const list = byPosition.get(p.position);
@@ -491,10 +495,12 @@ export function quote(
   const positionContexts: {
     positionKey: string;
     positionLabel: string;
-    tierId: number;
+    tierId: number | null;
     base: number;
     count: number;
   }[] = [];
+  const flat = pricing.pricing_mode === "flat";
+  let flatPrintPrice: number | null = null;
 
   for (const [positionKey, list] of byPosition) {
     const position = positions.get(positionKey);
@@ -518,37 +524,48 @@ export function quote(
       continue;
     }
 
-    const tier = pickTier(bbox, pricing.tiers);
+    const tier = flat ? null : pickTier(bbox, pricing.tiers);
 
-    if (!tier) {
+    if (!flat && !tier) {
       errors.push(`${position.label}: khung bao ${r1(bbox.w)}×${r1(bbox.h)} mm vượt bậc khổ lớn nhất.`);
       continue;
     }
 
-    const cell = pricing.cells[String(technique.id)]?.[String(tier.id)];
+    const cell = flat ? technique.price : pricing.cells[String(technique.id)]?.[String(tier!.id)];
     if (cell == null) {
       errors.push(
-        `${technique.name} không nhận khổ ${tier.name} — đổi kỹ thuật hoặc thu nhỏ hình ở ${position.label}.`,
+        `${technique.name} không nhận khổ ${tier?.name ?? "đã chọn"} — đổi kỹ thuật hoặc thu nhỏ hình ở ${position.label}.`,
       );
       continue;
     }
 
-    lines.push(
-      line(
-        `${technique.name} · ${position.label} · khổ ${tier.name}`,
-        cell,
-        `khung bao ${r1(bbox.w)} × ${r1(bbox.h)} mm · ${list.length} hình`,
-      ),
-    );
-    running += cell;
+    if (flat) {
+      // In mặt trước, mặt sau hay thêm chữ đều dùng chung một mức phí kỹ
+      // thuật. Vị trí vẫn được kiểm tra độc lập để xưởng nhận đúng file in.
+      flatPrintPrice ??= cell;
+    } else {
+      lines.push(
+        line(
+          `${technique.name} · ${position.label} · khổ ${tier!.name}`,
+          cell,
+          `khung bao ${r1(bbox.w)} × ${r1(bbox.h)} mm · ${list.length} hình`,
+        ),
+      );
+      running += cell;
+    }
 
     positionContexts.push({
       positionKey,
       positionLabel: position.label,
-      tierId: tier.id,
+      tierId: tier?.id ?? null,
       base: cell,
       count: list.length,
     });
+  }
+
+  if (flatPrintPrice !== null) {
+    lines.push(line(`${technique.name} · giá kỹ thuật / áo`, flatPrintPrice, "áp dụng một lần cho toàn bộ nội dung in trên áo"));
+    running += flatPrintPrice;
   }
 
   // Giảm giá của phôi — trên đúng phần "phôi + tiền in" vừa cộng, TRƯỚC phí
