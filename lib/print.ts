@@ -119,14 +119,21 @@ export type PrintMockup = {
  */
 export type PrintBlankCategory = { id: number; name: string; slug: string };
 
+/** Mức giảm của một phôi; `label` là chữ dựng sẵn bên quản trị, ví dụ "−10%". */
+export type PrintBlankDiscount = { type: "percent" | "amount"; value: number; label: string };
+
 export type PrintBlank = {
   id: number;
   slug: string;
   name: string;
   description: string | null;
   base_price: number;
-  /** Giá bày trên webstore khi quản trị bật gộp phôi + kỹ thuật. */
+  /** Giá bày trên webstore: gộp phôi + kỹ thuật và/hoặc đã trừ giảm giá. */
   display_price?: number | null;
+  /** Giá trước giảm để gạch ngang; null khi phôi không giảm giá. */
+  compare_price?: number | null;
+  /** Giảm trên giá phôi + tiền in của mỗi áo — xem blankDiscount(). */
+  discount?: PrintBlankDiscount | null;
   product_id: number | null;
   /**
    * null = phôi chưa xếp danh mục; thiếu hẳn khoá = trang quản trị đời cũ chưa
@@ -289,7 +296,25 @@ export type Quote = {
   total: number;
   errors: string[];
   warnings: string[];
+  /** Số đồng giảm trên mỗi áo, để studio gạch ngang giá gốc. */
+  discount?: number;
 };
+
+/**
+ * Số đồng giảm trên MỘT áo có tổng "phôi + tiền in" là `subtotal`.
+ *
+ * Bản dịch của PrintPricing::blankDiscount() bên trang quản trị — phải ra cùng
+ * một con số đến từng đồng: không vượt quá chính số tiền đó, làm tròn đến đồng.
+ */
+export function blankDiscount(discount: PrintBlankDiscount | null | undefined, subtotal: number): number {
+  const value = discount?.value ?? 0;
+  if (!discount || value <= 0 || subtotal <= 0) return 0;
+
+  const reduction =
+    discount.type === "percent" ? (subtotal * Math.min(value, 100)) / 100 : discount.type === "amount" ? value : 0;
+
+  return Math.round(Math.min(reduction, subtotal));
+}
 
 // ── Hình học ─────────────────────────────────────────────────────────
 
@@ -526,6 +551,14 @@ export function quote(
     });
   }
 
+  // Giảm giá của phôi — trên đúng phần "phôi + tiền in" vừa cộng, TRƯỚC phí
+  // sticker, y như PrintPricing::quote() bên trang quản trị.
+  const discount = blankDiscount(blank.discount, running);
+  if (discount > 0) {
+    lines.push(line("Giảm giá phôi", -discount, `${blank.discount?.label ?? ""} trên phôi + in`));
+    running -= discount;
+  }
+
   // Sticker có bản quyền — phí gắn với tài nguyên, không gắn với vị trí. Chữ do
   // khách tự gõ nên không có phí bản quyền nào.
   for (const p of design.placements) {
@@ -654,5 +687,5 @@ export function quote(
   if (qty < technique.moq) warnings.push(`${technique.name} nhận đơn tối thiểu ${technique.moq} áo.`);
   if (qty < blank.moq) warnings.push(`Phôi "${blank.name}" nhận đơn tối thiểu ${blank.moq} áo.`);
 
-  return { lines, unitPrice, total: unitPrice * qty, errors, warnings };
+  return { lines, unitPrice, total: unitPrice * qty, errors, warnings, discount };
 }

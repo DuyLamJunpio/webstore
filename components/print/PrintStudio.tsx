@@ -989,10 +989,27 @@ export default function PrintStudio({ catalogue, blank }: Props) {
 
             <div className="mt-4 flex items-baseline justify-between border-t-2 border-ink pt-3">
               <span className="text-xs font-semibold text-muted">Giá mỗi áo</span>
-              <span className="font-mono text-xl font-bold tabular-nums text-ink">
-                {formatPrice(result.unitPrice)}
+              <span className="flex items-baseline gap-2">
+                {/* Giảm giá của phôi: gạch ngang giá gốc để khách thấy mình được bớt bao nhiêu. */}
+                {result.discount ? (
+                  <span className="font-mono text-sm tabular-nums text-muted line-through">
+                    {formatPrice(result.unitPrice + result.discount)}
+                  </span>
+                ) : null}
+                <span
+                  className={`font-mono text-xl font-bold tabular-nums ${
+                    result.discount ? "text-[#8f633e]" : "text-ink"
+                  }`}
+                >
+                  {formatPrice(result.unitPrice)}
+                </span>
               </span>
             </div>
+            {result.discount && blank.discount ? (
+              <p className="mt-1 text-right text-[11px] font-semibold text-[#8f633e]">
+                Phôi đang giảm {blank.discount.label.replace("−", "")} — bớt {formatPrice(result.discount)} mỗi áo
+              </p>
+            ) : null}
             <div className="mt-1.5 flex items-baseline justify-between">
               <span className="text-xs text-muted">Tổng đơn × {design.qty}</span>
               <span className="font-mono text-sm font-semibold tabular-nums text-ink">
