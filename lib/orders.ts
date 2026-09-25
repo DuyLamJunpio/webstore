@@ -95,10 +95,16 @@ export type Order = {
 
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I/O/0/1 — these get read aloud
 
+/**
+ * SePay accepts payment-code suffixes up to 10 characters, and the webhook
+ * reads exactly this many after the prefix — so the SePay pattern must be
+ * exactly this long too.
+ */
+export const ORDER_REF_LENGTH = 10;
+
 /** short, unambiguous, unguessable: 10 chars of the reduced alphabet ≈ 50 bits */
 function newRef(): string {
-  // SePay accepts payment-code suffixes up to 10 characters.
-  const bytes = new Uint8Array(10);
+  const bytes = new Uint8Array(ORDER_REF_LENGTH);
   crypto.getRandomValues(bytes);
   return Array.from(bytes, (byte) => ALPHABET[byte % ALPHABET.length]).join("");
 }

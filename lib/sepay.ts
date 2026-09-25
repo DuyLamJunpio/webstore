@@ -4,14 +4,21 @@
  */
 
 import { timingSafeEqual } from "node:crypto";
+import { getOrder, ORDER_REF_LENGTH, type Order } from "./orders";
+
 const PREFIX_PATTERN = /^[A-Za-z]{2,5}$/;
-const SEPAY_API_URL = "https://my.sepay.vn/api/v1/bank-accounts";
+/** API Token ("API Access") endpoints. /api/v1 only accepts OAuth tokens and answers 401. */
+const SEPAY_API_URL = "https://my.sepay.vn/userapi/bankaccounts";
 const CACHE_MS = 5 * 60 * 1000;
+/** each candidate ref costs an order lookup before SePay's 30-second deadline */
+const MAX_REF_CANDIDATES = 3;
 
 export type SepayWebhook = {
   id: number;
   code?: string | null;
   content?: string | null;
+  /** the bank's full notification text */
+  description?: string | null;
   transferType?: string | null;
   transferAmount?: number | string | null;
   referenceCode?: string | null;
@@ -30,16 +37,21 @@ export type SepayBank = {
 };
 
 type SepayBankAccountResponse = {
-  status?: string;
-  data?: unknown;
+  /** from details/{id} */
+  bankaccount?: unknown;
+  /** from list */
+  bankaccounts?: unknown;
 };
 
 type SepayBankAccount = {
-  id?: number;
-  active?: boolean;
+  id?: string;
+  /** "1" active, "0" suspended */
+  active?: string;
   account_holder_name?: string;
   account_number?: string;
-  bank?: { short_name?: string; full_name?: string; bin?: string };
+  bank_short_name?: string;
+  bank_full_name?: string;
+  bank_bin?: string;
 };
 
 type Cache = { bank: SepayBank; expiresAt: number };
@@ -59,7 +71,7 @@ export const isSepayConfigured = () => readSepayWebhookConfig() !== null;
 function parseBankAccount(value: unknown): SepayBank | null {
   if (!value || typeof value !== "object") return null;
   const account = value as SepayBankAccount;
-  const bin = account.bank?.bin?.trim();
+  const bin = account.bank_bin?.trim();
   const accountNumber = account.account_number?.trim();
   const accountName = account.account_holder_name?.trim();
   if (!bin || !accountNumber || !accountName || !/^\d{6}$/.test(bin)) return null;
@@ -68,7 +80,7 @@ function parseBankAccount(value: unknown): SepayBank | null {
     bin,
     accountNumber,
     accountName,
-    bankName: account.bank?.short_name?.trim() || account.bank?.full_name?.trim() || "",
+    bankName: account.bank_short_name?.trim() || account.bank_full_name?.trim() || "",
   };
 }
 
@@ -88,7 +100,7 @@ export async function getSepayBankAccount(): Promise<SepayBank> {
     throw new Error("SEPAY_BANK_ACCOUNT_ID phải là ID số của tài khoản SePay.");
   }
 
-  const endpoint = configuredId ? `${SEPAY_API_URL}/${configuredId}` : `${SEPAY_API_URL}?page=1&limit=100`;
+  const endpoint = configuredId ? `${SEPAY_API_URL}/details/${configuredId}` : `${SEPAY_API_URL}/list`;
   let response: Response;
   try {
     response = await fetch(endpoint, {
@@ -112,9 +124,9 @@ export async function getSepayBankAccount(): Promise<SepayBank> {
 
   const payload = (await response.json().catch(() => null)) as SepayBankAccountResponse | null;
   const records = configuredId
-    ? [payload?.data]
-    : Array.isArray(payload?.data)
-      ? payload.data.filter((item): item is SepayBankAccount => Boolean(item && typeof item === "object" && (item as SepayBankAccount).active))
+    ? [payload?.bankaccount]
+    : Array.isArray(payload?.bankaccounts)
+      ? payload.bankaccounts.filter((item): item is SepayBankAccount => Boolean(item && typeof item === "object" && (item as SepayBankAccount).active === "1"))
       : [];
 
   if (!configuredId && records.length > 1) {
@@ -132,6 +144,58 @@ export async function getSepayBankAccount(): Promise<SepayBank> {
 export function sepayPaymentCode(ref: string, config = readSepayWebhookConfig()): string {
   if (!config) throw new Error("Chưa cấu hình SePay.");
   return `${config.paymentPrefix}${ref}`;
+}
+
+/**
+ * Order refs a transfer may be paying for, most likely first.
+ *
+ * SePay fills `code` only when a pattern under Cấu hình Công ty → Cấu hình
+ * chung → Cấu trúc mã thanh toán matches the memo. Without one, `code` arrives
+ * null although the memo still reads "…TBCSBGRY6WMQM…", so the memo is read too.
+ * A candidate is only a guess: the caller must find a stored order expecting
+ * exactly that payment code.
+ */
+export function sepayPaymentRefs(body: SepayWebhook, config: SepayWebhookConfig): string[] {
+  const texts = [body.code, body.content, body.description]
+    .filter((text): text is string => typeof text === "string")
+    .map((text) => text.toUpperCase());
+  const code = `${config.paymentPrefix}([A-Z0-9]{${ORDER_REF_LENGTH}})`;
+  // The code standing as its own word — as the QR prefills it — goes first, so
+  // look-alikes buried in a bank's trace numbers cannot crowd it past the cap.
+  const word = new RegExp(`(?<![A-Z0-9])${code}(?![A-Z0-9])`, "g");
+  // Then any run once separators are dropped, for codes typed with spaces or
+  // dots. A lookahead, so "TBCTBC<ref>" still yields <ref> after the false start.
+  const run = new RegExp(`(?=${code})`, "g");
+
+  const words = texts.flatMap((text) => Array.from(text.matchAll(word), (match) => match[1]));
+  const runs = texts.flatMap((text) =>
+    Array.from(text.replace(/[^A-Z0-9]/g, "").matchAll(run), (match) => match[1]),
+  );
+  // A run that swallowed the next prefix ("TBC" + "TBCSBGRY6W") is almost always
+  // a doubled prefix, not a ref, so it waits behind every other candidate.
+  const doubled = (ref: string) => ref.startsWith(config.paymentPrefix);
+  const ranked = [...words, ...runs.filter((ref) => !doubled(ref)), ...runs.filter(doubled)];
+
+  return Array.from(new Set(ranked)).slice(0, MAX_REF_CANDIDATES);
+}
+
+/**
+ * The first candidate that is a stored SePay order expecting exactly this
+ * payment code. A failed lookup throws on purpose: the webhook then answers 500
+ * and SePay delivers the same transfer again.
+ */
+export async function findSepayOrder(
+  refs: string[],
+  config: SepayWebhookConfig,
+  lookup: (ref: string) => Promise<Order | null> = getOrder,
+): Promise<Order | null> {
+  for (const ref of refs) {
+    const order = await lookup(ref);
+    if (order?.payment.provider === "sepay" && order.payment.description === sepayPaymentCode(ref, config)) {
+      return order;
+    }
+  }
+  return null;
 }
 
 /** API-key auth from SePay's `Authorization: Apikey <key>` header. */

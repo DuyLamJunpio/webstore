@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "tsx --test \"lib/**/*.test.ts\"",
     "sync:warehouse": "tsx scripts/sync-warehouse.mts",
     "shopee:auth": "tsx scripts/shopee-auth.mts",
     "sync:shopee": "tsx scripts/sync-shopee.mts",

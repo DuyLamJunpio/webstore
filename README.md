@@ -42,9 +42,17 @@ Tạo một webhook ở [SePay](https://my.sepay.vn) với xác thực **API Key
 | `SEPAY_PAYMENT_PREFIX` | Tiền tố mã thanh toán, mặc định `TBC` |
 | `SHOP_BANK_BIN`, `SHOP_BANK_ACCOUNT`, `SHOP_BANK_ACCOUNT_NAME` | Phương án dự phòng để vẫn tạo QR khi API tài khoản SePay bị lỗi; webhook SePay vẫn xác nhận tiền |
 
-QR VietQR được tạo tại chỗ với nội dung `TBC<10-ký-tự>`. Trong **Cấu hình chung** của
-SePay, tạo mã thanh toán có tiền tố `TBC`, hậu tố 10 ký tự chữ/số. Nếu dùng tiền tố khác,
-đặt cùng giá trị ở `SEPAY_PAYMENT_PREFIX`.
+QR VietQR được tạo tại chỗ với nội dung `TBC<10-ký-tự>`. Trong SePay → **Cấu hình Công ty →
+Cấu hình chung → Cấu trúc mã thanh toán**, thêm một mẫu rồi bấm **Lưu lại**:
+
+- Tiền tố: `TBC` (hoặc đúng giá trị của `SEPAY_PAYMENT_PREFIX`).
+- Độ dài hậu tố tối thiểu **10**, tối đa **10**.
+- Loại ký tự: **Số và chữ** — mã đơn có cả chữ lẫn số.
+- Trạng thái: **Đang hoạt động**.
+
+Mẫu mặc định của SePay (hậu tố 6–8 ký tự) không khớp mã 10 ký tự: giao dịch về với `code`
+rỗng, webhook lọc `TBC` sẽ **không gửi gì cả**, và trang thanh toán đứng mãi ở "Đang chờ
+chuyển khoản" dù tiền đã vào tài khoản.
 
 ### Webhook
 
@@ -65,6 +73,17 @@ cloudflared tunnel --url http://localhost:3000     # in ra một địa chỉ tr
 Route `POST /api/sepay/webhook` kiểm tra `Authorization: Apikey ...` trước khi ghi bất cứ thứ
 gì. Kho lưu ID giao dịch trong cùng transaction với đơn, nên SePay retry không thể tính trùng;
 những lần chuyển bổ sung được cộng dồn, chỉ đủ tiền mới chuyển đơn sang `PAID`.
+
+Khi SePay gửi `code` rỗng, route vẫn tự tìm `TBC<10-ký-tự>` trong nội dung chuyển khoản. Việc
+đó chỉ có tác dụng khi webhook được gửi đi, nên mẫu mã thanh toán ở trên vẫn bắt buộc.
+
+**Tiền đã vào mà đơn không đổi trạng thái?** Xem theo thứ tự:
+
+1. SePay → Webhooks → **Lịch sử gửi**. "Chưa gửi" nghĩa là SePay không nhận ra mã — xem lại
+   Cấu trúc mã thanh toán. HTTP 401 nghĩa là API key ở tab **Bảo mật** của webhook khác
+   `SEPAY_WEBHOOK_API_KEY` trên Vercel.
+2. Log Vercel, lọc `[sepay]`: mỗi giao dịch bị bỏ qua đều ghi lý do (`no_payment_code`,
+   `unknown_order`, hoặc "về sau khi đơn đã đóng — cần đối soát tay").
 
 ### Giá thử thanh toán
 
