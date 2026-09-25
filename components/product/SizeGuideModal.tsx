@@ -1,11 +1,19 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Close, Sparkles } from "../icons";
+import { Close } from "../icons";
+import SizeGuideTabs from "./SizeGuideTabs";
 
-export default function SizeGuideModal({ onClose }: { onClose: () => void }) {
+export interface SizeGuideModalProps {
+  onClose: () => void;
+  initialTab?: "adult" | "kids";
+}
+
+export default function SizeGuideModal({
+  onClose,
+  initialTab = "adult",
+}: SizeGuideModalProps) {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
@@ -31,11 +39,11 @@ export default function SizeGuideModal({ onClose }: { onClose: () => void }) {
         className="fixed inset-0 bg-ink/60 backdrop-blur-sm fade-in"
       />
 
-      <div className="relative z-10 flex w-full max-h-[90vh] flex-col overflow-hidden border border-line bg-white shadow-2xl sheet-up sm:max-w-2xl sm:pop">
+      <div className="relative z-10 flex w-full max-h-[92vh] flex-col overflow-hidden border border-line bg-white shadow-2xl sheet-up sm:max-w-2xl sm:pop">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#e5e5e5] px-5 py-4 sm:px-6">
+        <div className="flex items-center justify-between border-b border-[#e5e5e5] px-5 py-3.5 sm:px-6 bg-white">
           <div className="flex items-center gap-2">
-            <span className="bg-[#8f633e] px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white">
+            <span className="bg-[#8f633e] px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white shadow-2xs">
               LIFEWEAR SIZE
             </span>
             <h2 className="text-sm sm:text-base font-black uppercase tracking-tight text-ink">
@@ -54,26 +62,8 @@ export default function SizeGuideModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-          <div className="relative w-full overflow-hidden border border-[#e5e5e5] bg-white shadow-xs">
-            <Image
-              src="/images/size-guide.png"
-              alt="Bảng size áo chuẩn The Basic Concept"
-              width={1024}
-              height={704}
-              priority
-              className="w-full h-auto object-contain"
-            />
-          </div>
-
-          <div className="border border-[#e5e5e5] bg-[#f7f7f7] p-4 text-xs sm:text-[13px] leading-relaxed text-[#555555]">
-            <p className="font-bold uppercase tracking-wide text-ink mb-1.5">Mẹo chọn kích cỡ vừa vặn:</p>
-            <ul className="list-disc pl-4 space-y-1">
-              <li>Nếu số đo của bạn nằm giữa 2 size, hãy chọn size lớn hơn nếu thích mặc thoải mái (oversized).</li>
-              <li>Số đo có thể chênh lệch 1–2cm do phương pháp đo thủ công.</li>
-              <li>Nếu cần hỗ trợ tư vấn dáng người cụ thể, đừng ngần ngại nhắn tin cho shop qua Zalo hoặc Fanpage!</li>
-            </ul>
-          </div>
+        <div className="flex-1 overflow-y-auto">
+          <SizeGuideTabs defaultTab={initialTab} />
         </div>
 
         {/* Footer */}

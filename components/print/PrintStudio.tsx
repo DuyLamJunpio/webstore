@@ -21,6 +21,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useMemo, useRef, useState } from "react";
+import SizeGuideModal from "@/components/product/SizeGuideModal";
 import { CONTACT } from "@/lib/contact";
 import { formatPrice } from "@/lib/data";
 import { BULK_PRINT_FROM, isBulkPrint } from "@/lib/print-bulk";
@@ -107,6 +108,16 @@ export default function PrintStudio({ catalogue, blank }: Props) {
     null,
   );
   const [notice, setNotice] = useState<string | null>(null);
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
+
+  const isKidsBlank = useMemo(() => {
+    return (
+      blank.name.toLowerCase().includes("trẻ em") ||
+      blank.name.toLowerCase().includes("bé") ||
+      blank.category?.name.toLowerCase().includes("trẻ em") ||
+      blank.sizes.some((s) => s.toLowerCase().startsWith("size") || /^[1-5]$/.test(s))
+    );
+  }, [blank.name, blank.category?.name, blank.sizes]);
 
   const stageRef = useRef<HTMLDivElement>(null);
 
@@ -120,7 +131,33 @@ export default function PrintStudio({ catalogue, blank }: Props) {
   const color = blank.colors.find((c) => c.name === design.colorName) ?? blank.colors[0];
   const position = positions.find((p) => p.key === positionKey) ?? positions[0];
 
-  const result = useMemo(() => quote(design, blank, catalogue, assets), [design, blank, catalogue, assets]);
+  /*
+   * Chưa có hình thì tạm tính như khi in MỘT vị trí (vị trí đang chọn) bằng kỹ
+   * thuật đang chọn — đúng con số "Từ ..." trên thẻ phôi, để khách bấm vào chi
+   * tiết không thấy giá tụt xuống chỉ còn tiền phôi. Hình giả chỉ nằm trong bản
+   * xem giá: nút đặt vẫn đòi hình thật, và máy chủ báo giá lại từ hình thật.
+   */
+  const pricedDesign = useMemo<DesignState>(() => {
+    if (design.placements.length || !position) return design;
+    const estimate: Placement = {
+      key: "estimate",
+      position: position.key,
+      kind: "text",
+      assetId: null,
+      xMm: 0,
+      yMm: 0,
+      wMm: 1,
+      hMm: 1,
+      rotation: 0,
+    };
+    return { ...design, placements: [estimate] };
+  }, [design, position]);
+  const isEstimate = pricedDesign !== design;
+
+  const result = useMemo(
+    () => quote(pricedDesign, blank, catalogue, assets),
+    [pricedDesign, blank, catalogue, assets],
+  );
 
   /*
    * Đơn số lượng lớn: studio vẫn dựng và vẫn lưu mẫu, nhưng không cho vào giỏ.
@@ -564,7 +601,16 @@ export default function PrintStudio({ catalogue, blank }: Props) {
           </section>
 
           <section>
-            <p className="eyebrow text-ink/70">Kích cỡ</p>
+            <div className="flex items-center justify-between">
+              <p className="eyebrow text-ink/70">Kích cỡ</p>
+              <button
+                type="button"
+                onClick={() => setShowSizeGuide(true)}
+                className="text-xs text-ink/70 hover:text-[#8f633e] font-semibold underline underline-offset-4 transition-colors"
+              >
+                Bảng hướng dẫn chọn size
+              </button>
+            </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {blank.sizes.map((size) => (
                 <button
@@ -1010,6 +1056,11 @@ export default function PrintStudio({ catalogue, blank }: Props) {
                 Phôi đang giảm {blank.discount.label.replace("−", "")} — bớt {formatPrice(result.discount)} mỗi áo
               </p>
             ) : null}
+            {isEstimate && position ? (
+              <p className="mt-1 text-right text-[11px] text-muted">
+                Tạm tính khi in 1 vị trí ({position.label}) — thêm hình để ra giá chính xác
+              </p>
+            ) : null}
             <div className="mt-1.5 flex items-baseline justify-between">
               <span className="text-xs text-muted">Tổng đơn × {design.qty}</span>
               <span className="font-mono text-sm font-semibold tabular-nums text-ink">
@@ -1080,6 +1131,13 @@ export default function PrintStudio({ catalogue, blank }: Props) {
           )}
         </aside>
       </div>
+
+      {showSizeGuide && (
+        <SizeGuideModal
+          onClose={() => setShowSizeGuide(false)}
+          initialTab={isKidsBlank ? "kids" : "adult"}
+        />
+      )}
     </main>
   );
 }

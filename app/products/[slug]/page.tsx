@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import ProductCard from "@/components/ProductCard";
 import ProductGallery from "@/components/product/ProductGallery";
 import ProductPurchase from "@/components/product/ProductPurchase";
+import SizeGuideTabs from "@/components/product/SizeGuideTabs";
 import StickyBuyBar from "@/components/product/StickyBuyBar";
 import VariantSelectionProvider from "@/components/product/VariantSelectionProvider";
 import { promiseIcons } from "@/components/icons";
@@ -94,23 +95,21 @@ export default async function ProductPage(props: PageProps<"/products/[slug]">) 
 
           {/* Details & Size Guide */}
           <section id="size-guide" className="mt-8 scroll-mt-28 border-t border-[#e5e5e5] pt-6">
-            <div className="flex items-baseline justify-between">
+            <div className="flex items-baseline justify-between mb-3.5">
               <h2 className="text-xs font-black uppercase tracking-wider text-ink">BẢNG THÔNG SỐ KÍCH THƯỚC</h2>
               <span className="text-xs text-[#777777]">Đơn vị: cm</span>
             </div>
 
-            <div className="mt-3.5 overflow-hidden border border-[#e5e5e5] bg-white shadow-xs">
-              <Image
-                src="/images/size-guide.png"
-                alt={`Bảng hướng dẫn chọn size — ${product.name}`}
-                width={1024}
-                height={704}
-                className="w-full h-auto object-contain"
+            <div className="overflow-hidden border border-[#e5e5e5] bg-white shadow-xs">
+              <SizeGuideTabs
+                defaultTab={
+                  product.audience === "Trẻ em" ||
+                  product.sizes.some((s) => s.toLowerCase().startsWith("size") || /^[1-5]$/.test(s))
+                    ? "kids"
+                    : "adult"
+                }
               />
             </div>
-            <p className="mt-2 text-[11px] text-[#777777] italic text-center">
-              * Số đo có thể chênh lệch 1–2cm do đo thủ công
-            </p>
 
             <h3 className="text-xs font-black uppercase tracking-wider text-ink mt-6">CHI TIẾT & CHẤT LIỆU</h3>
             <ul className="mt-3 flex flex-col gap-2">
