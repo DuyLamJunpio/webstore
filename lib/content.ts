@@ -29,11 +29,37 @@ export type HeroSlide = {
   poster: string | null;
   /** Ảnh thay cho video trên điện thoại, để khách không phải tải cả file video. */
   mobile: string | null;
+  mobileMediaType: "image" | "video";
   alt: string;
   heading: string | null;
   subheading: string | null;
   ctaLabel: string | null;
   ctaLink: string | null;
+  contentBlocks: Array<{ title: string; content: string }>;
+  ctas: Array<{
+    label: string;
+    link: string;
+    style: "primary" | "secondary" | "ghost";
+    newTab: boolean;
+  }>;
+  desktopLayout: HeroLayout;
+  mobileLayout: HeroLayout;
+};
+
+export type HeroLayout = {
+  horizontal: "left" | "center" | "right";
+  vertical: "top" | "center" | "bottom";
+  textAlign: "left" | "center" | "right";
+  focalPoint: string;
+  overlayOpacity: number;
+};
+
+const DESKTOP_HERO_LAYOUT: HeroLayout = {
+  horizontal: "left", vertical: "center", textAlign: "left", focalPoint: "center", overlayOpacity: 35,
+};
+
+const MOBILE_HERO_LAYOUT: HeroLayout = {
+  horizontal: "center", vertical: "center", textAlign: "center", focalPoint: "center", overlayOpacity: 45,
 };
 
 export type Collection = {
@@ -72,11 +98,13 @@ const MAC_DINH: SiteContent = {
       mediaType: "image",
       poster: null,
       mobile: null,
+      mobileMediaType: "image",
       alt: "Người mẫu mặc áo khoác phối khối màu của mùa mới",
       heading: null,
       subheading: null,
       ctaLabel: "Mua ngay",
       ctaLink: "/shop",
+      contentBlocks: [], ctas: [], desktopLayout: DESKTOP_HERO_LAYOUT, mobileLayout: MOBILE_HERO_LAYOUT,
     },
     {
       id: "mac-dinh-2",
@@ -84,11 +112,13 @@ const MAC_DINH: SiteContent = {
       mediaType: "image",
       poster: null,
       mobile: null,
+      mobileMediaType: "image",
       alt: "Người mẫu mặc áo khoác phối khối màu của mùa mới",
       heading: null,
       subheading: null,
       ctaLabel: null,
       ctaLink: null,
+      contentBlocks: [], ctas: [], desktopLayout: DESKTOP_HERO_LAYOUT, mobileLayout: MOBILE_HERO_LAYOUT,
     },
     {
       id: "mac-dinh-3",
@@ -96,11 +126,13 @@ const MAC_DINH: SiteContent = {
       mediaType: "image",
       poster: null,
       mobile: null,
+      mobileMediaType: "image",
       alt: "Đăng ký ",
       heading: null,
       subheading: null,
       ctaLabel: null,
       ctaLink: null,
+      contentBlocks: [], ctas: [], desktopLayout: DESKTOP_HERO_LAYOUT, mobileLayout: MOBILE_HERO_LAYOUT,
     },
   ],
   collection: null,
@@ -127,11 +159,16 @@ type ApiContent = {
     media_type: string;
     poster: string | null;
     mobile: string | null;
+    mobile_media_type?: string | null;
     alt: string | null;
     heading: string | null;
     subheading: string | null;
     cta_label: string | null;
     cta_link: string | null;
+    content_blocks?: Array<{ title?: string; content?: string }> | null;
+    ctas?: Array<{ label?: string; link?: string; style?: string; new_tab?: boolean }> | null;
+    desktop_layout?: Record<string, unknown> | null;
+    mobile_layout?: Record<string, unknown> | null;
   }>;
   collection?: ApiCollection | null;
   collections?: ApiCollection[];
@@ -192,17 +229,31 @@ async function fetchContent(): Promise<SiteContent | null> {
 
     const data = (await response.json()) as ApiContent;
 
-    const slides: HeroSlide[] = (data.banners ?? []).map((b) => ({
+    const layout = (raw: Record<string, unknown> | null | undefined, fallback: HeroLayout): HeroLayout => ({
+      horizontal: raw?.horizontal === "center" || raw?.horizontal === "right" ? raw.horizontal : fallback.horizontal,
+      vertical: raw?.vertical === "top" || raw?.vertical === "bottom" ? raw.vertical : fallback.vertical,
+      textAlign: raw?.text_align === "center" || raw?.text_align === "right" ? raw.text_align : fallback.textAlign,
+      focalPoint: typeof raw?.focal_point === "string" ? raw.focal_point : fallback.focalPoint,
+      overlayOpacity: typeof raw?.overlay_opacity === "number" ? Math.max(0, Math.min(90, raw.overlay_opacity)) : fallback.overlayOpacity,
+    });
+    const slides: HeroSlide[] = (data.banners ?? []).slice(0, 3).map((b) => ({
       id: b.id,
       media: mediaUrl(b.media),
       mediaType: b.media_type === "video" ? "video" : "image",
       poster: b.poster ? mediaUrl(b.poster) : null,
       mobile: b.mobile ? mediaUrl(b.mobile) : null,
+      mobileMediaType: b.mobile_media_type === "video" ? "video" : "image",
       alt: b.alt ?? "",
       heading: b.heading,
       subheading: b.subheading,
       ctaLabel: b.cta_label,
       ctaLink: b.cta_link,
+      contentBlocks: (b.content_blocks ?? []).map((block) => ({ title: block.title ?? "", content: block.content ?? "" })),
+      ctas: (b.ctas ?? []).map((cta) => ({
+        label: cta.label ?? "", link: cta.link ?? "", style: cta.style === "secondary" || cta.style === "ghost" ? cta.style : "primary", newTab: Boolean(cta.new_tab),
+      })),
+      desktopLayout: layout(b.desktop_layout, DESKTOP_HERO_LAYOUT),
+      mobileLayout: layout(b.mobile_layout, MOBILE_HERO_LAYOUT),
     }));
 
     const rawCollections = data.collections ?? (data.collection ? [data.collection] : []);

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { HeroSlide } from "@/lib/content";
@@ -23,13 +22,12 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   if (slides.length === 0) return null;
 
   const current = slides[active] ?? slides[0];
-  const heading = current.heading ?? slides[0].heading ?? "LifeWear: Đơn giản tạo nên sự hoàn hảo";
-  const subheading =
-    current.subheading ??
-    slides[0].subheading ??
-    "Trang phục thường ngày chất lượng cao, bền bỉ và tạo sự tự tin thoải mái tối đa cho cuộc sống của mọi người.";
-  const ctaLabel = current.ctaLabel ?? slides[0].ctaLabel ?? "XEM CHI TIẾT";
-  const ctaLink = current.ctaLink ?? slides[0].ctaLink ?? "/shop";
+  const blocks = current.contentBlocks.length
+    ? current.contentBlocks
+    : [{ title: current.heading ?? "LifeWear: Đơn giản tạo nên sự hoàn hảo", content: current.subheading ?? "Trang phục thường ngày chất lượng cao, bền bỉ và tạo sự tự tin thoải mái." }];
+  const ctas = current.ctas.length
+    ? current.ctas
+    : current.ctaLabel && current.ctaLink ? [{ label: current.ctaLabel, link: current.ctaLink, style: "primary" as const, newTab: false }] : [];
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -53,7 +51,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   return (
     <section
       id="top"
-      className="relative h-screen min-h-[100dvh] h-[100dvh] w-full overflow-hidden bg-black select-none"
+      className="relative h-[100dvh] min-h-[100dvh] w-full overflow-hidden bg-black select-none"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
@@ -66,39 +64,8 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
               } transition-transform duration-1000`}
               aria-hidden={i !== active}
             >
-              {slide.mediaType === "video" ? (
-                <>
-                  {slide.mobile ? (
-                    <img
-                      src={slide.mobile}
-                      alt={slide.alt}
-                      className="absolute inset-0 h-full w-full object-cover sm:hidden"
-                    />
-                  ) : null}
-                  <video
-                    src={slide.media}
-                    poster={slide.poster ?? undefined}
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    preload={i === 0 && !slide.mobile ? "auto" : "none"}
-                    aria-label={slide.alt || undefined}
-                    className={`absolute inset-0 h-full w-full object-cover ${
-                      slide.mobile ? "hidden sm:block" : ""
-                    }`}
-                  />
-                </>
-              ) : (
-                <Image
-                  src={slide.media}
-                  alt={slide.alt}
-                  fill
-                  priority={i === 0}
-                  sizes="100vw"
-                  className="object-cover"
-                />
-              )}
+              <HeroMedia src={slide.media} type={slide.mediaType} poster={slide.poster} alt={slide.alt} focalPoint={slide.desktopLayout.focalPoint} className="hidden sm:block" preload={i === 0} />
+              <HeroMedia src={slide.mobile ?? slide.media} type={slide.mobile ? slide.mobileMediaType : slide.mediaType} poster={slide.poster} alt={slide.alt} focalPoint={slide.mobileLayout.focalPoint} className="sm:hidden" preload={i === 0} />
             </div>
           ))}
 
@@ -106,46 +73,11 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           <div className="absolute inset-x-0 top-0 h-36 sm:h-48 bg-gradient-to-b from-black/80 via-black/35 to-transparent pointer-events-none z-10" />
 
           {/* ── Minimalist Bottom Contrast Overlay ── */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent pointer-events-none z-10" />
+          <div className="absolute inset-0 z-10 hidden pointer-events-none sm:block" style={{ backgroundColor: `rgb(0 0 0 / ${current.desktopLayout.overlayOpacity / 100})` }} />
+          <div className="absolute inset-0 z-10 pointer-events-none sm:hidden" style={{ backgroundColor: `rgb(0 0 0 / ${current.mobileLayout.overlayOpacity / 100})` }} />
 
           {/* ── Hero Text Content ── */}
-          <div className="shell absolute inset-0 z-20 flex flex-col justify-end pb-16 sm:pb-20 lg:pb-24">
-            <div className="max-w-2xl text-white">
-              <span className="inline-block bg-[#8f633e] px-3 py-1 text-[11px] font-black uppercase tracking-widest text-white shadow-xs">
-                LIFEWEAR COLLECTION
-              </span>
-
-              {heading ? (
-                <h1 className="mt-4 font-sans text-[clamp(2.2rem,5.5vw,4.5rem)] font-extrabold leading-[1.05] tracking-[-0.02em] text-white text-balance uppercase">
-                  {heading}
-                </h1>
-              ) : null}
-
-              {subheading ? (
-                <p className="mt-3.5 max-w-xl text-sm leading-relaxed text-white/90 sm:text-base md:text-lg font-normal">
-                  {subheading}
-                </p>
-              ) : null}
-
-              {ctaLabel && ctaLink ? (
-                <div className="mt-6 sm:mt-8 flex items-center gap-3">
-                  <Link
-                    href={ctaLink}
-                    className="inline-flex h-12 items-center gap-2 bg-white px-8 text-xs sm:text-sm font-bold uppercase tracking-wider text-ink shadow-md transition-all hover:bg-[#8f633e] hover:text-white active:scale-98"
-                  >
-                    <span>{ctaLabel}</span>
-                    <ArrowUpRight className="h-4 w-4" />
-                  </Link>
-
-                  <Link
-                    href="/shop?new=1"
-                    className="inline-flex h-12 items-center gap-2 border border-white bg-transparent px-6 text-xs sm:text-sm font-bold uppercase tracking-wider text-white backdrop-blur-xs transition-all hover:bg-white hover:text-ink active:scale-98"
-                  >
-                    <span>HÀNG MỚI VỀ</span>
-                  </Link>
-                </div>
-              ) : null}
-            </div>
+          <HeroContent blocks={blocks} ctas={ctas} desktop={current.desktopLayout} mobile={current.mobileLayout} />
 
             {/* Slide indicators dạng thanh chữ nhật */}
             {slides.length > 1 ? (
@@ -165,9 +97,19 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
               </div>
             ) : null}
           </div>
-        </div>
     </section>
   );
+}
+
+function HeroMedia({ src, type, poster, alt, focalPoint, className, preload }: { src: string; type: "image" | "video"; poster: string | null; alt: string; focalPoint: string; className: string; preload: boolean }) {
+  const style = { objectPosition: focalPoint.replace("-", " ") };
+  return type === "video" ? <video src={src} poster={poster ?? undefined} autoPlay muted loop playsInline preload={preload ? "auto" : "metadata"} aria-label={alt || undefined} className={`absolute inset-0 h-full w-full object-cover ${className}`} style={style} /> : <img src={src} alt={alt} fetchPriority={preload ? "high" : "auto"} className={`absolute inset-0 h-full w-full object-cover ${className}`} style={style} />;
+}
+
+function HeroContent({ blocks, ctas, desktop, mobile }: { blocks: { title: string; content: string }[]; ctas: { label: string; link: string; style: "primary" | "secondary" | "ghost"; newTab: boolean }[]; desktop: HeroSlide["desktopLayout"]; mobile: HeroSlide["mobileLayout"] }) {
+  const position = (layout: HeroSlide["desktopLayout"]) => `${layout.vertical === "top" ? "justify-start" : layout.vertical === "bottom" ? "justify-end" : "justify-center"} ${layout.horizontal === "left" ? "items-start" : layout.horizontal === "right" ? "items-end" : "items-center"}`;
+  const content = <div className="max-w-2xl text-white"><div className="space-y-3">{blocks.map((block, index) => <div key={`${block.title}-${index}`}>{block.title ? index === 0 ? <h1 className="font-sans text-[clamp(2.2rem,5.5vw,4.5rem)] font-extrabold leading-[1.08] tracking-[-0.02em] text-balance uppercase">{block.title}</h1> : <h2 className="text-xl font-bold uppercase sm:text-2xl">{block.title}</h2> : null}{block.content ? <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/90 sm:text-base md:text-lg">{block.content}</p> : null}</div>)}</div>{ctas.length ? <div className="mt-6 flex flex-wrap gap-3 sm:mt-8">{ctas.filter((cta) => cta.label && cta.link).map((cta, index) => <Link key={`${cta.label}-${cta.link}`} href={cta.link} target={cta.newTab ? "_blank" : undefined} rel={cta.newTab ? "noreferrer" : undefined} className={`inline-flex h-11 items-center gap-2 px-6 text-xs font-bold uppercase tracking-wider transition-all active:scale-98 sm:h-12 sm:w-auto sm:px-8 sm:text-sm ${index >= 2 ? "w-full justify-center" : ""} ${cta.style === "secondary" ? "bg-[#8f633e] text-white hover:bg-[#734d2c]" : cta.style === "ghost" ? "border border-white bg-transparent text-white hover:bg-white hover:text-ink" : "bg-white text-ink hover:bg-[#8f633e] hover:text-white"}`}><span>{cta.label}</span><ArrowUpRight className="h-4 w-4" /></Link>)}</div> : null}</div>;
+  return <><div className={`shell absolute inset-0 z-20 hidden flex-col py-16 sm:flex sm:py-20 lg:py-24 ${position(desktop)}`} style={{ textAlign: desktop.textAlign }}>{content}</div><div className={`shell absolute inset-0 z-20 flex flex-col px-6 py-16 sm:hidden ${position(mobile)}`} style={{ textAlign: mobile.textAlign }}>{content}</div></>;
 }
 
 
